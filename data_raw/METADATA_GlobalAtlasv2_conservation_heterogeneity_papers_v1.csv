@@ -1,0 +1,24 @@
+﻿Order_ID,Variable,Units,Original variables
+Latitude_c,Latitude,Decimal degrees,
+Longitude_c ,Longitude,Decimal degrees,
+Eco_c,Ecosystem type,#,
+Soil_pH,Soil pH,#,
+Soil_salinity,Electrical conductivity,µS/cm,
+Clay_silt_c,Clay+silt,%,
+Soil_carbon_service,Soil carbon service,Standardized (0-1),Soil organic carbon content
+OM_decomposition_service,Organic matter decomposition service,Standardized (0-1),Average of standardized data: NAG Enzyme activity & soil respiration (Microresp)
+Water_regulation_service,Water regulation service,Standardized (0-1),Water holding capacity
+Soil_stability_service,Soil stability service,Standardized (0-1),Plant cover (field data)
+Nutrient_service,Nutrient cycling service,Standardized (0-1),"Average of standardized data: Ammonium, nitrate and phosphate content (Root simulator method) "
+Pathogen_control,Pathogen control,Standardized (0-1),Inversed of proportion of soil-borne potential plant pathogens 
+Richness_bacteria,Richness of bacteria,Number of ASVs,
+Fungi_18s_richness,Richness of fungi,Number of ASVs,
+Invertebrate_18s_richness,Richness of invertebrates,Number of ASVs,
+Protist_18s_richness,Richness of protists,Number of ASVs,
+Ectomycorrhizal_18s_richness,Richness of ectomycorrhizal fungi,Number of ASVs,
+Arbuscular_mycorrhizal_18s_richness,Richness of AMF,Number of ASVs,
+Decomposers_18s_richness,Richness of fungal decomposers,Number of ASVs,
+Diss_Bacteria_std,Dissimilarity of Bacteria,Standardized (0-1),Based on P/A matrix and Jaccard distance
+Diss_Fungi_std,Dissimilarity of Fungi,Standardized (0-1),Based on P/A matrix and Jaccard distance
+Diss_Protists_std,Dissimilarity of Protists,Standardized (0-1),Based on P/A matrix and Jaccard distance
+Diss_invert_std,Dissimilarity of Invertebrates,Standardized (0-1),Based on P/A matrix and Jaccard distance
