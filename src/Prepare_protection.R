@@ -34,7 +34,7 @@ shp_all
 save(shp_all, file="D:/_students/Romy/_Shapefiles/WDPA_WDOECM_Nov2022_Public_all_shp/WDPA_WDOECM_Nov2022_Public_all_merged.RData")
 gc()
 
-load("D:/_students/Romy/_Shapefiles/WDPA_WDOECM_Nov2022_Public_all_shp/WDPA_WDOECM_Nov2022_Public_all_merged.RData")
+load("D:/_students/Romy/_Shapefiles/WDPA_WDOECM_Nov2022_Public_all_shp/WDPA_WDOECM_Nov2022_Public_all_merged.RData") #shp_all
 
 #- - - - - - - - - - - - - - - - - - - - - -
 ## Extract protection information based on point coordinates
@@ -44,10 +44,10 @@ data_glob <- read_csv(paste0(here::here(), "/data_raw/GlobalAtlasv2_conservation
 data_glob
 
 data_vect <- terra::vect(data_glob[,c("Longitude_c", "Latitude_c")], geom=c("Longitude_c", "Latitude_c"))
-plot(data_vect)
+#plot(data_vect)
 
 # extract protection status
-data_pa <- terra::extract(shp_all, data_vect)
+data_pa <- terra::extract(shp_all, data_vect, xy=TRUE)
 data_pa
 
 data_pa$PA <- 0
