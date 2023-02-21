@@ -49,3 +49,24 @@ ggplot()+
 dev.off()
 
 
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Boxplot mahalanobis distance ####
+pa.pairs <- merge(pa.pairs, lucas[,c("LUCAS_ID", "Country")])
+
+# get sample sizes
+no.sample <- pa.pairs %>% count(Country, LC)
+#write.csv(no.sample, file="LUCAS_Boxplot_mahal.distance_samplesize.csv", row.names=F)
+#no.sample <- as.character(no.sample$n)
+
+#setwd(figu.wd); pdf(file="LUCAS_Boxplot_mahal.distance_wide.pdf", width=15) 
+ggplot(pa.pairs[pa.pairs$LC!="Other",],aes(Country,mahal.min, fill=LC)) +
+  geom_boxplot()+#,fatten = NULL) + # activate to remove the median lines
+  theme_classic() +
+  labs(x="Country",y="Mahalanobis distance") +
+  theme(axis.text.x=element_text(size=15, angle=45, hjust=1),text = element_text(size=20),  
+        legend.position = c(0.6,0.8), axis.text.y = element_text(size=15), legend.title = element_blank())+
+  scale_fill_manual(values=c("gold3", "forestgreen", "limegreen"))
+dev.off()
+
+
