@@ -225,6 +225,31 @@ repeat {
     print(times)
   }
 }
+# show total count of unpaired (and removed) PAs and compare with number of paired sites
+table(missing_pa[,2])  # should be 0
+#table(pa_pairs$nonPA) # all counts should be number of runs (i.e. times)
 
-table(missing_pa[,2])
-#table(pa_pairs$nonPA)
+# check for runs that failed (i.e. count < number of PA sites), and remove the respective pairs
+# note: other result objects are not effected as they were overwriten
+nrow(pa.pairs)  # more than 97 * 1000
+pa.pairs <- pa.pairs %>% add_count(times.with.error) %>% 
+  filter(n==length(lucas[lucas$PA==1,"LUCAS_ID"]))
+nrow(pa.pairs)  # exactly 97 protected sites * 1000
+
+# look what non-protected sites have (not) been paired to any PA
+hist(table(pa.pairs$nonPA))  # frequency distribution of the use of sites from all runs
+length(setdiff(lucas[lucas$PA==0,]$LUCAS_ID, pa.pairs$nonPA))  # sites never used
+
+
+# 2. do a p-value test on all runs at once (i.e. collapsing all 1000 
+# pairs into one table and perform a pair-wise comparison) per LC-type
+pa.pairs <- merge(pa.pairs, lucas[,c("LUCAS_ID", fns)], by="LUCAS_ID")
+pa.pairs <- merge(pa.pairs, lucas[,c("LUCAS_ID", fns)], by.x="nonPA", by.y="LUCAS_ID")
+colnames(pa.pairs)[4] <- "LC"
+
+#save(pa.pairs, file="Pairs_paNonpa_1000trails.RData")
+#write.csv(pa.pairs, file="Pairs_paNonpa_1000trails.csv", row.names=F)
+load("Pairs_paNonpa_1000trails.RData") #pa.pairs
+
+#pa.pairs <- pa.pairs[1:103,]
+
