@@ -1,8 +1,8 @@
 #- - - - - - - - - - - - - - - - - - - - - -#
 #                                           #
-#   Compare protected with unprotected      #
+#     Pair protected with unprotected       #
 #          author: Romy Zeiss               #
-#            date: 2022-11-04               #
+#            date: 2023-02-21               #
 #                                           #
 #- - - - - - - - - - - - - - - - - - - - - -#
 
@@ -10,7 +10,9 @@ library(here)
 library(tidyverse)
 
 library(igraph)  # to map network (pairing)
-library(psych)   # to calculate CI of Cohens d effect size
+
+# save sample function (if only 1 value in sample(), it considers it as vector)
+resample <- function(x, ...) x[sample.int(length(x), ...)]
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
@@ -137,8 +139,6 @@ nonpa <- data_glob[data_glob$PA==0,c("Order_ID", "LC", "PA", mahal_vars, fns)]
 pa <- data_glob[data_glob$PA==1,c("Order_ID", "LC", "PA", mahal_vars, fns)]
 
 # randomization
-p_list_total <- vector("list", length = 1000)
-effect_size_d <- vector("list", length=1000)
 pa_pairs <- data.frame(Order_ID=NULL, nonPA=NULL, mahal.min=NULL, LC=NULL, run=NULL)
 missing_pa <- data.frame(run=NA, pa.site=NA)[0,]
 times <- 0; times.with.error <- 0; set.seed(1) 
@@ -146,140 +146,85 @@ repeat {
   times <- times+1; if(times > 1000) {break} #stop loop if reached 1000 trails
   times.with.error <- times.with.error + 1
   
-  check.error <- try({  # for doing run again if error occurs (e.g. in pairing)
+  # add columns to store pairing temporary
+  pa[,c("nonPA", "mahal.min")] <- NA  
+  
+  for(i in 1:length(lc.names)){
+    data_PA <- pa[pa$LC==lc.names[i],] 
+    data_nonPA  <- nonpa[nonpa$LC==lc.names[i],]
     
-    # add columns to store pairing temporary
-    pa[,c("nonPA", "mahal.min")] <- NA  
+    # select environmental data only as matrix, remove rows with NAs
+    data_PA <- data_PA[complete.cases(data_PA[,mahal_vars]),c("Order_ID", mahal_vars)]
+    data_nonPA <- data_nonPA[complete.cases(data_nonPA[,mahal_vars]),c("Order_ID", mahal_vars)]
     
-    for(i in 1:length(lc.names)){
-      data_PA <- pa[pa$LC==lc.names[i],] 
-      data_nonPA  <- nonpa[nonpa$LC==lc.names[i],]
+    sigma <- cov(data_nonPA[,mahal_vars]) # covariance/correlation between variables
+    
+    # random order of PA sites
+    data_PA <- data_PA[order(sample(data_PA$Order_ID)),]
+    
+    # add empty columns
+    data_nonPA[,as.character(data_PA$Order_ID)] <- NA
+    
+    # calculate Mahalanobis distance
+    for(j in 1:nrow(data_PA)){
+      mu = as.numeric(data_PA[j,mahal_vars])
+      data_nonPA[,as.character(data_PA[j,"Order_ID"])] <- 
+        mahalanobis(data_nonPA[,mahal_vars], mu, sigma, tol=1e-30)
+      #print(j)
+    }
+    
+    # add column to PA data with respective nonPA sites 
+    # based on minimal mahalanobis distance
+    data_PA[, c("nonPA", "mahal.min")]  <- NA
+    #temp.col <- 0
+    
+    for(k in data_PA$Order_ID){
       
-      # select environmental data only as matrix, remove rows with NAs
-      data_PA <- data_PA[complete.cases(data_PA[,mahal_vars]),c("Order_ID", mahal_vars)]
-      data_nonPA <- data_nonPA[complete.cases(data_nonPA[,mahal_vars]),c("Order_ID", mahal_vars)]
-      
-      sigma <- cov(data_nonPA[,mahal_vars]) # covariance/correlation between variables
-      
-      # random order of PA sites
-      data_PA <- data_PA[order(sample(data_PA$Order_ID)),]
-      
-      # add empty columns
-      data_nonPA[,as.character(data_PA$Order_ID)] <- NA
-      
-      # calculate Mahalanobis distance
-      for(j in 1:nrow(data_PA)){
-        mu = as.numeric(data_PA[j,mahal_vars])
-        data_nonPA[,as.character(data_PA[j,"Order_ID"])] <- 
-          mahalanobis(data_nonPA[,mahal_vars], mu, sigma, tol=1e-30)
-        #print(j)
-      }
-      
-      # add column to PA data with respective nonPA sites 
-      # based on minimal mahalanobis distance
-      data_PA[, c("nonPA", "mahal.min")]  <- NA
-      #temp.col <- 0
-      
-      k_count <- 1
-      for(k in data_PA$Order_ID){
+      # if Mahal. distances compared to all relevant nonPA are above threshold...
+      if(min(data_nonPA[,as.character(k)])>=mahal_thres){
+        #... stop and re-do run
+        missing_pa <- rbind(missing_pa,c(times, k))  # to know why we've stopped
+        print(paste0("Not all PA sites paired. Check PA ", k, "."))
         
-        # if Mahal. distances compared to all relevant nonPA are above threshold...
-        if(min(data_nonPA[,as.character(k)])>=mahal_thres){
-          #... stop and re-do run
-          missing_pa <- rbind(missing_pa,c(times, k))  # to know why we've stopped
-          print(paste0("Not all PA sites paired. Check PA ", k, "."))
-          
-          pa[pa$Order_ID==k, c("nonPA", "mahal.min")] <-
-            cbind(NA, min(data_nonPA[,as.character(k)]))
-          data_PA <- data_PA[data_PA$Order_ID!=k,] # remove respective PA site
-        
-        }else{
-          # select (max. 10) nonPA sites with mahalanobis distance below threshold
-          nonPA.pair <- data_nonPA[data_nonPA[,as.character(k)]<=mahal_thres,c("Order_ID", as.character(k))]
-          nonPA.pair[nrow(nonPA.pair)+1:10,] <- NA #add empty rows for when there are less than 10 sites
-          nonPA.pair <- nonPA.pair %>% arrange(2)
-          nonPA.pair <- nonPA.pair[c(1:10),1]
-          
-          # sample one of the top 10 nonPA site that isn't NA 
-          data_PA[data_PA$Order_ID==k,"nonPA"] <- sample(as.numeric(nonPA.pair[!is.na(nonPA.pair)]),1)
-          
-          # add value of distance
-          data_PA[data_PA$Order_ID==k,"mahal.min"] <- unique(data_nonPA[data_nonPA$Order_ID==as.numeric(data_PA[data_PA$Order_ID==k,"nonPA"]),as.character(k)])
-          data_nonPA <- data_nonPA[data_nonPA$Order_ID!=as.character(data_PA[data_PA$Order_ID==k,"nonPA"]),]
-          
-          k_count <- k_count + 1
-        }
-      }
+        pa[pa$Order_ID==k, c("nonPA", "mahal.min")] <-
+          cbind(NA, min(data_nonPA[,as.character(k)]))
+        data_PA <- data_PA[data_PA$Order_ID!=k,] # remove respective PA site
       
+      }else{
+        # select (max. 10) nonPA sites with mahalanobis distance below threshold
+        nonPA.pair <- data_nonPA[data_nonPA[,as.character(k)]<=mahal_thres,c("Order_ID", as.character(k))]
+        nonPA.pair[nrow(nonPA.pair)+1:10,] <- NA #add empty rows for when there are less than 10 sites
+        nonPA.pair <- nonPA.pair %>% arrange(2)
+        nonPA.pair <- nonPA.pair[c(1:10),1]
+        
+        # sample one of the top 10 nonPA site that isn't NA 
+        data_PA[data_PA$Order_ID==k,"nonPA"] <- resample(as.numeric(nonPA.pair[!is.na(nonPA.pair)]),1)
+        
+        # add value of distance
+        data_PA[data_PA$Order_ID==k,"mahal.min"] <- unique(data_nonPA[data_nonPA$Order_ID==as.numeric(data_PA[data_PA$Order_ID==k,"nonPA"]),as.character(k)])
+        data_nonPA <- data_nonPA[data_nonPA$Order_ID!=as.character(data_PA[data_PA$Order_ID==k,"nonPA"]),]
+      }
+    }
+    # do run again if there is an error (i.e. if no nonPA site with distance lower than threshold)
+    if(nrow(data_PA)<20) {
+      times <- times-1
+      stop("Not enough PA sites paired.")
+      
+    } else {
       data_PA <- data_PA %>% sample_n(size = 20, replace = FALSE)
       
       # add to result table
       pa[pa$Order_ID %in% data_PA$Order_ID, c("nonPA", "mahal.min")] <-
         cbind(data_PA[order(as.numeric(rownames(data_PA))),c("nonPA", "mahal.min")])
-        
+      
       # add to result table to analyse all at once below
       pa_pairs <- rbind(pa_pairs, cbind(data_PA[,c("Order_ID", "nonPA", "mahal.min")],
                                         lc.names[i], times.with.error, times))
-
-    }
-
-    #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    ## Compare difference between PA and nonPA sites ####
-    
-    # merge pairs of PA and nonPA in one table ####
-    nonpa.subset <- nonpa[unique(nonpa$Order_ID) %in% pa$nonPA,]
-    #data_glob.paired <- full_join(pa[order(pa$nonPA),], nonpa.subset[order(nonpa.subset$Order_ID),])
-    #head(data_glob.paired)
-    
-    # Perform t tests
-    p.list <- list()
-    effect_size_d[[times]] <- list()
-    for(l in lc.names){
-      p.list[[l]] <- vector("list", length(fns))
-      names(p.list[[l]]) <- fns
-      
-      # subset data based on land cover type
-      temp.PA <- pa[pa$LC==l & pa$PA==1,]
-      temp.nonPA <- nonpa.subset[nonpa.subset$LC==l & nonpa.subset$PA==0,]
-      #NEEDS TO BE FIXED: temp.nonPA <- full_join(temp.PA, temp.nonPA, by=c("nonPA"="Order_ID"), suffix)
-      
-      temp.cohens <- psych::cohen.d(rbind(temp.PA, temp.nonPA)[,c("PA",fns)], "PA")
-      effect_size_d[[times]][[l]] <- cbind(lc=l, data.frame(temp.cohens$cohen.d), run=times)
-      
-      for(no.fns in 1:(length(fns))){
-        # unpaired t test
-        p.list[[l]][[no.fns]] <- t.test(temp.PA[,fns[no.fns]],temp.nonPA[,fns[no.fns]])
-      }
-      print(summary(temp.PA[,"nonPA"] == temp.nonPA[temp.nonPA$Order_ID %in% as.numeric(unlist(temp.PA[,"nonPA"])),"Order_ID"])) # make sure that the sites are pairing properly
       
     }
-    effect_size_d[[times]] <- do.call(rbind, effect_size_d[[times]])
-    
-    #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    ## Make table of all p values for all functions and LC types
-    p_table <- as.data.frame(matrix(ncol=length(fns),nrow=5))
-    colnames(p_table) <- fns
-    rownames(p_table) <- c("Other","Shrubland","Grassland", "Woodland","total")
-    
-    for(n in 1:ncol(p_table)){
-      for(lc in 1:length(lc.names)){
-        p_table[which(rownames(p_table)==lc.names[lc]),n] <- p.list[[lc.names[lc]]][[n]]["p.value"]
-      }
-    }
-    
-    # add to overall result list
-    p_list_total[[times]] <- p_table  #p-values from Chi-squared test
-  })
-  
-  # do run again if there is an error (i.e. if no nonPA site with distance lower than threshold)
-  if(is(check.error,"try-error")) {
-    times <- times-1; print(times)
-  } else {
-    print(check.error); print(times)}
-  
-} #end of randomization
+    print(times)
+  }
+}
 
 table(missing_pa[,2])
 #table(pa_pairs$nonPA)
-
-save(effect_size_d,  file="d_1000_trails.RData")

@@ -53,7 +53,18 @@ rm(protect_glob)
 
 write_csv(data_glob, file=paste0(here::here(), "/intermediates/Data_global.csv"))
 
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Rename land cover types in data ####
+data_glob$LC <- data_glob$Eco_c
+unique(data_glob$LC)
+data_glob[data_glob$LC=="Forest", "LC"] <- "Woodland"
+data_glob[data_glob$LC=="Moss_heath", "LC"] <- "Other"
+unique(data_glob$LC)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Check for colinearity between environmental variables ####
+
+
+
+
 
