@@ -9,6 +9,8 @@
 library(here)
 library(tidyverse)
 
+source("src/00_Parameters_functions.R")
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
 data_glob <- read_csv(paste0(here::here(), "/data_raw/GlobalAtlasv2_conservation_heterogeneity_papers_v1.csv"))
@@ -51,7 +53,10 @@ data_glob <- data_glob %>%
   mutate("PA"=protect_glob %>% dplyr::select(id.y, PA) %>% unique() %>% dplyr::select(PA) %>% unlist())
 rm(protect_glob)
 
-write_csv(data_glob, file=paste0(here::here(), "/intermediates/Data_global.csv"))
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Keep complete cases only ####
+data_glob <- data_glob[complete.cases(data_glob[,c(mahal_vars, fns)]),]
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Rename land cover types in data ####
@@ -62,7 +67,13 @@ data_glob[data_glob$LC=="Moss_heath", "LC"] <- "Other"
 unique(data_glob$LC)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Save ####
+write_csv(data_glob, file=paste0(here::here(), "/intermediates/Data_global.csv"))
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Check for colinearity between environmental variables ####
+
 
 
 

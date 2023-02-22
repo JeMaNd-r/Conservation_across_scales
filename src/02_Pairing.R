@@ -6,13 +6,15 @@
 #                                           #
 #- - - - - - - - - - - - - - - - - - - - - -#
 
+# pair one PA with most similar nonPA sample point
+# based on physical properties and distance
+
 library(here)
 library(tidyverse)
 
 library(igraph)  # to map network (pairing)
 
-# save sample function (if only 1 value in sample(), it considers it as vector)
-resample <- function(x, ...) x[sample.int(length(x), ...)]
+source("src/00_Parameters_functions.R")
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
@@ -20,65 +22,31 @@ data_glob <- read_csv(paste0(here::here(), "/intermediates/Data_global.csv"))
 data_glob
 
 ## Explore data
-summary(as.factor(data_glob$PA))
-
+summary(as.factor(data_glob$PA)) #248 nonPA and 135 PAs
 # number of observations (raw)
 nrow(data_glob); nrow(data_glob[data_glob$PA,])  #383 with 135 PAs
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## pair one PA with most similar nonPA sample point ####
-# based on physical properties and distance
-
-# define functions to be compared
-fns = c("Soil_carbon_service", "OM_decomposition_service", "Water_regulation_service", 
-        "Soil_stability_service", "Nutrient_service", "Pathogen_control", 
-        "Richness_bacteria", "Fungi_18s_richness", "Invertebrate_18s_richness", 
-        "Protist_18s_richness", "Ectomycorrhizal_18s_richness", 
-        "Arbuscular_mycorrhizal_18s_richness", "Decomposers_18s_richness", 
-        "Diss_Bacteria_std", "Diss_Fungi_std", "Diss_Protists_std", "Diss_invert_std")
-
-## define variables to be compared between PA and nonPA, & threshold
-mahal_vars <- c("Latitude_c", "Longitude_c", "Elevation", "AnnualPrec", "AnnualTemp", 
-                #"MonthlyPrecipSum","MonthlyMeanTemp", 
-                "Soil_pH", "Soil_salinity", "Clay_silt_c")
-
-# keep complete cases only
-data_glob <- data_glob[complete.cases(data_glob[,c(mahal_vars, fns)]),]
-nrow(data_glob); nrow(data_glob[data_glob$PA==1,])  # n = 383 including 135 PAs
-
-mahal_thres <- qchisq(.975, df=length(mahal_vars)) #21.92005
-
-# scale variables for mahalanobis distance
+## Scale variables for mahalanobis distance ####
 for(i in mahal_vars){
   data_glob[,paste0(i,".z")] <- as.numeric(scale(data_glob[,i]))
 }
 
-mahal_vars <- paste0(mahal_vars, ".z")
-
-# define each land cover type
-lc.names <- c("Grassland", "Shrubland", "Woodland") # Other has only 3 samples
-
-# rename land cover types in data
-data_glob$LC <- data_glob$Eco_c
-unique(data_glob$LC)
-data_glob[data_glob$LC=="Forest", "LC"] <- "Woodland"
-data_glob[data_glob$LC=="Moss_heath", "LC"] <- "Other"
-unique(data_glob$LC)
-
-# check for pairing
-nonpa <- data_glob[data_glob$PA==0,c("Order_ID", "LC", "PA", mahal_vars, fns)]
-pa <- data_glob[data_glob$PA==1,c("Order_ID", "LC", "PA", mahal_vars, fns)]
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Check for pairing
+nonpa <- data_glob[data_glob$PA==0,c("Order_ID", "LC", "PA", mahal_vars_z)]
+pa <- data_glob[data_glob$PA==1,c("Order_ID", "LC", "PA", mahal_vars_z)]
 pa_noPair <- c()
 all_nonPA <- nonpa[0,]
 
-for(i in 1:length(lc.names)){
-    data_nonPA  <- nonpa[nonpa$LC==lc.names[i],]
-    data_PA <- pa[pa$LC==lc.names[i],]
-    sigma <- cov(data_nonPA[,mahal_vars]) 
+for(i in 1:length(lc_names)){
+    data_nonPA  <- nonpa[nonpa$LC==lc_names[i],]
+    data_PA <- pa[pa$LC==lc_names[i],]
+    sigma <- cov(data_nonPA[,mahal_vars_z]) 
     for(j in 1:nrow(data_PA)){
-      mu <- as.numeric(data_PA[j,mahal_vars])
+      mu <- as.numeric(data_PA[j,mahal_vars_z])
       data_nonPA[,as.character(data_PA[j,"Order_ID"])] <- 
-        mahalanobis(data_nonPA[,mahal_vars], mu, sigma, tol=1e-30)
+        mahalanobis(data_nonPA[,mahal_vars_z], mu, sigma, tol=1e-30)
       #print(j)
     }
     min_mahal <- apply(X = data_nonPA[,as.character(data_PA$Order_ID)], MARGIN = 2, FUN = min, na.rm = TRUE)
@@ -92,8 +60,8 @@ nrow(pa_noPair) #nrow=12
 unpaired_pa <- data_glob[data_glob$Order_ID %in% pa_noPair,] #12 PA sites can't be paired
 write.csv(unpaired_pa, file=paste0(here::here(), "/intermediates/", "Unpaired_protected_sites_", Sys.Date(), ".csv"), row.names = F)
 
-
-all_nonPA
+# look at Mahalanoubis distance values for each nonPA (Order_ID) and PA (columns)
+#all_nonPA
 
 # count how many "options" exist for one PA
 count_nonPA <- data.frame("Order_ID"=NA, "n"=NA)
@@ -110,7 +78,8 @@ count_nonPA #number of nonPA sites per PA (Order_ID)
 
 #View(all_nonPA %>% dplyr::select(Order_ID, count_nonPA[count_nonPA$n<10 & !is.na(count_nonPA$Order_ID), "Order_ID"]))
 
-## network of possible combinations
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Network of possible combinations ####
 # l <- lapply(colnames(all_nonPA)[!is.na(as.numeric(colnames(all_nonPA)))],
 #        function(x) tibble("PA_ID"=rep(x, nrow(all_nonPA[which(all_nonPA[,x]<=mahal_thres),])),
 #                          all_nonPA[which(all_nonPA[,x]<=mahal_thres),"Order_ID"]))
@@ -120,6 +89,9 @@ count_nonPA #number of nonPA sites per PA (Order_ID)
 # plot(network,
 #      vertex.size=0.5, vertex.label.cex=0.2,
 #      edge.arrow.size = 0.2, edge.arrow.width = 0.2)
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Remove sites ####
 
 # Note: There were nonPA sites with mahalanobis distance below threshold
 # for three protected sites with Order_ID. They have to been removed.
@@ -134,11 +106,13 @@ data_glob %>% group_by(LC, PA) %>% count()
 #data_glob <- data_glob[data_glob$Order_ID!=28302282,]
 #data_glob <- data_glob[data_glob$Order_ID!=29542352,]
 
-# split data
-nonpa <- data_glob[data_glob$PA==0,c("Order_ID", "LC", "PA", mahal_vars, fns)]
-pa <- data_glob[data_glob$PA==1,c("Order_ID", "LC", "PA", mahal_vars, fns)]
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Split data ####
+nonpa <- data_glob[data_glob$PA==0,c("Order_ID", "LC", "PA", mahal_vars_z)]
+pa <- data_glob[data_glob$PA==1,c("Order_ID", "LC", "PA", mahal_vars_z)]
 
-# randomization
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Randomization ####
 pa_pairs <- data.frame(Order_ID=NULL, nonPA=NULL, mahal.min=NULL, LC=NULL, run=NULL)
 missing_pa <- data.frame(run=NA, pa.site=NA)[0,]
 times <- 0; times.with.error <- 0; set.seed(1) 
@@ -149,15 +123,15 @@ repeat {
   # add columns to store pairing temporary
   pa[,c("nonPA", "mahal.min")] <- NA  
   
-  for(i in 1:length(lc.names)){
-    data_PA <- pa[pa$LC==lc.names[i],] 
-    data_nonPA  <- nonpa[nonpa$LC==lc.names[i],]
+  for(i in 1:length(lc_names)){
+    data_PA <- pa[pa$LC==lc_names[i],] 
+    data_nonPA  <- nonpa[nonpa$LC==lc_names[i],]
     
     # select environmental data only as matrix, remove rows with NAs
-    data_PA <- data_PA[complete.cases(data_PA[,mahal_vars]),c("Order_ID", mahal_vars)]
-    data_nonPA <- data_nonPA[complete.cases(data_nonPA[,mahal_vars]),c("Order_ID", mahal_vars)]
+    data_PA <- data_PA[complete.cases(data_PA[,mahal_vars_z]),c("Order_ID", mahal_vars_z)]
+    data_nonPA <- data_nonPA[complete.cases(data_nonPA[,mahal_vars_z]),c("Order_ID", mahal_vars_z)]
     
-    sigma <- cov(data_nonPA[,mahal_vars]) # covariance/correlation between variables
+    sigma <- cov(data_nonPA[,mahal_vars_z]) # covariance/correlation between variables
     
     # random order of PA sites
     data_PA <- data_PA[order(sample(data_PA$Order_ID)),]
@@ -167,9 +141,9 @@ repeat {
     
     # calculate Mahalanobis distance
     for(j in 1:nrow(data_PA)){
-      mu = as.numeric(data_PA[j,mahal_vars])
+      mu = as.numeric(data_PA[j,mahal_vars_z])
       data_nonPA[,as.character(data_PA[j,"Order_ID"])] <- 
-        mahalanobis(data_nonPA[,mahal_vars], mu, sigma, tol=1e-30)
+        mahalanobis(data_nonPA[,mahal_vars_z], mu, sigma, tol=1e-30)
       #print(j)
     }
     
@@ -206,12 +180,12 @@ repeat {
       }
     }
     # do run again if there is an error (i.e. if no nonPA site with distance lower than threshold)
-    if(nrow(data_PA)<20) {
+    if(nrow(data_PA) < min_size) {
       times <- times-1
       stop("Not enough PA sites paired.")
       
     } else {
-      data_PA <- data_PA %>% sample_n(size = 20, replace = FALSE)
+      data_PA <- data_PA %>% sample_n(size = min_size, replace = FALSE)
       
       # add to result table
       pa[pa$Order_ID %in% data_PA$Order_ID, c("nonPA", "mahal.min")] <-
@@ -219,37 +193,30 @@ repeat {
       
       # add to result table to analyse all at once below
       pa_pairs <- rbind(pa_pairs, cbind(data_PA[,c("Order_ID", "nonPA", "mahal.min")],
-                                        lc.names[i], times.with.error, times))
+                                        "LC"=lc_names[i], times.with.error, times))
       
     }
     print(times)
   }
 }
 # show total count of unpaired (and removed) PAs and compare with number of paired sites
-table(missing_pa[,2])  # should be 0
-#table(pa_pairs$nonPA) # all counts should be number of runs (i.e. times)
+table(missing_pa[,2])  # can be larger than 0
+#table(pa_pairs$nonPA) # counts should be lower or equal to number of runs (i.e. times)
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Check & Save ####
 
 # check for runs that failed (i.e. count < number of PA sites), and remove the respective pairs
-# note: other result objects are not effected as they were overwriten
-nrow(pa.pairs)  # more than 97 * 1000
-pa.pairs <- pa.pairs %>% add_count(times.with.error) %>% 
-  filter(n==length(lucas[lucas$PA==1,"LUCAS_ID"]))
-nrow(pa.pairs)  # exactly 97 protected sites * 1000
+# note: other result objects are not effected as they were overwritten
+nrow(pa_pairs)  # should be 3 * min_size * 1000
+pa_pairs <- pa_pairs %>% add_count(times.with.error) %>%
+  filter(n==3*min_size)
+nrow(pa_pairs)  # exactly 3 * min_size * 1000
 
 # look what non-protected sites have (not) been paired to any PA
-hist(table(pa.pairs$nonPA))  # frequency distribution of the use of sites from all runs
-length(setdiff(lucas[lucas$PA==0,]$LUCAS_ID, pa.pairs$nonPA))  # sites never used
+hist(table(pa_pairs$nonPA))  # frequency distribution of the use of sites from all runs
+length(setdiff(data_glob[data_glob$PA==0,]$Order_ID, pa_pairs$nonPA))  # nonPA sites never used
 
-
-# 2. do a p-value test on all runs at once (i.e. collapsing all 1000 
-# pairs into one table and perform a pair-wise comparison) per LC-type
-pa.pairs <- merge(pa.pairs, lucas[,c("LUCAS_ID", fns)], by="LUCAS_ID")
-pa.pairs <- merge(pa.pairs, lucas[,c("LUCAS_ID", fns)], by.x="nonPA", by.y="LUCAS_ID")
-colnames(pa.pairs)[4] <- "LC"
-
-#save(pa.pairs, file="Pairs_paNonpa_1000trails.RData")
-#write.csv(pa.pairs, file="Pairs_paNonpa_1000trails.csv", row.names=F)
-load("Pairs_paNonpa_1000trails.RData") #pa.pairs
-
-#pa.pairs <- pa.pairs[1:103,]
+#save(pa_pairs, file=paste0(here::here(), "/intermediates/Pairs_paNonpa_1000trails_", Sys.Date(),".RData"))
+write.csv(pa_pairs, file=paste0(here::here(), "/intermediates/Pairs_paNonpa_1000trails_", Sys.Date(),".csv"), row.names=F)
 
