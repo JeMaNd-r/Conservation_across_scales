@@ -11,139 +11,159 @@ library(tidyverse)
 
 library(psych)   # to calculate CI of Cohens d effect size
 
-# save sample function (if only 1 value in sample(), it considers it as vector)
-resample <- function(x, ...) x[sample.int(length(x), ...)]
+source("src/00_Parameters_functions.R")
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
 data_glob <- read_csv(paste0(here::here(), "/intermediates/Data_global.csv"))
 data_glob
 
-## Explore data
-summary(as.factor(data_glob$PA))
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Load PA-nonPA pairs ####
+pa_pairs <- read.csv(file=paste0(here::here(), "/intermediates/Pairs_paNonpa_1000trails_2023-02-22.csv"))
 
-# number of observations (raw)
-nrow(data_glob); nrow(data_glob[data_glob$PA,])  #383 with 135 PAs
+# # add columns of functions for each PA and nonPA (wide format)
+# pa_pairs <- merge(pa_pairs, data_glob[,c("Order_ID", fns)], by="Order_ID")
+# pa_pairs <- merge(pa_pairs, data_glob[,c("Order_ID", fns)], by.x="nonPA", by.y="Order_ID",
+#                   suffixes = c(".pa", ".nonpa"))
+
+head(pa_pairs)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## pair one PA with most similar nonPA sample point ####
-# based on physical properties and distance
-
-# define functions to be compared
-fns = c("Soil_carbon_service", "OM_decomposition_service", "Water_regulation_service", 
-        "Soil_stability_service", "Nutrient_service", "Pathogen_control", 
-        "Richness_bacteria", "Fungi_18s_richness", "Invertebrate_18s_richness", 
-        "Protist_18s_richness", "Ectomycorrhizal_18s_richness", 
-        "Arbuscular_mycorrhizal_18s_richness", "Decomposers_18s_richness", 
-        "Diss_Bacteria_std", "Diss_Fungi_std", "Diss_Protists_std", "Diss_invert_std")
-
-## define variables to be compared between PA and nonPA, & threshold
-mahal_vars <- c("Latitude_c", "Longitude_c", "Elevation", "AnnualPrec", "AnnualTemp", 
-                #"MonthlyPrecipSum","MonthlyMeanTemp", 
-                "Soil_pH", "Soil_salinity", "Clay_silt_c")
-
-# keep complete cases only
-data_glob <- data_glob[complete.cases(data_glob[,c(mahal_vars, fns)]),]
-nrow(data_glob); nrow(data_glob[data_glob$PA==1,])  # n = 383 including 135 PAs
-
-mahal_thres <- qchisq(.975, df=length(mahal_vars)) #21.92005
-
-# scale variables for mahalanobis distance
-for(i in mahal_vars){
-  data_glob[,paste0(i,".z")] <- as.numeric(scale(data_glob[,i]))
-}
-
-mahal_vars <- paste0(mahal_vars, ".z")
-
-# define each land cover type
-lc.names <- c("Grassland", "Shrubland", "Woodland")
-
-# Note: There were nonPA sites with mahalanobis distance below threshold
-# for three protected sites with Order_ID. They have to been removed.
-data_glob <- data_glob[!(data_glob$Order_ID %in% unpaired_pa$Order_ID),] 
-nrow(data_glob); nrow(data_glob[data_glob$PA,]) #nrow=371 with 123 PAs
-
-# Remove sites that can only be paired once
-data_glob <- data_glob[!(data_glob$Order_ID %in% count_nonPA[count_nonPA$n<3, "Order_ID"]),]
-nrow(data_glob); nrow(data_glob[data_glob$PA,]) #nrow=364 with 116 PAs
-data_glob %>% group_by(LC, PA) %>% count()
-
-#data_glob <- data_glob[data_glob$Order_ID!=28302282,]
-#data_glob <- data_glob[data_glob$Order_ID!=29542352,]
-
-# split data
-nonpa <- data_glob[data_glob$PA==0,c("Order_ID", "LC", "PA", mahal_vars, fns)]
-pa <- data_glob[data_glob$PA==1,c("Order_ID", "LC", "PA", mahal_vars, fns)]
-
-# randomization
-p_list_total <- vector("list", length = 1000)
-effect_size_d <- vector("list", length=1000)
-times <- 0; times.with.error <- 0; set.seed(1) 
-repeat {
- 
-}
+## Compare difference between PA and nonPA sites ####
+# take one run (1:1000), estimate p and effect size (and Bayesian), take next
+p_list <- vector("list", length = 1000)
+d_list <- vector("list", length = 1000)
+lapply(unique(pa_pairs$times), function(x){
+  
+  # subset data
+  temp_pairs <- pa_pairs[pa_pairs$times==x,]
+  
+  # Perform tests
+  p_list[[x]] <- list()
+  d_list[[x]] <- list()
+  
+  # individual tests per LC type
+  for(lc in lc_names){
+    temp_p[[lc]] <- vector("list", length(fns))
+    names(temp_p[[lc]]) <- fns
     
-    #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    ## Compare difference between PA and nonPA sites ####
+    # subset data based on land cover type
+    temp_PA <- temp_pairs %>% 
+      left_join(data_glob[,c("Order_ID", "PA", fns)], by=c("Order_ID"="Order_ID")) %>% 
+      filter(LC==lc) %>% 
+      dplyr::select(-nonPA, -mahal.min)
+    temp_nonPA <- temp_pairs %>% 
+      left_join(data_glob[,c("Order_ID", "PA", fns)], by=c("nonPA"="Order_ID")) %>% 
+      filter(LC==lc) %>% 
+      mutate("Order_ID"=nonPA) %>% 
+      dplyr::select(-nonPA, -mahal.min)
     
-    # merge pairs of PA and nonPA in one table ####
-    nonpa.subset <- nonpa[unique(nonpa$Order_ID) %in% pa$nonPA,]
-    #data_glob.paired <- full_join(pa[order(pa$nonPA),], nonpa.subset[order(nonpa.subset$Order_ID),])
-    #head(data_glob.paired)
+    temp_d <- psych::cohen.d(rbind(temp_PA, temp_nonPA)[,c("PA",fns)], "PA")
+    d_list[[x]][[lc]] <- data.frame(lc=lc, 
+                                    data.frame(temp_d$cohen.d),
+                                    fns = rownames(data.frame(temp_d$cohen.d)),
+                                    run=x,
+                                    row.names = NULL)
     
-    # Perform t tests
-    p.list <- list()
-    effect_size_d[[times]] <- list()
-    for(l in lc.names){
-      p.list[[l]] <- vector("list", length(fns))
-      names(p.list[[l]]) <- fns
+    for(no_fns in 1:(length(fns))){
+      # unpaired t test
+      temp_p <- t.test(temp_PA[,fns[no_fns]], 
+                       temp_nonPA[,fns[no_fns]])[c("p.value", 
+                                                   "conf.int", # 95% confidence intervals
+                                                   #"estimate", # mean of each group (1. PA, 2. nonPA)
+                                                   "statistic")] # t statistic
       
-      # subset data based on land cover type
-      temp.PA <- pa[pa$LC==l & pa$PA==1,]
-      temp.nonPA <- nonpa.subset[nonpa.subset$LC==l & nonpa.subset$PA==0,]
-      #NEEDS TO BE FIXED: temp.nonPA <- full_join(temp.PA, temp.nonPA, by=c("nonPA"="Order_ID"), suffix)
-      
-      temp.cohens <- psych::cohen.d(rbind(temp.PA, temp.nonPA)[,c("PA",fns)], "PA")
-      effect_size_d[[times]][[l]] <- cbind(lc=l, data.frame(temp.cohens$cohen.d), run=times)
-      
-      for(no.fns in 1:(length(fns))){
-        # unpaired t test
-        p.list[[l]][[no.fns]] <- t.test(temp.PA[,fns[no.fns]],temp.nonPA[,fns[no.fns]])
-      }
-      print(summary(temp.PA[,"nonPA"] == temp.nonPA[temp.nonPA$Order_ID %in% as.numeric(unlist(temp.PA[,"nonPA"])),"Order_ID"])) # make sure that the sites are pairing properly
-      
+      p_list[[x]][[lc]][[no_fns]] <- data.frame(lc=lc, 
+                                           fns = fns[no_fns],
+                                           p_value = temp_p$p.value,
+                                           ci_lower = temp_p$conf.int[1],
+                                           ci_upper = temp_p$conf.int[2],
+                                           t_stats = temp_p$statistic,
+                                           run=x,
+                                           row.names = NULL) 
     }
-    effect_size_d[[times]] <- do.call(rbind, effect_size_d[[times]])
+    #print(sum(temp_pairs[temp_pairs$LC==lc,"nonPA"] == temp_nonPA[,"Order_ID"])==min_size) # make sure that the sites are pairing properly
+    # print should give min_size (TRUE = fitting pairs) for each LC types * 1000 runs
+    # You may wanna run this is a for loop to see the output of each print statement.
     
-    #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    ## Make table of all p values for all functions and LC types
-    p_table <- as.data.frame(matrix(ncol=length(fns),nrow=5))
-    colnames(p_table) <- fns
-    rownames(p_table) <- c("Other","Shrubland","Grassland", "Woodland","total")
+    p_list[[x]][[lc]] <- do.call(rbind, p_list[[x]][[lc]])
     
-    for(n in 1:ncol(p_table)){
-      for(lc in 1:length(lc.names)){
-        p_table[which(rownames(p_table)==lc.names[lc]),n] <- p.list[[lc.names[lc]]][[n]]["p.value"]
-      }
+  }
+  
+  # combine individual list elements (df) into one df
+  d_list[[x]] <- do.call(rbind, d_list[[x]])
+  p_list[[x]] <- do.call(rbind, p_list[[x]])
+  
+  # remove rownames
+  rownames(d_list[[x]]) <- NULL
+  rownames(p_list[[x]]) <- NULL
+})
+
+
+
+  
+  #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  ## Compare difference between PA and nonPA sites ####
+  
+  # merge pairs of PA and nonPA in one table ####
+  nonpa.subset <- nonpa[unique(nonpa$Order_ID) %in% pa$nonPA,]
+  #data_glob.paired <- full_join(pa[order(pa$nonPA),], nonpa.subset[order(nonpa.subset$Order_ID),])
+  #head(data_glob.paired)
+  
+  # Perform t tests
+  p.list <- list()
+  effect_size_d[[times]] <- list()
+  for(l in lc_names){
+    p.list[[l]] <- vector("list", length(fns))
+    names(p.list[[l]]) <- fns
+    
+    # subset data based on land cover type
+    temp.PA <- pa[pa$LC==l & pa$PA==1,]
+    temp.nonPA <- nonpa.subset[nonpa.subset$LC==l & nonpa.subset$PA==0,]
+    #NEEDS TO BE FIXED: temp.nonPA <- full_join(temp.PA, temp.nonPA, by=c("nonPA"="Order_ID"), suffix)
+    
+    temp.cohens <- psych::cohen.d(rbind(temp.PA, temp.nonPA)[,c("PA",fns)], "PA")
+    effect_size_d[[times]][[l]] <- cbind(lc=l, data.frame(temp.cohens$cohen.d), run=times)
+    
+    for(no.fns in 1:(length(fns))){
+      # unpaired t test
+      p.list[[l]][[no.fns]] <- t.test(temp.PA[,fns[no.fns]],temp.nonPA[,fns[no.fns]])
     }
+    print(summary(temp.PA[,"nonPA"] == temp.nonPA[temp.nonPA$Order_ID %in% as.numeric(unlist(temp.PA[,"nonPA"])),"Order_ID"])) # make sure that the sites are pairing properly
     
-    # add to overall result list
-    p_list_total[[times]] <- p_table  #p-values from Chi-squared test
+  }
+  effect_size_d[[times]] <- do.call(rbind, effect_size_d[[times]])
+  
+  #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  ## Make table of all p values for all functions and LC types
+  p_table <- as.data.frame(matrix(ncol=length(fns),nrow=5))
+  colnames(p_table) <- fns
+  rownames(p_table) <- c("Other","Shrubland","Grassland", "Woodland","total")
+  
+  for(n in 1:ncol(p_table)){
+    for(lc in 1:length(lc_names)){
+      p_table[which(rownames(p_table)==lc_names[lc]),n] <- p.list[[lc_names[lc]]][[n]]["p.value"]
+    }
+  }
+  
+  # add to overall result list
+  p_list_total[[times]] <- p_table  #p-values from Chi-squared test
+})
   
 
-save(effect_size_d,  file="d_1000_trails.RData")
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## Save total list with p tables
+## Save total list with p tables & effect sizes ####
 #save(p.list.total, file="p_1000_trails.RData")
 #write.csv(p.list.total, file="p_1000_trails.csv")
-
+save(effect_size_d,  file="d_1000_trails.RData")
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Extract Cohen's d effect size for each run ####
 d.table = as.data.frame(matrix(ncol=length(fns)+1,nrow=4000))
 colnames(d.table) = c("lc", fns)
-d.table$lc <- rep(lc.names, each=1000)
+d.table$lc <- rep(lc_names, each=1000)
 d.table$run <- rep(1:1000, 4)
 #rownames(d.table) = c("Cropland","Grassland", "Woodland","Other","total")
 
@@ -301,265 +321,7 @@ statistics <- merge(p.vals.summary, d.table.summary,
 head(statistics)
 #write.csv(statistics, file="1000_trails_statistics_p+d.csv", row.names = F)
 
-# ggplot(data=pvals.all2, aes(x=value, fill=variable))+
-#   geom_histogram()+
-#   geom_vline(xintercept=0.05, linetype="dashed")
 
-## violin plot all together, p values
-# ggplot(data=pvals.all2, aes(x=value, y=variable, fill=variable))+
-#   geom_violin()+
-#   geom_vline(xintercept=0.05, linetype="dashed")+
-#   ggtitle("Cropland") +
-#   theme(legend.position = "none", axis.title.y =element_blank())
-
-## violin plot per land use type
-# agri
-aplot <- ggplot(data=pvals.agri, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.05, linetype="dashed")+
-  geom_vline(xintercept=0, linetype="solid")+
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  ggtitle("Cropland") +
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_text(size=20))
-
-# gras
-gplot <- ggplot(data=pvals.gras, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.05, linetype="dashed")+
-  geom_vline(xintercept=0, linetype="solid")+
-  ggtitle("Grassland") +
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.text.y = element_blank(),  axis.text.x = element_text(size=20))
-
-# Woodland
-fplot<- ggplot(data=pvals.fore, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.05, linetype="dashed")+
-  geom_vline(xintercept=0, linetype="solid")+
-  ggtitle("Woodland") +
-  theme_bw() + # use a white background
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.text.y = element_blank(),  axis.text.x = element_text(size=20))
-
-# others
-oplot<- ggplot(data=pvals.othe, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.05, linetype="dashed")+
-  geom_vline(xintercept=0, linetype="solid")+
-  ggtitle("Others") +
-  theme_bw() + # use a white background
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.text.y = element_blank(),  axis.text.x = element_text(size=20))
-
-library(ggpubr)
-#setwd(figu.wd); pdf(file="Pvals_violin_1000trails_ttest.pdf", width=15)
-ggarrange(aplot, gplot, fplot, oplot, ncol = 4, nrow = 1, align = "none",
-          widths=c(2,1,1,1))
-dev.off()
-
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## Effect size as violin plot ####
-setwd(data.wd)
-load(file="Effect_size_d_table.RData")
-#load(file="Effect_size_dt_table.RData")    #Cohen's d from t value
-#load(file="Effect_size_gs_table.RData")    #Hedge's g
-
-dvals.all <- melt(d.table, id.vars=c("lc", "run"))
-dvals.agri <- melt(d.table[d.table$lc=="Cropland",], id.vars = c("lc", "run"))
-dvals.gras <- melt(d.table[d.table$lc=="Grassland",], id.vars = c("lc", "run"))
-dvals.fore <- melt(d.table[d.table$lc=="Woodland",], id.vars = c("lc", "run"))
-dvals.othe <- melt(d.table[d.table$lc=="Other",], id.vars = c("lc", "run"))
-
-## violin plot per land use type
-#setwd(figu.wd); pdf(file="Gvals_violin_1000trails_in1.pdf", height=15)
-ggplot(data=dvals.all[dvals.all$lc!="Other",], aes(x=value, y=variable, fill=lc))+
-  geom_violin()+
-  geom_vline(xintercept=0.2, linetype="dashed")+
-  geom_vline(xintercept=-0.2, linetype="dashed")+
-  geom_vline(xintercept=0, linetype="solid")+
-  #facet_grid(lc~.) +
-  theme(#legend.position = "none", 
-    axis.title.y =element_blank(), 
-    axis.text = element_text(size=10))
-dev.off()
-
-## or as separate plots merged at the end
-# agri
-aplot <- ggplot(data=dvals.agri, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.2, linetype="dashed")+
-  geom_vline(xintercept=-0.2, linetype="dashed")+
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  geom_vline(xintercept=0, linetype="solid")+
-  ggtitle("Cropland") +
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.title.x =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_text(size=20))+
-  scale_x_continuous(limits = c(-1.5,0.8))
-
-# gras
-gplot <- ggplot(data=dvals.gras, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.2, linetype="dashed")+
-  geom_vline(xintercept=-0.2, linetype="dashed")+
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  geom_vline(xintercept=0, linetype="solid")+
-  ggtitle("Grassland") +
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.title.x =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_text(size=20))+
-  scale_x_continuous(limits = c(-1.5,0.8))
-
-# Woodland
-fplot<- ggplot(data=dvals.fore, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.2, linetype="dashed")+
-  geom_vline(xintercept=-0.2, linetype="dashed")+
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  geom_vline(xintercept=0, linetype="solid")+
-  ggtitle("Woodland") +
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.title.x =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_text(size=20))+
-  scale_x_continuous(limits = c(-1.5,0.8))
-
-# others
-oplot<- ggplot(data=dvals.othe, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.2, linetype="dashed")+
-  geom_vline(xintercept=-0.2, linetype="dashed")+
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  geom_vline(xintercept=0, linetype="solid")+
-  ggtitle("Others") +
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.title.x =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_text(size=20))+
-  scale_x_continuous(limits = c(-1.5,0.8))
-
-library(ggpubr)
-#setwd(figu.wd); pdf(file="Dvals_violin_1000trails.pdf", height=15)
-ggarrange(aplot, gplot, fplot, ncol = 1, nrow = 3, align = "none")
-dev.off()
-
-# ## with confidence intervals ####
-setwd(data.wd)
-d.table.summary <- read.csv("Effect_size_d_summary.csv")
-head(d.table.summary)
-
-aplot <- ggplot(data=d.table.summary[d.table.summary$lc=="Cropland",], 
-                aes(y=mean.D, x=name, ymin=CI.lower,ymax=CI.upper))+
-  geom_pointrange() +
-  geom_hline(yintercept=0, linetype="dashed")+
-  ggtitle("Cropland") +
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.title.x =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_blank())+
-  scale_y_continuous(limits = c(-1,1))
-
-gplot <- ggplot(data=d.table.summary[d.table.summary$lc=="Grassland",], 
-                aes(y=mean.D, x=name, ymin=CI.lower,ymax=CI.upper))+
-  geom_pointrange() +
-  ggtitle("Grassland") +
-  geom_hline(yintercept=0, linetype="dashed")+
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.title.x =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_blank())+
-  scale_y_continuous(limits = c(-1,1))
-
-fplot <- ggplot(data=d.table.summary[d.table.summary$lc=="Woodland",], 
-                aes(y=mean.D, x=name, ymin=CI.lower,ymax=CI.upper))+
-  geom_pointrange() +
-  ggtitle("Woodland") +
-  geom_hline(yintercept=0, linetype="dashed")+
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.title.x =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_text(size=20, angle=45, hjust=1))+
-  scale_y_continuous(limits = c(-1,1))
-
-library(ggpubr)
-#setwd(figu.wd); pdf(file="Dvals_pointrange_1000trails.pdf", height=15)
-ggarrange(aplot, gplot, fplot, ncol = 1, nrow = 3, align = "none", heights=c(1,1,1.7))
-dev.off()
-
-
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## Boxplots ####
-
-# Standardize
-std.data <- lucas[lucas$LUCAS_ID %in% unique(c(pa.pairs$LUCAS_ID, pa.pairs$nonPA)),]
-std.data[,fns] <- scale(std.data[,fns])
-
-# Labels for functions
-labeling <- c("BAS", "Cmic", "Xylo", "Cellu", "bGluco", "NAG", 
-              "Phosp", "MWD", "WSA")
-
-# Split up by land cover type
-std.Woodland = std.data[which(std.data$LC_5 == "Woodland"),]
-std.grass = std.data[which(std.data$LC_5 == "Grassland"),]
-std.agri = std.data[which(std.data$LC_5 == "Cropland"),]
-std.other = std.data[which(std.data$LC_5 == "Other"),]
-
-# melt data to get one colume with both PA and nonPA variables
-amelt <- melt(std.agri, id.vars=c("LUCAS_ID", "PA"), measure.vars = fns, na.rm=T)
-gmelt <- melt(std.grass, id.vars=c("LUCAS_ID", "PA"), measure.vars = fns, na.rm=T)
-fmelt <- melt(std.Woodland, id.vars=c("LUCAS_ID", "PA"), measure.vars = fns,na.rm=T)
-omelt <- melt(std.other, id.vars=c("LUCAS_ID", "PA"), measure.vars = fns, na.rm=T)
-
-## Plot
-library(ggplot2)
-library(ggpubr)
-
-#Woodland
-fplot <- ggplot(fmelt,aes(variable,value)) +
-  geom_boxplot(aes(fill=as.factor(PA)))+#,fatten = NULL) + # activate to remove the median lines
-  scale_fill_manual(values=c("orange","darkgreen"),name = NULL, labels = c("Non-Protected","Protected")) +
-  #scale_y_continuous(limits=c(-3,13)) + 
-  geom_hline(yintercept = 0, lty="dashed") +
-  theme_classic() +
-  theme(axis.text.x=element_blank(), axis.ticks=element_blank(),text = element_text(size=20),
-        legend.position = c(0.9,0.9), legend.text = element_text(size=20), axis.text.y = element_text(size=15)) +
-  labs(x=NULL,y="Woodland") #+
-#geom_text(x=2,y=12.5,label="*",size=9,color="red3")
-
-#Cropland
-aplot <- ggplot(amelt,aes(variable,value)) +
-  geom_boxplot(aes(fill=as.factor(PA)))+#,fatten = NULL) + # activate to remove the median lines
-  scale_fill_manual(values=c("orange","darkgreen"),name = NULL, labels = c("Non-Protected","Protected")) +
-  #scale_y_continuous(limits=c(-3,13)) + 
-  geom_hline(yintercept = 0, lty="dashed") +
-  theme_classic() +
-  scale_x_discrete(labels=labeling) +
-  theme(text = element_text(size=20),legend.position = "none", axis.text.y = element_text(size=15)) +
-  labs(x=NULL,y="Cropland") #+
-#geom_text(x=1,y=2.25,label="*",size=9,color="red3")
-
-#grassland
-gplot <- ggplot(gmelt,aes(variable,value)) +
-  geom_boxplot(aes(fill=as.factor(PA)))+#,fatten = NULL) + # activate to remove the median lines
-  scale_fill_manual(values=c("orange","darkgreen"),name = NULL, labels = c("Non-Protected","Protected")) +
-  #scale_y_continuous(limits=c(-3,13)) + 
-  geom_hline(yintercept = 0, lty="dashed") +
-  theme_classic() +
-  theme(axis.text.x=element_blank(), axis.ticks=element_blank(),text = element_text(size=20),
-        legend.position = "none", axis.text.y = element_text(size=15)) +
-  labs(x=NULL,y="Grassland")
-
-#setwd(figu.wd); pdf(file="LUCAS_Boxplot_paNonpa.pdf", width=12)
-ggarrange(fplot, gplot, aplot, ncol = 1, nrow = 3, align = "v")
-dev.off()
 
 
 
