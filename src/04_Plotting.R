@@ -17,25 +17,34 @@ source("src/00_Parameters_functions.R")
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
-data_glob <- read_csv(paste0(here::here(), "/data_raw/GlobalAtlasv2_conservation_heterogeneity_papers_v1.csv"))
+data_glob <- read_csv(paste0(here::here(), "/intermediates/Data_global.csv"))
 data_glob
 
-# load protected data
-protect_df <- read_csv(paste0(here::here(), "/intermediates/PA_assignment_global.csv"))
+# load pairs of PA and nonPA
+pa_pairs <- read.csv(file=paste0(here::here(), "/intermediates/Pairs_paNonpa_1000trails_2023-02-22.csv"))
+head(pa_pairs)
 
-data_glob <- data_glob %>% 
-  mutate("PA"=protect_df %>% dplyr::select(id.y, PA) %>% unique() %>% dplyr::select(PA) %>% unlist())
+# load p values and effect sizes
+load(file=paste0(here::here(), "/results/p_1000_trails.RData")) #p_list
+load(file=paste0(here::here(), "/results/d_1000_trails.RData")) #d_list
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Sampling locations ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-pdf(paste0(here::here(), "/figures/Data_locations_global.pdf"))
+# extract list of sampling locations actually used in comparison
+data_locations <- data_glob %>% 
+  filter(Order_ID %in% unique(pa_pairs$Order_ID) | 
+           Order_ID %in% unique(pa_pairs$nonPA)) %>%
+  dplyr::select(Longitude_c,Latitude_c,Order_ID, PA, LC)
+data_locations
+
 ggplot()+
-  geom_map(data = world.inp, map = world.inp, aes(map_id = region), fill = "grey80") +
+  geom_map(data = world.inp, map = world.inp, aes(map_id = region), fill = "grey80", show.legend = FALSE) +
   xlim(-180, 180) +
   ylim(-180, 180) +
   
-  geom_point(data=data_glob, aes(x=Longitude_c, y=Latitude_c, fill=as.factor(PA), shape=Eco_c), alpha=0.5)+
+  geom_point(data=data_locations, aes(x=Longitude_c, y=Latitude_c, fill=as.factor(PA), shape=LC), alpha=0.5)+
   scale_fill_manual(values = c("black", "olivedrab3"))+
   scale_shape_manual(values = c(21, 22, 23, 24))+ #label = c("Protected", "Unprotected")
   
@@ -48,288 +57,221 @@ ggplot()+
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
         panel.background = element_blank())
-dev.off()
-
+ggsave(filename=paste0(here::here(), "/figures/Data_locations_global.png"),
+       plot = last_plot())
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Boxplot mahalanobis distance ####
-pa.pairs <- merge(pa.pairs, lucas[,c("LUCAS_ID", "Country")])
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# get sample sizes
-no.sample <- pa.pairs %>% count(Country, LC)
-#write.csv(no.sample, file="LUCAS_Boxplot_mahal.distance_samplesize.csv", row.names=F)
-#no.sample <- as.character(no.sample$n)
+ggplot(pa_pairs, aes(x = LC, y = mahal.min, fill = LC))+
+  geom_boxplot()+
+  geom_violin(alpha = 0.3, adjust = 0.3)+
+  theme_bw() +
+  labs(x="Land-cover type",y="Mahalanobis distance") +
+  theme(axis.text.x=element_text(size=15),text = element_text(size=20),  
+        legend.position = "none", axis.text.y = element_text(size=15), legend.title = element_blank())+
+  scale_fill_manual(values=c("gold3", "limegreen", "forestgreen"))
+ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_mahal.distance_global.png"),
+       plot = last_plot())
 
-#setwd(figu.wd); pdf(file="LUCAS_Boxplot_mahal.distance_wide.pdf", width=15) 
-ggplot(pa.pairs[pa.pairs$LC!="Other",],aes(Country,mahal.min, fill=LC)) +
-  geom_boxplot()+#,fatten = NULL) + # activate to remove the median lines
-  theme_classic() +
-  labs(x="Country",y="Mahalanobis distance") +
-  theme(axis.text.x=element_text(size=15, angle=45, hjust=1),text = element_text(size=20),  
-        legend.position = c(0.6,0.8), axis.text.y = element_text(size=15), legend.title = element_blank())+
-  scale_fill_manual(values=c("gold3", "forestgreen", "limegreen"))
-dev.off()
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## P-value per land use type ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+p_df <- do.call(rbind, p_list)
+str(p_df)
+
+p_df <- p_df %>% full_join(fns_labels, by=c("fns"="Function")) %>%
+  mutate("Label" = factor(Label, levels = rev(fns_labels$Label)),
+         "Organism" = factor(Organism, levels = unique(fns_labels$Organism)))
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Violin plot p-value per land use type ####
+
+ggplot(data=p_df, aes(x=round(p_value,2), y=Label))+
+  geom_violin(aes(fill = Organism), scale="width", width=0.5)+ #scale by width of violin bounding box
+  geom_vline(aes(xintercept=0.05, linetype = "p = 0.05"))+
+  geom_vline(aes(xintercept=0, linetype = "p = 0"))+
+  scale_color_manual(values = c("p = 0.05" = "dashed", "p = 0" = "solid"))+
+  stat_summary(fun = "mean", geom = "point", color = "black")+
+  facet_wrap(vars(lc))+
+  scale_x_continuous(labels = function(x) format(x, nsmall = 2))+#round p-value axis label
+  scale_fill_viridis_d()+
+  xlab("p-value")+
+  theme_bw() + # use a white background
+  theme(legend.position = "right", axis.title.y =element_blank(),
+        axis.text.y = element_text(size=10),  
+        axis.text.x = element_text(size=7),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.spacing = unit(1, "lines"))
+ggsave(filename=paste0(here::here(), "/figures/Data_violin_p-value_global.png"),
+       plot = last_plot())
+
+# save data for plot
+write.csv(p_df, file=paste0(here::here(), "/figures/Data_violin_p-value_global.csv"))
+
+p_summary <- p_df %>% 
+  dplyr::select(-run) %>%
+  #pivot_longer(cols = c(p_value, ci_lower, ci_upper, t_stats),
+  #             names_to = "metric") %>%
+  group_by(lc, fns, Label, Group_function, Organism) %>%
+  summarize(across(everything(), .fns = list("mean"=mean, "SD"=sd)))
+p_summary
+write.csv(p_summary, file=paste0(here::here(), "/figures/Data_violin_p-value_summary_global.csv"))
+
+# check for significant mean p-values
+#p_summary %>% arrange(p_value_mean)
+
+sink(file=paste0(here::here(), "/results/P-values_global.txt"))
+cat("#################################################", sep="\n")
+cat("##  Significant p-values from global analysis  ##", sep="\n")
+cat(paste0("##  Sys.Date() ", Sys.Date(), "  ##"), sep="\n")
+cat("#################################################", sep="\n")
+print(p_summary %>% ungroup() %>%
+        filter(p_value_mean <= 0.05) %>%
+        dplyr::select(lc, fns, starts_with("p_value"), starts_with("ci"),
+                      starts_with("t_stats")),
+      n=nrow(p_summary %>% filter(p_value_mean <= 0.05)))
+sink()
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Effect size per LC type ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+d_df <- do.call(rbind, d_list)
+str(d_df)
+
+d_df <- d_df %>% full_join(fns_labels, by=c("fns"="Function")) %>%
+  mutate("Label" = factor(Label, levels = rev(fns_labels$Label)),
+         "Organism" = factor(Organism, levels = unique(fns_labels$Organism)))
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Violin plot effect size per LC type ####
+
+ggplot(data=d_df, aes(x=round(effect,2), y=Label))+
+  geom_vline(aes(xintercept=0.8, linetype = "0.8"))+
+  geom_vline(aes(xintercept=-0.8, linetype = "-0.8"))+ #large effect
+  geom_vline(aes(xintercept=0.5, linetype = "0.5"))+
+  geom_vline(aes(xintercept=-0.5, linetype = "-0.5"))+ #medium effect
+  geom_vline(aes(xintercept=0.2, linetype = "0.2"))+ #small effect
+  geom_vline(aes(xintercept=-0.2, linetype = "-0.2"))+
+  #geom_vline(aes(xintercept=0, linetype = "0"))+
+  scale_linetype_manual(values = c("-0.8" = "dotted",
+                                   "-0.5" = "dashed", "-0.2" = "solid",
+                                   "0.2" = "solid","0.5" = "dashed",
+                                   "0.8" = "dotted"))+
+  
+  geom_violin(aes(fill = Organism), scale="width", width=0.5)+ #scale by width of violin bounding box
+  stat_summary(fun = "mean", geom = "point", color = "black")+
+  facet_wrap(vars(lc))+
+  scale_x_continuous(labels = function(x) format(x, nsmall = 0))+#round c-value axis label
+  scale_fill_viridis_d()+
+  xlab("Effect size")+
+  theme_bw() + # use a white background
+  theme(legend.position = "right", axis.title.y =element_blank(),
+        axis.text.y = element_text(size=10),  
+        axis.text.x = element_text(size=7),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.spacing = unit(1, "lines"))
+ggsave(filename=paste0(here::here(), "/figures/Data_violin_d-value_global.png"),
+       plot = last_plot())
+
+# save data for plot
+write.csv(d_df, file=paste0(here::here(), "/figures/Data_violin_d-value_global.csv"))
+
+d_summary <- d_df %>% 
+  dplyr::select(-run) %>%
+  #pivot_longer(cols = c(p_value, ci_lower, ci_upper, t_stats),
+  #             names_to = "metric") %>%
+  group_by(lc, fns, Label, Group_function, Organism) %>%
+  summarize(across(everything(), .fns = list("mean"=mean, "SD"=sd)))
+d_summary
+write.csv(d_summary, file=paste0(here::here(), "/figures/Data_violin_d-value_summary_global.csv"))
+
+# check for significant mean p-values
+#d_summary %>% arrange(p_value_mean)
+
+sink(file=paste0(here::here(), "/results/D-values_global.txt"))
+cat("#################################################", sep="\n")
+cat("##  Significant d-values from global analysis  ##", sep="\n")
+cat(paste0("##  Sys.Date() ", Sys.Date(), "  ##"), sep="\n")
+cat("#################################################", sep="\n")
+print(d_summary %>% ungroup() %>%
+  filter(abs(effect_mean) >= 0.2) %>%
+  dplyr::select(lc, fns, starts_with("effect"), starts_with("lower"),
+                starts_with("upper")),
+  n=nrow(d_summary %>% filter(abs(effect_mean) >= 0.2)))
+sink()
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Pointrange effect size per LC type ####
+# with confidence intervals 
+
+ggplot(data = d_summary, 
+       aes(y = effect_mean, x = Label, ymin = lower_mean, ymax = upper_mean))+
+  
+  geom_hline(aes(yintercept=0.8, linetype = " 0.8"), color="grey60")+
+  geom_hline(aes(yintercept=-0.8, linetype = "-0.8"), color="grey60")+ #large effect
+  geom_hline(aes(yintercept=0.5, linetype = " 0.5"), color="grey60")+
+  geom_hline(aes(yintercept=-0.5, linetype = "-0.5"), color="grey60")+ #medium effect
+  geom_hline(aes(yintercept=0.2, linetype = " 0.2"), color="grey60")+ #small effect
+  geom_hline(aes(yintercept=-0.2, linetype = "-0.2"), color="grey60")+
+  #geom_hline(aes(yintercept=0, linetype = "0"))+
+  scale_linetype_manual(values = c("-0.8" = "dotted",
+                                   "-0.5" = "dashed", "-0.2" = "solid",
+                                   " 0.2" = "solid"," 0.5" = "dashed",
+                                   " 0.8" = "dotted"))+
+  
+  geom_linerange(size=1, color="black") +
+  geom_point(aes(color=Organism), shape=19, size=3)+
+  scale_color_viridis_d()+
+  coord_flip()+
+  ylab("Effect size")+
+  facet_wrap(vars(lc))+
+  theme_bw() + # use a white background
+  theme(legend.position = "right", axis.title.y =element_blank(),
+        axis.text.y = element_text(size=10),  
+        axis.text.x = element_text(size=10),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.spacing = unit(1, "lines"))
+ggsave(filename=paste0(here::here(), "/figures/Data_pointrange_d-value_global.png"),
+       plot = last_plot())
+
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# ggplot(data=pvals.all2, aes(x=value, fill=variable))+
-#   geom_histogram()+
-#   geom_vline(xintercept=0.05, linetype="dashed")
-
-## violin plot all together, p values
-# ggplot(data=pvals.all2, aes(x=value, y=variable, fill=variable))+
-#   geom_violin()+
-#   geom_vline(xintercept=0.05, linetype="dashed")+
-#   ggtitle("Cropland") +
-#   theme(legend.position = "none", axis.title.y =element_blank())
-
-## violin plot per land use type
-# agri
-aplot <- ggplot(data=pvals.agri, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.05, linetype="dashed")+
-  geom_vline(xintercept=0, linetype="solid")+
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  ggtitle("Cropland") +
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_text(size=20))
-
-# gras
-gplot <- ggplot(data=pvals.gras, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.05, linetype="dashed")+
-  geom_vline(xintercept=0, linetype="solid")+
-  ggtitle("Grassland") +
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.text.y = element_blank(),  axis.text.x = element_text(size=20))
-
-# Woodland
-fplot<- ggplot(data=pvals.fore, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.05, linetype="dashed")+
-  geom_vline(xintercept=0, linetype="solid")+
-  ggtitle("Woodland") +
-  theme_bw() + # use a white background
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.text.y = element_blank(),  axis.text.x = element_text(size=20))
-
-# others
-oplot<- ggplot(data=pvals.othe, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.05, linetype="dashed")+
-  geom_vline(xintercept=0, linetype="solid")+
-  ggtitle("Others") +
-  theme_bw() + # use a white background
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.text.y = element_blank(),  axis.text.x = element_text(size=20))
-
-library(ggpubr)
-#setwd(figu.wd); pdf(file="Pvals_violin_1000trails_ttest.pdf", width=15)
-ggarrange(aplot, gplot, fplot, oplot, ncol = 4, nrow = 1, align = "none",
-          widths=c(2,1,1,1))
-dev.off()
-
+## Boxplots values ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## Effect size as violin plot ####
-setwd(data.wd)
-load(file="Effect_size_d_table.RData")
-#load(file="Effect_size_dt_table.RData")    #Cohen's d from t value
-#load(file="Effect_size_gs_table.RData")    #Hedge's g
 
-dvals.all <- melt(d.table, id.vars=c("lc", "run"))
-dvals.agri <- melt(d.table[d.table$lc=="Cropland",], id.vars = c("lc", "run"))
-dvals.gras <- melt(d.table[d.table$lc=="Grassland",], id.vars = c("lc", "run"))
-dvals.fore <- melt(d.table[d.table$lc=="Woodland",], id.vars = c("lc", "run"))
-dvals.othe <- melt(d.table[d.table$lc=="Other",], id.vars = c("lc", "run"))
+# extract list of sampling locations actually used in comparison
+data_values <- data_glob %>% 
+  filter(Order_ID %in% unique(pa_pairs$Order_ID) | 
+         Order_ID %in% unique(pa_pairs$nonPA)) %>%
+  dplyr::select(Order_ID, PA, LC, fns) %>%
+  mutate(across(fns, .fns = function(x) { (x - mean(x)) / sd(x)})) %>%
+  
+  pivot_longer(cols = c(fns), names_to = "fns") %>%
+  full_join(fns_labels, by=c("fns"="Function")) %>%
+  mutate("Label" = factor(Label, levels = rev(fns_labels$Label)),
+         "Organism" = factor(Organism, levels = unique(fns_labels$Organism)))
+data_values
 
-## violin plot per land use type
-#setwd(figu.wd); pdf(file="Gvals_violin_1000trails_in1.pdf", height=15)
-ggplot(data=dvals.all[dvals.all$lc!="Other",], aes(x=value, y=variable, fill=lc))+
-  geom_violin()+
-  geom_vline(xintercept=0.2, linetype="dashed")+
-  geom_vline(xintercept=-0.2, linetype="dashed")+
-  geom_vline(xintercept=0, linetype="solid")+
-  #facet_grid(lc~.) +
-  theme(#legend.position = "none", 
-    axis.title.y =element_blank(), 
-    axis.text = element_text(size=10))
-dev.off()
-
-## or as separate plots merged at the end
-# agri
-aplot <- ggplot(data=dvals.agri, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.2, linetype="dashed")+
-  geom_vline(xintercept=-0.2, linetype="dashed")+
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  geom_vline(xintercept=0, linetype="solid")+
-  ggtitle("Cropland") +
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.title.x =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_text(size=20))+
-  scale_x_continuous(limits = c(-1.5,0.8))
-
-# gras
-gplot <- ggplot(data=dvals.gras, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.2, linetype="dashed")+
-  geom_vline(xintercept=-0.2, linetype="dashed")+
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  geom_vline(xintercept=0, linetype="solid")+
-  ggtitle("Grassland") +
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.title.x =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_text(size=20))+
-  scale_x_continuous(limits = c(-1.5,0.8))
-
-# Woodland
-fplot<- ggplot(data=dvals.fore, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.2, linetype="dashed")+
-  geom_vline(xintercept=-0.2, linetype="dashed")+
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  geom_vline(xintercept=0, linetype="solid")+
-  ggtitle("Woodland") +
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.title.x =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_text(size=20))+
-  scale_x_continuous(limits = c(-1.5,0.8))
-
-# others
-oplot<- ggplot(data=dvals.othe, aes(x=value, y=variable))+
-  geom_violin()+
-  geom_vline(xintercept=0.2, linetype="dashed")+
-  geom_vline(xintercept=-0.2, linetype="dashed")+
-  stat_summary(fun = "mean",geom = "point",color = "black")+
-  geom_vline(xintercept=0, linetype="solid")+
-  ggtitle("Others") +
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.title.x =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_text(size=20))+
-  scale_x_continuous(limits = c(-1.5,0.8))
-
-library(ggpubr)
-#setwd(figu.wd); pdf(file="Dvals_violin_1000trails.pdf", height=15)
-ggarrange(aplot, gplot, fplot, ncol = 1, nrow = 3, align = "none")
-dev.off()
-
-# ## with confidence intervals ####
-setwd(data.wd)
-d.table.summary <- read.csv("Effect_size_d_summary.csv")
-head(d.table.summary)
-
-aplot <- ggplot(data=d.table.summary[d.table.summary$lc=="Cropland",], 
-                aes(y=mean.D, x=name, ymin=CI.lower,ymax=CI.upper))+
-  geom_pointrange() +
-  geom_hline(yintercept=0, linetype="dashed")+
-  ggtitle("Cropland") +
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.title.x =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_blank())+
-  scale_y_continuous(limits = c(-1,1))
-
-gplot <- ggplot(data=d.table.summary[d.table.summary$lc=="Grassland",], 
-                aes(y=mean.D, x=name, ymin=CI.lower,ymax=CI.upper))+
-  geom_pointrange() +
-  ggtitle("Grassland") +
-  geom_hline(yintercept=0, linetype="dashed")+
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.title.x =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_blank())+
-  scale_y_continuous(limits = c(-1,1))
-
-fplot <- ggplot(data=d.table.summary[d.table.summary$lc=="Woodland",], 
-                aes(y=mean.D, x=name, ymin=CI.lower,ymax=CI.upper))+
-  geom_pointrange() +
-  ggtitle("Woodland") +
-  geom_hline(yintercept=0, linetype="dashed")+
-  theme_bw() + # use a white background
-  theme(legend.position = "none", axis.title.y =element_blank(),
-        axis.title.x =element_blank(),
-        axis.text.y = element_text(size=20),  axis.text.x = element_text(size=20, angle=45, hjust=1))+
-  scale_y_continuous(limits = c(-1,1))
-
-library(ggpubr)
-#setwd(figu.wd); pdf(file="Dvals_pointrange_1000trails.pdf", height=15)
-ggarrange(aplot, gplot, fplot, ncol = 1, nrow = 3, align = "none", heights=c(1,1,1.7))
-dev.off()
-
-
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## Boxplots ####
-
-# Standardize
-std.data <- lucas[lucas$LUCAS_ID %in% unique(c(pa.pairs$LUCAS_ID, pa.pairs$nonPA)),]
-std.data[,fns] <- scale(std.data[,fns])
-
-# Labels for functions
-labeling <- c("BAS", "Cmic", "Xylo", "Cellu", "bGluco", "NAG", 
-              "Phosp", "MWD", "WSA")
-
-# Split up by land cover type
-std.Woodland = std.data[which(std.data$LC_5 == "Woodland"),]
-std.grass = std.data[which(std.data$LC_5 == "Grassland"),]
-std.agri = std.data[which(std.data$LC_5 == "Cropland"),]
-std.other = std.data[which(std.data$LC_5 == "Other"),]
-
-# melt data to get one colume with both PA and nonPA variables
-amelt <- melt(std.agri, id.vars=c("LUCAS_ID", "PA"), measure.vars = fns, na.rm=T)
-gmelt <- melt(std.grass, id.vars=c("LUCAS_ID", "PA"), measure.vars = fns, na.rm=T)
-fmelt <- melt(std.Woodland, id.vars=c("LUCAS_ID", "PA"), measure.vars = fns,na.rm=T)
-omelt <- melt(std.other, id.vars=c("LUCAS_ID", "PA"), measure.vars = fns, na.rm=T)
-
-## Plot
-library(ggplot2)
-library(ggpubr)
-
-#Woodland
-fplot <- ggplot(fmelt,aes(variable,value)) +
+ggplot(data_values, aes(x = Label, y = value)) +
+  geom_hline(yintercept = 0, lty="dashed", color="grey60") +
   geom_boxplot(aes(fill=as.factor(PA)))+#,fatten = NULL) + # activate to remove the median lines
   scale_fill_manual(values=c("orange","darkgreen"),name = NULL, labels = c("Non-Protected","Protected")) +
   #scale_y_continuous(limits=c(-3,13)) + 
-  geom_hline(yintercept = 0, lty="dashed") +
-  theme_classic() +
-  theme(axis.text.x=element_blank(), axis.ticks=element_blank(),text = element_text(size=20),
-        legend.position = c(0.9,0.9), legend.text = element_text(size=20), axis.text.y = element_text(size=15)) +
-  labs(x=NULL,y="Woodland") #+
-#geom_text(x=2,y=12.5,label="*",size=9,color="red3")
-
-#Cropland
-aplot <- ggplot(amelt,aes(variable,value)) +
-  geom_boxplot(aes(fill=as.factor(PA)))+#,fatten = NULL) + # activate to remove the median lines
-  scale_fill_manual(values=c("orange","darkgreen"),name = NULL, labels = c("Non-Protected","Protected")) +
-  #scale_y_continuous(limits=c(-3,13)) + 
-  geom_hline(yintercept = 0, lty="dashed") +
-  theme_classic() +
-  scale_x_discrete(labels=labeling) +
-  theme(text = element_text(size=20),legend.position = "none", axis.text.y = element_text(size=15)) +
-  labs(x=NULL,y="Cropland") #+
-#geom_text(x=1,y=2.25,label="*",size=9,color="red3")
-
-#grassland
-gplot <- ggplot(gmelt,aes(variable,value)) +
-  geom_boxplot(aes(fill=as.factor(PA)))+#,fatten = NULL) + # activate to remove the median lines
-  scale_fill_manual(values=c("orange","darkgreen"),name = NULL, labels = c("Non-Protected","Protected")) +
-  #scale_y_continuous(limits=c(-3,13)) + 
-  geom_hline(yintercept = 0, lty="dashed") +
-  theme_classic() +
-  theme(axis.text.x=element_blank(), axis.ticks=element_blank(),text = element_text(size=20),
-        legend.position = "none", axis.text.y = element_text(size=15)) +
-  labs(x=NULL,y="Grassland")
-
-#setwd(figu.wd); pdf(file="LUCAS_Boxplot_paNonpa.pdf", width=12)
-ggarrange(fplot, gplot, aplot, ncol = 1, nrow = 3, align = "v")
-dev.off()
+  
+  xlab("")+ ylab("")+
+  facet_wrap(vars(LC), ncol=1, nrow=3)+
+  theme_bw() +
+  theme(axis.text.x=element_text(size=5, angle=45, hjust=1),
+        panel.grid.minor.y = element_blank(), panel.grid.major.x = element_blank(),
+        legend.position = "none", legend.text = element_text(size=15), axis.text.y = element_text(size=15))
+ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_values_global.png"),
+       plot = last_plot())
 
