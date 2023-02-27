@@ -1,11 +1,11 @@
 #################################################
 ##  Significant p-values from global analysis  ##
-##  Sys.Date() 2023-02-23  ##
+##  Sys.Date() 2023-02-27  ##
 #################################################
 # A tibble: 4 x 10
-  lc        fns                                 p_value_mean p_value_SD ci_lower_mean ci_lower_SD ci_upper_mean ci_upper_SD t_stats_mean t_stats_SD
-  <chr>     <chr>                                      <dbl>      <dbl>         <dbl>       <dbl>         <dbl>       <dbl>        <dbl>      <dbl>
-1 Shrubland Arbuscular_mycorrhizal_18s_richness      0.00913     0.0180         1.80       1.04          7.55        0.918          3.35      0.830
-2 Shrubland Diss_invert_std                          0.0117      0.0247        -0.322      0.0455       -0.0708      0.0447        -3.19      0.765
-3 Shrubland Fungi_18s_richness                       0.00371     0.0103        28.8       12.6          96.4        11.3            3.78      0.836
-4 Shrubland Invertebrate_18s_richness                0.0150      0.0379         6.71       4.64         31.1         4.11           3.18      0.828
+  lc        fns                         p_value_mean p_value_SD ci_lower_mean ci_lower_SD ci_upper_mean ci_upper_SD t_stats_mean t_stats_SD
+  <chr>     <chr>                              <dbl>      <dbl>         <dbl>       <dbl>         <dbl>       <dbl>        <dbl>      <dbl>
+1 Shrubland Arbuscular_mycorrhizal_18s~      0.00913     0.0180         1.80       1.04          7.55        0.918          3.35      0.830
+2 Shrubland Diss_invert_std                  0.0117      0.0247        -0.322      0.0455       -0.0708      0.0447        -3.19      0.765
+3 Shrubland Fungi_18s_richness               0.00371     0.0103        28.8       12.6          96.4        11.3            3.78      0.836
+4 Shrubland Invertebrate_18s_richness        0.0150      0.0379         6.71       4.64         31.1         4.11           3.18      0.828
