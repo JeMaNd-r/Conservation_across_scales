@@ -11,9 +11,9 @@ library(here)
 library(tidyverse)
 
 library(rstan)
-options(mc.cores = 3) # number of CPU cores
+options(mc.cores = 4) # number of CPU cores
 
-source("src/00_Parameters_functions.R")
+source(paste0(here::here(), "/src/00_Parameters_functions.R"))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
@@ -42,6 +42,13 @@ delta_list <- lapply(delta_list,
                      function(x) {
                        x <- vector("list", length = length(fns))
                        names(x) <- fns
+                       
+                       lapply(x, 
+                              function(y) {
+                                y <- vector("list", length = length(unique(pa_pairs$times)))
+                                names(y) <- unique(pa_pairs$times)
+                              }
+                       )
                        }
                      )
 
@@ -120,6 +127,8 @@ for(x in unique(pa_pairs$times)){
   
   close(progress_bar)
 }
+
+save(delta_list, file=paste0(here::here(), "/intermediates/delta_1000_trails_Bayesian.RData"))
 
 # combine individual list elements (c) per fns & lc into one vector
 # that is, we have one list element per fns and lc containing the values 
