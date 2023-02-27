@@ -6,6 +6,8 @@
 #                                           #
 #- - - - - - - - - - - - - - - - - - - - - -#
 
+set.seed(1759)
+
 ## re-define sample function (if only 1 value in sample(), it considers it as vector)
 resample <- function(x, ...) x[sample.int(length(x), ...)]
 
