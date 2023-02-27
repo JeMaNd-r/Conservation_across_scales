@@ -37,7 +37,8 @@ data_locations <- data_glob %>%
   filter(Order_ID %in% unique(pa_pairs$Order_ID) | 
            Order_ID %in% unique(pa_pairs$nonPA)) %>%
   dplyr::select(Longitude_c,Latitude_c,Order_ID, PA, LC)
-data_locations
+data_locations #nrow=319
+nrow(data_locations %>% filter(PA==1)) #120 PAs
 
 ggplot()+
   geom_map(data = world.inp, map = world.inp, aes(map_id = region), fill = "grey80", show.legend = FALSE) +
@@ -151,12 +152,12 @@ d_df <- d_df %>% full_join(fns_labels, by=c("fns"="Function")) %>%
 ## Violin plot effect size per LC type ####
 
 ggplot(data=d_df, aes(x=round(effect,2), y=Label))+
-  geom_vline(aes(xintercept=0.8, linetype = "0.8"))+
-  geom_vline(aes(xintercept=-0.8, linetype = "-0.8"))+ #large effect
-  geom_vline(aes(xintercept=0.5, linetype = "0.5"))+
-  geom_vline(aes(xintercept=-0.5, linetype = "-0.5"))+ #medium effect
-  geom_vline(aes(xintercept=0.2, linetype = "0.2"))+ #small effect
-  geom_vline(aes(xintercept=-0.2, linetype = "-0.2"))+
+  geom_vline(aes(xintercept=0.8, linetype = "0.8"), color="grey60")+
+  geom_vline(aes(xintercept=-0.8, linetype = "-0.8"), color="grey60")+ #large effect
+  geom_vline(aes(xintercept=0.5, linetype = "0.5"), color="grey60")+
+  geom_vline(aes(xintercept=-0.5, linetype = "-0.5"), color="grey60")+ #medium effect
+  geom_vline(aes(xintercept=0.2, linetype = "0.2"), color="grey60")+ #small effect
+  geom_vline(aes(xintercept=-0.2, linetype = "-0.2"), color="grey60")+
   #geom_vline(aes(xintercept=0, linetype = "0"))+
   scale_linetype_manual(values = c("-0.8" = "dotted",
                                    "-0.5" = "dashed", "-0.2" = "solid",
@@ -190,6 +191,22 @@ d_summary <- d_df %>%
   summarize(across(everything(), .fns = list("mean"=mean, "SD"=sd)))
 d_summary
 write.csv(d_summary, file=paste0(here::here(), "/figures/Data_violin_d-value_summary_global.csv"))
+
+# mean per lc type
+d_summary %>% ungroup() %>% group_by(lc) %>% 
+  summarize(across(c(effect_mean, lower_mean, upper_mean), 
+                   function(x) mean(x)))
+d_summary %>% ungroup() %>% group_by(lc) %>% 
+  summarize(across(c(effect_mean, lower_mean, upper_mean), 
+                   function(x) mean(abs(x))))
+
+# mean per Group_function
+d_summary %>% ungroup() %>% group_by(Group_function) %>% 
+  summarize(across(c(effect_mean, lower_mean, upper_mean), 
+                   function(x) mean(abs(x))))
+d_summary %>% ungroup() %>% group_by(Group_function) %>% 
+  summarize(across(c(effect_mean, lower_mean, upper_mean), 
+                   function(x) mean(x)))
 
 # check for significant mean p-values
 #d_summary %>% arrange(p_value_mean)
