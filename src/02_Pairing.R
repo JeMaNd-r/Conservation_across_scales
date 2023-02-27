@@ -217,6 +217,17 @@ nrow(pa_pairs)  # exactly 3 * min_size * 1000
 hist(table(pa_pairs$nonPA))  # frequency distribution of the use of sites from all runs
 length(setdiff(data_glob[data_glob$PA==0,]$Order_ID, pa_pairs$nonPA))  # nonPA sites never used
 
+mean(table(pa_pairs$nonPA))
+mean(table(pa_pairs$Order_ID))
+
+sd(table(pa_pairs$nonPA))
+sd(table(pa_pairs$Order_ID))
+
+min(table(pa_pairs$nonPA))
+min(table(pa_pairs$Order_ID))
+max(table(pa_pairs$nonPA))
+max(table(pa_pairs$Order_ID))
+
 #save(pa_pairs, file=paste0(here::here(), "/intermediates/Pairs_paNonpa_1000trails_", Sys.Date(),".RData"))
 write.csv(pa_pairs, file=paste0(here::here(), "/intermediates/Pairs_paNonpa_1000trails_", Sys.Date(),".csv"), row.names=F)
 
