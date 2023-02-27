@@ -1,6 +1,7 @@
 #- - - - - - - - - - - - - - - - - - - - - -#
 #                                           #
 #   Compare protected with unprotected      #
+#        (Frequentist approach)             #
 #          author: Romy Zeiss               #
 #            date: 2022-11-04               #
 #                                           #
@@ -34,10 +35,16 @@ head(pa_pairs)
 # take one run (1:1000), estimate p and effect size (and Bayesian), take next
 p_list <- vector("list", length = 1000)
 d_list <- vector("list", length = 1000)
+
+# progress bar
+progress_bar <- txtProgressBar(min = 0, max = length(p_list), initial = 0,
+                               style=3, title = "Processing") 
+
 for(x in unique(pa_pairs$times)){
   
-  print("#########################")
-  print(paste0("Run number ", x))
+  setTxtProgressBar(progress_bar,x)
+  #print("#########################")
+  #print(paste0("Run number ", x))
   
   # subset data
   temp_pairs <- pa_pairs[pa_pairs$times==x,]
@@ -48,8 +55,6 @@ for(x in unique(pa_pairs$times)){
   
   # individual tests per LC type
   for(lc in lc_names){
-    temp_p[[lc]] <- vector("list", length(fns))
-    names(temp_p[[lc]]) <- fns
     
     # subset data based on land cover type
     temp_PA <- temp_pairs %>% 
@@ -86,7 +91,7 @@ for(x in unique(pa_pairs$times)){
                                            run=x,
                                            row.names = NULL) 
     }
-    print(sum(temp_pairs[temp_pairs$LC==lc,"nonPA"] == temp_nonPA[,"Order_ID"])==min_size) # make sure that the sites are pairing properly
+    #print(sum(temp_pairs[temp_pairs$LC==lc,"nonPA"] == temp_nonPA[,"Order_ID"])==min_size) # make sure that the sites are pairing properly
     # print should give min_size (TRUE = fitting pairs) for each LC types * 1000 runs
     
     p_list[[x]][[lc]] <- do.call(rbind, p_list[[x]][[lc]])
@@ -100,16 +105,14 @@ for(x in unique(pa_pairs$times)){
   # remove rownames
   rownames(d_list[[x]]) <- NULL
   rownames(p_list[[x]]) <- NULL
+  
+  close(progress_bar)
 }
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Save total list with p tables & effect sizes ####
 save(p_list, file=paste0(here::here(), "/results/p_1000_trails.RData"))
 save(d_list,  file=paste0(here::here(), "/results/d_1000_trails.RData"))
-
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## Save lists as csv (input for figures) ####
-
 
 
 
