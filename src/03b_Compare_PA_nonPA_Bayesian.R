@@ -53,9 +53,37 @@ delta_list <- lapply(delta_list,
                      )
 
 stan_fit <- vector("list", length=length(unique(pa_pairs$times)))
-stan_model <- vector("list", length=length(unique(pa_pairs$times)))
 stan_data <- vector("list", length=length(unique(pa_pairs$times)))
-stan_code <- vector("list", length=length(unique(pa_pairs$times)))
+
+# define stan code for unpaired t test
+stan_code = '
+        data {
+          int n1;
+          vector[n1] y1;
+          int n2;
+          vector[n2] y2;
+        }
+        parameters {
+          real mu1;
+          real mu2;
+          real<lower=0> sigma;
+        }
+        model {
+          // priors
+          mu1 ~ normal(0, 10);
+          mu2 ~ normal(0, 10);
+          sigma ~ normal(0, 10);
+          // likelihood
+          y1 ~ normal(mu1, sigma);
+          y2 ~ normal(mu2, sigma);
+        }
+        generated quantities{
+          real delta;
+          delta = mu2-mu1;
+        }
+      '
+
+stan_model <- stan_model(model_code = stan_code)
 
 for(x in unique(pa_pairs$times)){
   
@@ -86,43 +114,13 @@ for(x in unique(pa_pairs$times)){
                    y1 = temp_PA[,fns[no_fns]],
                    y2 = temp_nonPA[,fns[no_fns]])
       
-      # unpaired t test
-      stan_code[[x]] = '
-        data {
-          int n1;
-          vector[n1] y1;
-          int n2;
-          vector[n2] y2;
-        }
-        parameters {
-          real mu1;
-          real mu2;
-          real<lower=0> sigma;
-        }
-        model {
-          // priors
-          mu1 ~ normal(0, 10);
-          mu2 ~ normal(0, 10);
-          sigma ~ normal(0, 10);
-          // likelihood
-          y1 ~ normal(mu1, sigma);
-          y2 ~ normal(mu2, sigma);
-        }
-        generated quantities{
-          real delta;
-          delta = mu2-mu1;
-        }
-      '
-      
-      stan_model[[x]] <- stan_model(model_code = stan_code[[x]])
-      stan_fit[[x]] <- sampling(stan_model[[x]], data = stan_data[[x]],
+      stan_fit[[x]] <- sampling(stan_model, data = stan_data[[x]],
                            chains = 4, iter = 4000, warmup = 1000,
                            show_messages = TRUE)
       #print(stan_fit, digits = 3, probs = c(0.025, 0.975))
       
       delta_list[[lc]][[no_fns]][[x]] <- extract(stan_fit[[x]], pars="delta") 
-      
-      stan_model[[x]] <- NULL
+
       stan_fit[[x]] <- NULL
       stan_data[[x]] <- NULL
       
@@ -130,6 +128,14 @@ for(x in unique(pa_pairs$times)){
     
     gc()
     #unlink(file.path("tmp", "Rtmp*"), recursive = T)
+    
+    dso_filenames <- dir(tempdir(), pattern=.Platform$dynlib.ext)
+    filenames  <- dir(tempdir())
+    for (i in seq(dso_filenames))
+      try(dyn.unload(file.path(tempdir(), dso_filenames[i])))
+    for (i in seq(filenames))
+      if (file.exists(file.path(tempdir(), filenames[i])) & nchar(filenames[i]) < 42) # some files w/ long filenames that didn't like to be removeed
+        file.remove(file.path(tempdir(), filenames[i]))
     
   }
 
