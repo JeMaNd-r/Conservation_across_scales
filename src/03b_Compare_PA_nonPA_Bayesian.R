@@ -52,15 +52,15 @@ delta_list <- lapply(delta_list,
                        }
                      )
 
-# progress bar
-progress_bar <- txtProgressBar(min = 0, max = length(unique(pa_pairs$times)), initial = 0,
-                               style=3, title = "Processing") 
+stan_fit <- vector("list", length=length(unique(pa_pairs$times)))
+stan_model <- vector("list", length=length(unique(pa_pairs$times)))
+stan_data <- vector("list", length=length(unique(pa_pairs$times)))
+stan_code <- vector("list", length=length(unique(pa_pairs$times)))
 
 for(x in unique(pa_pairs$times)){
   
-  setTxtProgressBar(progress_bar,x)
-  #print("#########################")
-  #print(paste0("Run number ", x))
+  print("#####################################")
+  print(paste0("Run number ", x))
   
   # subset data
   temp_pairs <- pa_pairs[pa_pairs$times==x,]
@@ -81,13 +81,13 @@ for(x in unique(pa_pairs$times)){
     
     for(no_fns in 1:(length(fns))){
       
-      data <- list(n1 = nrow(temp_PA),
+      stan_data[[x]] <- list(n1 = nrow(temp_PA),
                    n2 = nrow(temp_nonPA),
                    y1 = temp_PA[,fns[no_fns]],
                    y2 = temp_nonPA[,fns[no_fns]])
       
       # unpaired t test
-      stan_code = '
+      stan_code[[x]] = '
         data {
           int n1;
           vector[n1] y1;
@@ -114,18 +114,25 @@ for(x in unique(pa_pairs$times)){
         }
       '
       
-      stan_model <- stan_model(model_code = stan_code)
-      stan_fit <- sampling(stan_model, data = data,
+      stan_model[[x]] <- stan_model(model_code = stan_code[[x]])
+      stan_fit[[x]] <- sampling(stan_model[[x]], data = stan_data[[x]],
                            chains = 4, iter = 4000, warmup = 1000,
-                           show_messages = FALSE)
+                           show_messages = TRUE)
       #print(stan_fit, digits = 3, probs = c(0.025, 0.975))
       
-      delta_list[[lc]][[no_fns]][[x]] <- extract(stan_fit, pars="delta") 
+      delta_list[[lc]][[no_fns]][[x]] <- extract(stan_fit[[x]], pars="delta") 
+      
+      stan_model[[x]] <- NULL
+      stan_fit[[x]] <- NULL
+      stan_data[[x]] <- NULL
+      
     }
     
+    gc()
+    #unlink(file.path("tmp", "Rtmp*"), recursive = T)
+    
   }
-  
-  close(progress_bar)
+
 }
 
 save(delta_list, file=paste0(here::here(), "/intermediates/delta_1000_trails_Bayesian.RData"))
