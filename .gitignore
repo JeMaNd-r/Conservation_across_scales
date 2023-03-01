@@ -51,3 +51,4 @@ rsconnect/
 *.pdf
 *.RData
 *.png
+*.db
