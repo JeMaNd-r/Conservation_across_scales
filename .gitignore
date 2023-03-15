@@ -52,3 +52,4 @@ rsconnect/
 *.RData
 *.png
 *.db
+figures/Data_distr_delta1000_global.csv
