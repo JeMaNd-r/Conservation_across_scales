@@ -109,7 +109,7 @@ for(x in unique(pa_pairs$times)){
     
     for(no_fns in 1:(length(fns))){
       
-      stan_data[[x]] <- list(n1 = nrow(temp_PA),
+      stan_data[[x]] <- list(n1 = nrow(temp_PA), #delta = 2-1 (!)
                    n2 = nrow(temp_nonPA),
                    y1 = temp_PA[,fns[no_fns]],
                    y2 = temp_nonPA[,fns[no_fns]])
@@ -146,11 +146,23 @@ save(delta_list, file=paste0(here::here(), "/intermediates/delta_1000_trails_Bay
 # combine individual list elements (c) per fns & lc into one vector
 # that is, we have one list element per fns and lc containing the values 
 # from all 1000 runs = 4000*1000 estimates
-delta_list[[lc]][[fns]] <- do.call(c, delta_list[[lc]][[fns]])
+n_sample <- 1000
+
+delta_sample <- lapply(delta_list, function (x){ #across lc types
+  lapply(x, function(y){ #across functions
+    lapply(y, function(z){ #across 1000 trails
+      sample(z$delta, n_sample, replace=FALSE)
+    })
+  })
+})
+
+delta_sample <- lapply(delta_sample, function (x){ #across lc types
+  lapply(x, function(y){ #across functions
+    do.call(c, y)
+  })
+})
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Save total list with p tables & effect sizes ####
-save(delta_list, file=paste0(here::here(), "/results/delta_1000_trails_Bayesian.RData"))
-
-
+save(delta_sample, file=paste0(here::here(), "/results/delta_1000_trails_Bayesian_sample",n_sample,".RData"))
 
