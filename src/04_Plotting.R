@@ -10,6 +10,8 @@ library(here)
 library(tidyverse)
 library(terra)
 library(ggridges) #to plot distributions (Bayesian)
+library(ggdist) #to plot distributions (Bayesian)
+library(ggpubr) #plot multiple ggplots
 
 # load background map
 world.inp <- map_data("world")
@@ -333,3 +335,39 @@ delta_summary <- delta_df %>% group_by(fns, LC) %>%
                                )))
 delta_summary
 write.csv(delta_summary, file=paste0(here::here(), "/figures/Data_distr_delta1000_global.csv"))
+
+
+
+# ggdist plot
+a <- ggplot(delta_df %>% filter(Group_function=="Service"), aes(x = value, y = Label, fill=stat(abs(x)<0.005))) +
+  ggdist::stat_halfeye(normalize = "groups",
+                        alpha = 1)+
+  facet_wrap(vars(LC), ncol=3)+
+  xlab ("")+ ylab("")+
+  scale_fill_manual(values=c("grey85", "skyblue"))+
+  theme_bw()+
+  theme(legend.position = "none",
+        panel.grid.major.y = element_blank())
+
+b <- ggplot(delta_df %>% filter(Group_function=="Richness"), aes(x = value, y = Label, fill=stat(abs(x)<0.5))) +
+  ggdist::stat_halfeye(normalize = "groups",
+                       alpha = 1)+
+  facet_wrap(vars(LC), ncol=3)+
+  xlab ("")+ ylab("")+
+  scale_fill_manual(values=c("grey85", "skyblue"))+
+  theme_bw()+
+  theme(legend.position = "none",
+        panel.grid.major.y = element_blank())
+
+c <- ggplot(delta_df %>% filter(Group_function=="Dissimilarity"), aes(x = value, y = Label, fill=stat(abs(x)<0.005))) +
+  ggdist::stat_halfeye(normalize = "groups",
+                       alpha = 1)+
+  facet_wrap(vars(LC), ncol=3)+
+  xlab ("")+ ylab("")+
+  scale_fill_manual(values=c("grey85", "skyblue"))+
+  theme_bw()+
+  theme(legend.position = "none",
+        panel.grid.major.y = element_blank())
+ggpubr::ggarrange(a,b,c, nrow=3, heights = c(1,1.1,0.9))
+ggsave(filename=paste0(here::here(), "/figures/Data_ggdist_delta_global.png"),
+       plot = last_plot())
