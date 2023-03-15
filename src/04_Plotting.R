@@ -9,6 +9,7 @@
 library(here)
 library(tidyverse)
 library(terra)
+library(ggridges) #to plot distributions (Bayesian)
 
 # load background map
 world.inp <- map_data("world")
@@ -27,6 +28,9 @@ head(pa_pairs)
 # load p values and effect sizes
 load(file=paste0(here::here(), "/results/p_1000_trails.RData")) #p_list
 load(file=paste0(here::here(), "/results/d_1000_trails.RData")) #d_list
+
+# load Bayesian results
+load(file=paste0(here::here(), "/results/delta_1000_trails_Bayesian_sample100.RData")) #delta_sample
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Sampling locations ####
@@ -243,8 +247,8 @@ ggplot(data = d_summary,
                                    " 0.8" = "dotted"))+
   
   geom_linerange(size=1, color="black") +
-  geom_point(aes(color=Organism), shape=19, size=3)+
-  scale_color_viridis_d()+
+  geom_point(aes(color=Group_function), shape=19, size=3)+
+  #scale_color_viridis_d()+
   coord_flip()+
   ylab("Effect size")+
   facet_wrap(vars(lc))+
@@ -292,3 +296,40 @@ ggplot(data_values, aes(x = Label, y = value)) +
 ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_values_global.png"),
        plot = last_plot())
 
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Bayesian results (distributions) ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+delta_df <- delta_sample %>% 
+  bind_rows(.id="LC") %>% 
+  pivot_longer(cols=Soil_carbon_service:Diss_invert_std, names_to = "fns") %>%
+  mutate("value"=value*(-1)) #convert all values to get difference PA-nonPA
+head(delta_df)
+
+# add categories of functions
+delta_df <- delta_df %>% full_join(fns_labels, by=c("fns"="Function")) %>%
+  mutate("Label" = factor(Label, levels = rev(fns_labels$Label)),
+         "Organism" = factor(Organism, levels = unique(fns_labels$Organism)))
+
+ggplot(delta_df, aes(x = value, y = Label, color=Group_function, fill=Group_function)) +
+  geom_vline(xintercept=0, color="grey60")+
+  ggridges::geom_density_ridges() +
+  theme_ridges() + 
+  facet_wrap(vars(LC), ncol=3)+
+  #xlim(-10, 10)+
+  xlab ("")+ ylab("")+
+  #theme_bw()+
+  theme(legend.position = "none",
+        panel.grid.major.y = element_blank())
+ggsave(filename=paste0(here::here(), "/figures/Data_distr_delta1000_global.png"),
+       plot = last_plot())
+
+
+# save CI for delta_summary
+delta_summary <- delta_df %>% group_by(fns, LC) %>% 
+  summarize(across(value, list("mean"= mean,
+                               "CI_05"=function(x) quantile(x,0.05),
+                               "CI_95"=function(x) quantile(x,0.95)
+                               )))
+delta_summary
+write.csv(delta_summary, file=paste0(here::here(), "/figures/Data_distr_delta1000_global.csv"))
