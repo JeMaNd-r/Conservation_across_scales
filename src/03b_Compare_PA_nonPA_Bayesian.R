@@ -129,6 +129,7 @@ for(x in unique(pa_pairs$times)){
     gc()
     #unlink(file.path("tmp", "Rtmp*"), recursive = T)
     
+    # remove temporary files
     dso_filenames <- dir(tempdir(), pattern=.Platform$dynlib.ext)
     filenames  <- dir(tempdir())
     for (i in seq(dso_filenames))
