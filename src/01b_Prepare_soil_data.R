@@ -80,10 +80,11 @@ protect_glob <- protect_glob %>%
 # add column with information about protected and non-protected sites
 data_glob <- data_glob %>% 
   mutate("id.x" = 1:nrow(data_glob)) %>%
-  full_join(protect_glob %>% dplyr::select(id.y, PA_type_min, PA_protected_min),
+  full_join(protect_glob %>% dplyr::select(id.y, PA_type_min, PA_protected_min, PA_rank_min),
             by=c("id.x"="id.y")) %>%
   rename("PA" = PA_protected_min,
-         "PA_type" = PA_type_min) %>%
+         "PA_type" = PA_type_min,
+         "PA_rank" = PA_rank_min) %>%
   mutate("PA" = ifelse(is.na(PA), 0, PA))
 
 nrow(data_glob %>% filter(PA==1)) #81
