@@ -127,15 +127,17 @@ save(pars_list, file=paste0(here::here(), "/intermediates/pars_PAtypes_Bayesian.
 
 pars_sample <- lapply(pars_list, function (x){ #across lc types
   lapply(x, function(y){ #across functions
-      bind_rows(y)
+      dplyr::bind_rows(y)
   })
 })
 
+rm(pars_list); gc()
+
 pars_sample <- lapply(pars_sample, function (x){ #across lc types
-    bind_rows(x, .id = "fns")
+  dplyr::bind_rows(x, .id = "fns")
 })
 
-pars_sample <- bind_rows(pars_sample, .id="lc")
+pars_sample <- dplyr::bind_rows(pars_sample, .id="lc")
 head(pars_sample)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -

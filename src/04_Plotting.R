@@ -33,6 +33,9 @@ load(file=paste0(here::here(), "/results/d_1000_trails.RData")) #d_list
 
 # load Bayesian results
 load(file=paste0(here::here(), "/results/delta_1000_trails_Bayesian_sample100.RData")) #delta_sample
+load(file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df.RData")) #pars_sample
+
+pars_sample <- pars_sample %>% group_by(fns, lc) %>% slice_sample(n=1000)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Sampling locations ####
@@ -299,7 +302,7 @@ ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_values_global.png"),
        plot = last_plot())
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## Bayesian results (distributions) ####
+## Bayesian results (comparison) ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 delta_df <- delta_sample %>% 
@@ -336,8 +339,6 @@ delta_summary <- delta_df %>% group_by(fns, LC) %>%
 delta_summary
 write.csv(delta_summary, file=paste0(here::here(), "/figures/Data_distr_delta1000_global.csv"))
 
-
-
 # ggdist plot
 a <- ggplot(delta_df %>% filter(Group_function=="Service"), aes(x = value, y = Label, fill=stat(abs(x)<0.005))) +
   ggdist::stat_halfeye(normalize = "groups",
@@ -371,3 +372,17 @@ c <- ggplot(delta_df %>% filter(Group_function=="Dissimilarity"), aes(x = value,
 ggpubr::ggarrange(a,b,c, nrow=3, heights = c(1,1.1,0.9))
 ggsave(filename=paste0(here::here(), "/figures/Data_ggdist_delta_global.png"),
        plot = last_plot())
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Bayesian results (PA types) ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+pars_df <- pars_sample %>% dplyr::select(-sigma) %>% pivot_longer(cols = c("a[1]":"a[11]"))
+a <- ggplot(pars_df,
+       aes(y=name, x=value))+
+  ggdist::stat_halfeye(normalize="xy")+ 
+  facet_wrap(vars(lc))+
+  theme_bw()
+
+a %+% subset(pars_df %>% filter(fns==fns[6]))
