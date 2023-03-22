@@ -1,16 +1,12 @@
 #- - - - - - - - - - - - - - - - - - - - - -#
 #                                           #
-#        Parameters & functions             #
+#          Parameter settings               #
 #          author: Romy Zeiss               #
-#            date: 2023-02-22               #
+#            date: 2023-03-22               #
 #                                           #
 #- - - - - - - - - - - - - - - - - - - - - -#
 
 set.seed(1759)
-
-## re-define sample function (if only 1 value in sample(), it considers it as vector)
-resample <- function(x, ...) x[sample.int(length(x), ...)]
-
 
 ## define functions to be compared
 fns <- c("Soil_carbon_service", "OM_decomposition_service", "Water_regulation_service", 
@@ -37,3 +33,4 @@ lc_names <- c("Grassland", "Shrubland", "Woodland")
 
 # number of samples/ sites that should be paired per LC type
 min_size <- 20
+
