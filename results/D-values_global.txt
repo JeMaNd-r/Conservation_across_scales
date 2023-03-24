@@ -1,33 +1,43 @@
 #################################################
 ##  Significant d-values from global analysis  ##
-##  Sys.Date() 2023-02-27  ##
+##  Sys.Date() 2023-03-23  ##
 #################################################
-# A tibble: 26 x 8
+# A tibble: 36 × 8
    lc        fns                                 effect_mean effect_SD lower_mean lower_SD upper_mean upper_SD
    <chr>     <chr>                                     <dbl>     <dbl>      <dbl>    <dbl>      <dbl>    <dbl>
- 1 Grassland Arbuscular_mycorrhizal_18s_richness       0.500     0.199   -0.134      0.190     1.13      0.206
- 2 Grassland Decomposers_18s_richness                 -0.327     0.209   -0.951      0.214     0.301     0.202
- 3 Grassland Diss_Fungi_std                            0.410     0.197   -0.220      0.190     1.04      0.202
- 4 Grassland Diss_invert_std                          -0.516     0.199   -1.15       0.206     0.119     0.189
- 5 Grassland Fungi_18s_richness                       -0.227     0.204   -0.849      0.207     0.398     0.199
- 6 Grassland Invertebrate_18s_richness                 0.490     0.202   -0.144      0.193     1.12      0.209
- 7 Grassland Nutrient_service                         -0.204     0.214   -0.826      0.217     0.421     0.208
- 8 Grassland Soil_stability_service                    0.338     0.201   -0.290      0.194     0.962     0.206
- 9 Grassland Water_regulation_service                  0.241     0.231   -0.385      0.224     0.864     0.234
-10 Shrubland Arbuscular_mycorrhizal_18s_richness       1.09      0.269    0.412      0.245     1.75      0.291
-11 Shrubland Decomposers_18s_richness                  0.652     0.240    0.00872    0.226     1.29      0.251
-12 Shrubland Diss_Bacteria_std                        -0.591     0.271   -1.22       0.285     0.0487    0.255
-13 Shrubland Diss_Fungi_std                           -0.657     0.254   -1.29       0.267    -0.0136    0.239
-14 Shrubland Diss_invert_std                          -1.03      0.248   -1.69       0.267    -0.365     0.227
-15 Shrubland Diss_Protists_std                        -0.526     0.253   -1.16       0.263     0.111     0.239
-16 Shrubland Ectomycorrhizal_18s_richness              0.553     0.215   -0.0840     0.205     1.18      0.223
-17 Shrubland Fungi_18s_richness                        1.23      0.271    0.541      0.245     1.90      0.296
-18 Shrubland Invertebrate_18s_richness                 1.03      0.268    0.362      0.246     1.69      0.289
-19 Shrubland Pathogen_control                         -0.294     0.232   -0.918      0.236     0.333     0.225
-20 Shrubland Protist_18s_richness                      0.285     0.236   -0.343      0.229     0.908     0.240
-21 Shrubland Richness_bacteria                         0.451     0.227   -0.182      0.218     1.08      0.234
-22 Shrubland Soil_carbon_service                       0.426     0.279   -0.206      0.267     1.05      0.288
-23 Woodland  Diss_Bacteria_std                         0.234     0.271   -0.392      0.265     0.858     0.274
-24 Woodland  Richness_bacteria                        -0.327     0.278   -0.952      0.283     0.302     0.269
-25 Woodland  Soil_stability_service                   -0.414     0.275   -1.04       0.283     0.218     0.263
-26 Woodland  Water_regulation_service                 -0.334     0.264   -0.959      0.270     0.295     0.256
+ 1 Grassland Decomposers_18s_richness                 -0.713     0.261    -1.45      0.276     0.0351    0.242
+ 2 Grassland Diss_Fungi_std                            0.346     0.256    -0.381     0.245     1.07      0.263
+ 3 Grassland Diss_invert_std                          -0.286     0.272    -1.01      0.278     0.440     0.262
+ 4 Grassland Diss_Protists_std                         0.322     0.236    -0.404     0.227     1.04      0.241
+ 5 Grassland Fungi_18s_richness                       -0.442     0.262    -1.17      0.272     0.290     0.249
+ 6 Grassland Invertebrate_18s_richness                 0.393     0.245    -0.336     0.234     1.12      0.252
+ 7 Grassland Nutrient_service                         -0.671     0.196    -1.40      0.206     0.0733    0.183
+ 8 Grassland OM_decomposition_service                 -0.206     0.270    -0.925     0.271     0.517     0.265
+ 9 Grassland Protist_18s_richness                     -0.427     0.280    -1.15      0.290     0.305     0.266
+10 Shrubland Arbuscular_mycorrhizal_18s_richness       1.12      0.306     0.337     0.272     1.89      0.336
+11 Shrubland Decomposers_18s_richness                  0.717     0.225    -0.0311    0.208     1.45      0.239
+12 Shrubland Diss_Bacteria_std                        -0.486     0.247    -1.21      0.259     0.247     0.232
+13 Shrubland Diss_Fungi_std                           -0.873     0.237    -1.62      0.256    -0.113     0.216
+14 Shrubland Diss_invert_std                          -1.11      0.273    -1.88      0.300    -0.328     0.244
+15 Shrubland Diss_Protists_std                        -0.302     0.228    -1.02      0.233     0.423     0.219
+16 Shrubland Ectomycorrhizal_18s_richness              0.228     0.218    -0.494     0.210     0.947     0.221
+17 Shrubland Fungi_18s_richness                        1.38      0.277     0.565     0.242     2.17      0.310
+18 Shrubland Invertebrate_18s_richness                 1.12      0.240     0.337     0.215     1.89      0.263
+19 Shrubland Nutrient_service                         -0.626     0.173    -1.36      0.182     0.114     0.163
+20 Shrubland Pathogen_control                         -0.305     0.317    -1.03      0.326     0.422     0.303
+21 Shrubland Richness_bacteria                         0.640     0.257    -0.103     0.238     1.37      0.273
+22 Shrubland Soil_carbon_service                       0.277     0.306    -0.449     0.293     0.998     0.314
+23 Shrubland Soil_stability_service                    0.226     0.229    -0.497     0.222     0.945     0.232
+24 Shrubland Water_regulation_service                 -0.524     0.232    -1.25      0.240     0.212     0.220
+25 Woodland  Arbuscular_mycorrhizal_18s_richness       0.260     0.286    -0.465     0.279     0.981     0.288
+26 Woodland  Diss_Bacteria_std                         0.601     0.303    -0.140     0.282     1.33      0.318
+27 Woodland  Diss_Fungi_std                            0.382     0.312    -0.348     0.299     1.11      0.321
+28 Woodland  Diss_invert_std                           0.335     0.308    -0.393     0.295     1.06      0.316
+29 Woodland  Diss_Protists_std                         0.492     0.301    -0.244     0.284     1.22      0.314
+30 Woodland  Fungi_18s_richness                       -0.245     0.307    -0.966     0.312     0.480     0.296
+31 Woodland  Invertebrate_18s_richness                 0.283     0.315    -0.443     0.304     1.01      0.321
+32 Woodland  OM_decomposition_service                  0.268     0.256    -0.456     0.250     0.988     0.258
+33 Woodland  Pathogen_control                          0.335     0.260    -0.392     0.252     1.06      0.263
+34 Woodland  Protist_18s_richness                     -0.347     0.307    -1.07      0.315     0.382     0.293
+35 Woodland  Richness_bacteria                        -0.783     0.317    -1.53      0.339    -0.0284    0.291
+36 Woodland  Water_regulation_service                 -0.414     0.262    -1.14      0.270     0.317     0.249
