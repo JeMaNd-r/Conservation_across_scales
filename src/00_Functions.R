@@ -522,7 +522,8 @@ f_combine_pars_list <- function(pars_list){
     })
   })
   
-  rm(pars_list); gc()
+  rm(pars_list)
+  gc()
   
   pars_sample <- lapply(pars_sample, function (x){ #across lc types
     dplyr::bind_rows(x, .id = "fns")

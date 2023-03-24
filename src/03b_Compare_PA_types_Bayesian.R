@@ -82,10 +82,20 @@ save(pars_list, file=paste0(here::here(), "/intermediates/pars_PAtypes_Bayesian_
 # combine individual list elements (c) per fns & lc into one vector
 # that is, we have one list element per fns and lc containing the values
 
-pars_sample <- f_combine_pars_list(pars_list = pars_list)
-head(pars_sample)
+load(file=paste0(here::here(), "/intermediates/pars_PAtypes_Bayesian_global.RData")) #pars_list
 
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+pars_sample <- f_combine_pars_list(pars_list = pars_list)
+str(pars_sample)
+
+rm(pars_list)
+gc()
+
 ## Save total list with p tables & effect sizes 
 save(pars_sample, file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_global.RData"))
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Compare difference using brms ####
+
+library(brms)
 
