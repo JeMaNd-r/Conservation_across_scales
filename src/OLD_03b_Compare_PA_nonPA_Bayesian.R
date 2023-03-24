@@ -167,3 +167,75 @@ delta_sample <- lapply(delta_sample, function (x){ #across lc types
 ## Save total list with p tables & effect sizes ####
 save(delta_sample, file=paste0(here::here(), "/results/delta_1000_trails_Bayesian_sample",n_sample,".RData"))
 
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Bayesian results (comparison) ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# delta_df <- delta_sample %>% 
+#   bind_rows(.id="LC") %>% 
+#   pivot_longer(cols=Soil_carbon_service:Diss_invert_std, names_to = "fns") %>%
+#   mutate("value"=value*(-1)) #convert all values to get difference PA-nonPA
+# head(delta_df)
+# 
+# # add categories of functions
+# delta_df <- delta_df %>% full_join(fns_labels, by=c("fns"="Function")) %>%
+#   mutate("Label" = factor(Label, levels = rev(fns_labels$Label)),
+#          "Organism" = factor(Organism, levels = unique(fns_labels$Organism)))
+# 
+# ggplot(delta_df, aes(x = value, y = Label, color=Group_function, fill=Group_function)) +
+#   geom_vline(xintercept=0, color="grey60")+
+#   ggridges::geom_density_ridges() +
+#   theme_ridges() + 
+#   facet_wrap(vars(LC), ncol=3)+
+#   #xlim(-10, 10)+
+#   xlab ("")+ ylab("")+
+#   #theme_bw()+
+#   theme(legend.position = "none",
+#         panel.grid.major.y = element_blank())
+# ggsave(filename=paste0(here::here(), "/figures/Data_distr_delta1000_global.png"),
+#        plot = last_plot())
+# 
+# 
+# # save CI for delta_summary
+# delta_summary <- delta_df %>% group_by(fns, LC) %>% 
+#   summarize(across(value, list("mean"= mean,
+#                                "CI_05"=function(x) quantile(x,0.05),
+#                                "CI_95"=function(x) quantile(x,0.95)
+#                                )))
+# delta_summary
+# write.csv(delta_summary, file=paste0(here::here(), "/figures/Data_distr_delta1000_global.csv"))
+# 
+# # ggdist plot
+# a <- ggplot(delta_df %>% filter(Group_function=="Service"), aes(x = value, y = Label, fill=stat(abs(x)<0.005))) +
+#   ggdist::stat_halfeye(normalize = "groups",
+#                         alpha = 1)+
+#   facet_wrap(vars(LC), ncol=3)+
+#   xlab ("")+ ylab("")+
+#   scale_fill_manual(values=c("grey85", "skyblue"))+
+#   theme_bw()+
+#   theme(legend.position = "none",
+#         panel.grid.major.y = element_blank())
+# 
+# b <- ggplot(delta_df %>% filter(Group_function=="Richness"), aes(x = value, y = Label, fill=stat(abs(x)<0.5))) +
+#   ggdist::stat_halfeye(normalize = "groups",
+#                        alpha = 1)+
+#   facet_wrap(vars(LC), ncol=3)+
+#   xlab ("")+ ylab("")+
+#   scale_fill_manual(values=c("grey85", "skyblue"))+
+#   theme_bw()+
+#   theme(legend.position = "none",
+#         panel.grid.major.y = element_blank())
+# 
+# c <- ggplot(delta_df %>% filter(Group_function=="Dissimilarity"), aes(x = value, y = Label, fill=stat(abs(x)<0.005))) +
+#   ggdist::stat_halfeye(normalize = "groups",
+#                        alpha = 1)+
+#   facet_wrap(vars(LC), ncol=3)+
+#   xlab ("")+ ylab("")+
+#   scale_fill_manual(values=c("grey85", "skyblue"))+
+#   theme_bw()+
+#   theme(legend.position = "none",
+#         panel.grid.major.y = element_blank())
+# ggpubr::ggarrange(a,b,c, nrow=3, heights = c(1,1.1,0.9))
+# ggsave(filename=paste0(here::here(), "/figures/Data_ggdist_delta_global.png"),
+#        plot = last_plot())

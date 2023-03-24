@@ -32,5 +32,14 @@ mahal_vars_z <- paste0(mahal_vars, ".z")
 lc_names <- c("Grassland", "Shrubland", "Woodland")
 
 # number of samples/ sites that should be paired per LC type
-min_size <- 20
+min_size <- 15
 
+# number of randomization = number of pairings 
+number_times <- 1000
+
+# define protected area ranking
+protect_type <- data.frame("PA_type" = c("Ia", "Ib", "II", "III", "IV", "V", "VI",
+                                         "Not Reported", "Not Assigned", "Not Applicable"),
+                           "PA_rank" = 1:10,
+                           "PA_protected" = c(rep(1,7), rep(0,3)))
+protect_type
