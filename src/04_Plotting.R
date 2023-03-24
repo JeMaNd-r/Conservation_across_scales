@@ -9,9 +9,8 @@
 library(here)
 library(tidyverse)
 library(terra)
-library(ggridges) #to plot distributions (Bayesian)
 library(ggdist) #to plot distributions (Bayesian)
-library(ggpubr) #plot multiple ggplots
+library(gridExtra) #to add table in plot
 
 # load background map
 world.inp <- map_data("world")
@@ -34,7 +33,7 @@ load(file=paste0(here::here(), "/results/d_1000_trails_global.RData")) #d_list
 # load Bayesian results from PA_type comparison
 load(file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_global.RData")) #pars_sample
 
-pars_sample <- pars_sample %>% group_by(fns, lc) %>% slice_sample(n=1000)
+#pars_sample <- pars_sample %>% group_by(fns, lc) %>% slice_sample(n=10000)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Sampling locations ####
@@ -128,32 +127,37 @@ d_df <- d_df %>% full_join(fns_labels, by=c("fns"="Function")) %>%
 #        plot = last_plot())
 
 # save data for plot
-write.csv(d_df, file=paste0(here::here(), "/figures/Data_violin_d-value_global.csv"))
+write.csv(d_df, file=paste0(here::here(), "/figures/Data_pointrange_d-value_global.csv"), row.names = FALSE)
+
+d_df <- read.csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_global.csv"))
 
 d_summary <- d_df %>% 
   dplyr::select(-run) %>%
   #pivot_longer(cols = c(p_value, ci_lower, ci_upper, t_stats),
   #             names_to = "metric") %>%
   group_by(lc, fns, Label, Group_function, Organism) %>%
-  summarize(across(everything(), .fns = list("mean"=mean, "SD"=sd)))
+  summarize(across(effect, .fns = list("mean"=mean, "SD"=sd, "median"=median,
+                                       "ci_2.5" = function(x) quantile(x, 0.05, na.rm=TRUE), 
+                                       "ci_17" = function(x) quantile(x, 0.17, na.rm=TRUE), 
+                                       "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
+                                       "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE))))
 d_summary
-write.csv(d_summary, file=paste0(here::here(), "/figures/Data_violin_d-value_summary_global.csv"))
+write.csv(d_summary, file=paste0(here::here(), "/figures/Results_pointrange_d-value_summary_global.csv"))
 
 # mean per lc type
 d_summary %>% ungroup() %>% group_by(lc) %>% 
-  summarize(across(c(effect_mean, lower_mean, upper_mean), 
+  summarize(across(c(effect_median, effect_ci_2.5:effect_ci_97.5), 
                    function(x) mean(x)))
 d_summary %>% ungroup() %>% group_by(lc) %>% 
-  summarize(across(c(effect_mean, lower_mean, upper_mean), 
-                   function(x) mean(abs(x))))
+  summarize(across(c(effect_median), 
+                   list(mean=function(x) mean(abs(x)),
+                        sd=function(x) sd(abs(x)))))
 
 # mean per Group_function
 d_summary %>% ungroup() %>% group_by(Group_function) %>% 
-  summarize(across(c(effect_mean, lower_mean, upper_mean), 
-                   function(x) mean(abs(x))))
-d_summary %>% ungroup() %>% group_by(Group_function) %>% 
-  summarize(across(c(effect_mean, lower_mean, upper_mean), 
-                   function(x) mean(x)))
+  summarize(across(c(effect_median), 
+                   list(mean=function(x) mean(abs(x)),
+                        sd=function(x) sd(abs(x)))))
 
 # check for significant mean p-values
 #d_summary %>% arrange(p_value_mean)
@@ -165,16 +169,16 @@ cat(paste0("##  Sys.Date() ", Sys.Date(), "  ##"), sep="\n")
 cat("#################################################", sep="\n")
 print(d_summary %>% ungroup() %>%
   filter(abs(effect_mean) >= 0.2) %>%
-  dplyr::select(lc, fns, starts_with("effect"), starts_with("lower"),
-                starts_with("upper")),
-  n=nrow(d_summary %>% filter(abs(effect_mean) >= 0.2)))
+  dplyr::select(lc, fns, starts_with("effect")) %>%
+    arrange(effect_median),
+  n=nrow(d_summary %>% filter(abs(effect_mean) >= 0.2))) #for print() command
 sink()
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Pointrange effect size per LC type ####
 # with confidence intervals 
 
-ggplot(data = d_df, 
+ggplot(data = d_df %>% mutate(Label=factor(Label, levels = rev(fns_labels$Label))), 
        aes(y = effect, x = Label))+
   
   geom_hline(aes(yintercept=0.8, linetype = "-0.8 / 0.8"), color="grey60")+
@@ -189,6 +193,11 @@ ggplot(data = d_df,
                                    "-0.2 / 0.2" = "solid"), name="Strength of effect")+
   annotate("rect", ymin = -0.2, ymax = 0.2, xmin=-Inf, xmax=Inf, fill = "grey95")+
 
+  # fill background of Group_function
+  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=Inf, fill = "chocolate4", alpha=0.1)+
+  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=11+0.5, fill = "chocolate4", alpha=0.1)+
+  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=4+0.5, fill = "chocolate4", alpha=0.1)+
+  
   ggdist::stat_pointinterval(fatten_point=1.2, shape=21) +
   coord_flip()+
   ylab("Effect size")+
@@ -198,9 +207,12 @@ ggplot(data = d_df,
         axis.text.y = element_text(size=10),  
         axis.text.x = element_text(size=10),
         panel.grid.minor = element_blank(),
-        panel.grid.major.y = element_blank())
-ggsave(filename=paste0(here::here(), "/figures/Data_pointrange_d-value_global.png"),
-       plot = last_plot())
+        panel.grid.major.y = element_blank(),
+        strip.background = element_rect(fill="chocolate4"),
+        strip.text = element_text(color="white"))
+ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_global.png"),
+       plot = last_plot(),
+       width=5, height=4)
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -232,7 +244,7 @@ ggplot(data_values, aes(x = Label, y = value)) +
   theme(axis.text.x=element_text(size=5, angle=45, hjust=1),
         panel.grid.minor.y = element_blank(), panel.grid.major.x = element_blank(),
         legend.position = "none", legend.text = element_text(size=15), axis.text.y = element_text(size=15))
-ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_values_global.png"),
+ggsave(filename=paste0(here::here(), "/figures/Results_boxplot_estimates_global.png"),
        plot = last_plot())
 
 
@@ -240,11 +252,72 @@ ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_values_global.png"),
 ## Bayesian results (PA types) ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-pars_df <- pars_sample %>% dplyr::select(-sigma) %>% pivot_longer(cols = c("a[1]":"a[11]"))
-a <- ggplot(pars_df,
-       aes(y=name, x=value))+
-  ggdist::stat_halfeye(normalize="xy")+ 
-  facet_wrap(vars(lc))+
-  theme_bw()
+# transform parameters to long format and assign labels
+pars_long <- pars_sample %>% 
+  dplyr::select(-sigma, -sigma_a, -mu_a) %>% 
+  pivot_longer(cols = c("1":"2"))%>%
+  full_join(protect_type %>% 
+              mutate(PA_rank = as.character(PA_rank)), 
+            by=c("name" = "PA_rank"))  %>%
+  mutate("Label_pa" = ifelse(name=="11", "Unprotected", PA_type)) %>%
+  mutate("Label_pa" = factor(Label_pa, levels = rev(c(protect_type$PA_type, "Unprotected")))) %>%
+  full_join(fns_labels, by=c("fns"="Function")) %>%
+  mutate("Label_fns" = factor(Label, fns_labels$Label))
+head(pars_long)
 
-a %+% subset(pars_df %>% filter(fns==fns[6]))
+# save summary (i.e., data from figure)
+pars_summary <- pars_long %>% group_by(lc, fns) %>% 
+  summarize(across(value, list("mean"  = function(x) mean(x, na.rm=TRUE), 
+                               "median" = function(x) median(x, na.rm=TRUE), 
+                               "ci_2.5" = function(x) quantile(x, 0.05, na.rm=TRUE), 
+                               "ci_17" = function(x) quantile(x, 0.17, na.rm=TRUE), 
+                               "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
+                               "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE)))) %>%
+  arrange(lc, fns)
+pars_summary
+write.csv(pars_summary, file=paste0(here::here(), "/figures/Results_pointrange_parsBayesian_summary_global.csv"),
+          row.names=FALSE)
+
+n_table <- data_glob %>% filter(LC!="Other") %>%
+  group_by(LC, PA, PA_type, PA_rank) %>% count() %>%
+  pivot_wider(id_cols = c("PA", "PA_type", "PA_rank"), 
+              names_from = LC, values_from = n) %>% 
+  arrange(PA_rank) %>% ungroup() %>%
+  dplyr::select(-PA_rank)
+n_table
+write.csv(n_table, file=paste0(here::here(), "/figures/Results_pointrange_parsBayesian_nTable_global.csv"),
+          row.names=FALSE)
+
+plot_all <- ggplot(pars_long %>% filter(!is.na(Label)) %>%
+                     # add number of sizes to plot
+                     rbind(data_glob %>% filter(LC!="Other") %>%
+                             group_by(LC, PA_type) %>% count() %>%
+                             rename(lc=LC, value=n) %>%
+                             mutate(fns="Number of sites",
+                                    name=NA,
+                                    PA_protected=NA,
+                                    Label_pa=ifelse(is.na(PA_type), "Unprotected", PA_type),
+                                    Label="Number of sites",
+                                    Label_fns = Label,
+                                    Group_function=NA,
+                                    Organism=NA) %>%
+                             dplyr::select(colnames(pars_long))),
+       aes(y=Label_pa, x=value, color=lc))+
+  
+  annotate("rect", ymin = -Inf, ymax = 4+0.5, xmin=-Inf, xmax=Inf, fill = "grey90", alpha=0.5)+
+  annotate("rect", ymin = -Inf, ymax = 1+0.5, xmin=-Inf, xmax=Inf, fill = "grey85", alpha=0.5)+
+  
+  ggdist::stat_pointinterval(fatten_point=1, shape=3, 
+                             position=position_dodgejust(width=0.5))+ 
+  facet_wrap(vars(Label_fns), scales = "free_x")+
+  
+  scale_color_manual(values=c("gold3", "limegreen", "forestgreen"), name="Land-cover type")+
+  ylab("")+ xlab("")+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        legend.position = c(0.8, 0.12))
+plot_all
+ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_parsBayesian_global.png"),
+       plot = last_plot(),
+       width=10, height=10)
