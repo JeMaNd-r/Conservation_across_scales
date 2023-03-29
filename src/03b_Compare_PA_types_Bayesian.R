@@ -13,6 +13,8 @@ library(tidyverse)
 library(rstan)
 options(mc.cores = 4) # number of CPU cores
 
+library(emmeans) # to estimate contrast i.e. EM means
+
 source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
 
@@ -90,12 +92,32 @@ str(pars_sample)
 rm(pars_list)
 gc()
 
-## Save total list with p tables & effect sizes 
+### Save total list with p tables & effect sizes ####
 save(pars_sample, file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_global.RData"))
 
+# #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# ### Calculate contrast between protection types ####
+# 
+# load(file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_global.RData")) #pars_sample
+# 
+# # group protection type Ia-VI (1-7) together, and group Not... and Unprotected (8-11) together
+# pars_sample %>% 
+#   pivot_longer(cols="1":"2") %>%
+#   mutate("PA" = ifelse(name %in% as.character(1:7), 1, 
+#                        ifelse(name %in% as.character(8:11), 0, NA))) %>%
+#   group_by(lc, fns, PA) %>%
+#   summarize(across(value, list("mean"  = function(x) mean(x, na.rm=TRUE), 
+#                                 "median" = function(x) median(x, na.rm=TRUE), 
+#                                 "ci_2.5" = function(x) quantile(x, 0.05, na.rm=TRUE), 
+#                                 "ci_17" = function(x) quantile(x, 0.17, na.rm=TRUE), 
+#                                 "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
+#                                 "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE))))
+# 
+# # Estimated marginal means
+# emmeans::emmeans()
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Compare difference using brms ####
 
-library(brms)
+# library(brms)
 

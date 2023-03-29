@@ -280,6 +280,7 @@ pars_summary
 write.csv(pars_summary, file=paste0(here::here(), "/figures/Results_pointrange_parsBayesian_summary_global.csv"),
           row.names=FALSE)
 
+# extract sample size
 n_table <- data_glob %>% filter(LC!="Other") %>%
   group_by(LC, PA, PA_type, PA_rank) %>% count() %>%
   pivot_wider(id_cols = c("PA", "PA_type", "PA_rank"), 
