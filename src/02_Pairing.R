@@ -115,6 +115,9 @@ min(table(pa_pairs$ID))
 max(table(pa_pairs$nonPA))
 max(table(pa_pairs$ID))
 
+pa_pairs %>% group_by(LC) %>% dplyr::select(ID) %>% unique() %>% count()
+pa_pairs %>% group_by(LC) %>% dplyr::select(nonPA) %>% unique() %>% count()
+
 #save(pa_pairs, file=paste0(here::here(), "/intermediates/Pairs_paNonpa_1000trails_", Sys.Date(),".RData"))
 write.csv(pa_pairs, file=paste0(here::here(), "/intermediates/Pairs_paNonpa_1000trails_", Sys.Date(),".csv"), row.names=F)
 

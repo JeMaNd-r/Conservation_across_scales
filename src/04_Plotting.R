@@ -145,6 +145,8 @@ d_summary
 write.csv(d_summary, file=paste0(here::here(), "/figures/Results_pointrange_d-value_summary_global.csv"))
 
 # mean per lc type
+d_summary <- read.csv(file=paste0(here::here(), "/figures/Results_pointrange_d-value_summary_global.csv"))
+
 d_summary %>% ungroup() %>% group_by(lc) %>% 
   summarize(across(c(effect_median, effect_ci_2.5:effect_ci_97.5), 
                    function(x) mean(x)))
