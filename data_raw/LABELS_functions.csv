@@ -5,14 +5,19 @@ Water_regulation_service,Water regulation,Service,Service
 Soil_stability_service,Soil stability,Service,Service
 Nutrient_service,Nutrients,Service,Service
 Pathogen_control,Pathogen control,Service,Service
-Richness_bacteria,Bacterial richness,Richness,Bacteria
-Fungi_18s_richness,Fungal richness,Richness,Fungi
-Invertebrate_18s_richness,Invertebrate richness,Richness,Invertebrates
-Protist_18s_richness,Protist richness,Richness,Protists
-Ectomycorrhizal_18s_richness,EM fungi richness,Richness,Fungi
-Arbuscular_mycorrhizal_18s_richness,AM fungi richness,Richness,Fungi
-Decomposers_18s_richness,Decomposer richness,Richness,Decomposers
-Diss_Bacteria_std,Bacterial dissimilarity,Dissimilarity,Bacteria
-Diss_Fungi_std,Fungal dissimilarity,Dissimilarity,Fungi
-Diss_Protists_std,Protist dissimilarity,Dissimilarity,Protists
-Diss_invert_std,Invertebrate dissimilarity,Dissimilarity,Invertebrates
+Bac_richness,Bacterial R,Richness,Bacteria
+Fungi_richness,Fungal R,Richness,Fungi
+Invertebrate_richness,Invertebrate R,Richness,Invertebrates
+Protist_richness,Protist R,Richness,Protists
+Nematode_richness,Nematode R,Richness,Nematodes
+Ectomycorrhizal_richness,EM fungi R,Richness,Fungi
+Arbuscularmycorrhizal_richness,AM fungi R,Richness,Fungi
+Decomposer_richness,Decomposer R,Richness,Decomposers
+Bac_shannonDiv,Bacterial S,Diversity,Bacteria
+Fungi_shannonDiv,Fungal S,Diversity,Fungi
+Invertebrate_shannonDiv,Invertebrate S,Diversity,Invertebrates
+Protist_shannonDiv,Protist S,Diversity,Protists
+Bac_JaccDist_av,Bacterial D,Dissimilarity,Bacteria
+Fungi_JaccDist_av,Fungal D,Dissimilarity,Fungi
+Protist_JaccDist_av,Protist D,Dissimilarity,Protists
+Invertebrate_JaccDist_av,Invertebrate D,Dissimilarity,Invertebrates
