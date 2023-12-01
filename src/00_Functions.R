@@ -11,11 +11,12 @@
 #- - - - - - - - - - - - - - - - - - - - - -
 
 ### Extract PA status ####
-f_extract_pa <- function(data, col_lon, col_lat, shp, col_pa){
+f_extract_pa <- function(data, col_lon, col_lat, col_id, shp, col_pa){
   
   # data:     data frame with one column for longitude and latitude each
   # col_lon:  column name of longitude
   # col_lat:  column name of latitude
+  # col_id:   column name with Sample ID
   # shp:      shapefile containing polygons of protected areas
   # col_pa:   name of layer in shp that contains information of PA 
   #           (if !is.na(col_pa), PA=1)
@@ -32,10 +33,10 @@ f_extract_pa <- function(data, col_lon, col_lat, shp, col_pa){
   
   temp_pa <- temp_pa %>% 
     full_join(data %>% 
-                dplyr::select(Order_ID, col_lon, col_lat) %>% 
+                dplyr::select(all_of(col_id, col_lon, col_lat)) %>% 
                 mutate(id.y=1:nrow(data))) %>%
     dplyr::select(-id.y) %>%
-    dplyr::select(Order_ID, col_lon, col_lat, PA, everything())
+    dplyr::select(all_of(col_id, col_lon, col_lat, PA), everything())
   
   return(temp_pa)
 }
@@ -72,20 +73,21 @@ f_add_protect <- function(data, data_pa, col_id){
   # data_pa: dataframe containing information about protection status
   # col_id:  name of column with site IDs (in both dataframes)
   
-  # remove double entries (i.e., 2+ protected area types for 1 PA)
+  ## Remove double entries (i.e., 2+ protected area types for 1 PA)
   data_pa <- data_pa %>% full_join(protect_type, by=c("IUCN_CAT" = "PA_type"))
   
   # take the highest = min (or lowest = max) protection level
   data_pa <- data_pa[, c(col_id, "PA_rank")] %>%
     group_by(data_pa[,col_id]) %>%
-    summarize(across(PA_rank, list("min"=min, "max"=max), na.rm=T)) %>%
+    summarize(across(PA_rank, list("min"=~ min(.x, na.rm = TRUE), 
+                                   "max"=~ max(.x, na.rm = TRUE)))) %>%
     mutate("PA_rank_min" = ifelse(PA_rank_min == Inf, NA, PA_rank_min),
            "PA_rank_max" = ifelse(PA_rank_max == -Inf, NA, PA_rank_max)) %>%
-    full_join(protect_type %>% rename("PA_type_min" = PA_type,
+    left_join(protect_type %>% rename("PA_type_min" = PA_type,
                                       "PA_rank_min" = PA_rank,
                                       "PA_protected_min" = PA_protected), 
               by="PA_rank_min") %>%
-    full_join(protect_type %>% rename("PA_type_max" = PA_type,
+    left_join(protect_type %>% rename("PA_type_max" = PA_type,
                                       "PA_rank_max" = PA_rank,
                                       "PA_protected_max" = PA_protected), 
               by="PA_rank_max")
@@ -148,11 +150,11 @@ f_colinearity <- function(data, col_lon, col_lat, vars_env){
   corMatSpearman <- cor(temp_env, use="complete.obs", method="spearman") %>% round(2)
   corMatPearson <- cor(temp_env, use="complete.obs", method="pearson") %>% round(2)
   
+  rm(vif_cor, temp_env, vif_step)
+  
   return(list("env_vif" = env_vif,
               "corMatSpearman" = corMatSpearman,
               "corMatPearson" = corMatPearson))
-  
-  rm(env_vif, vif_cor, corMatPearson, corMatSpearman, temp_env, vif_step)
 }
 
 
@@ -173,8 +175,9 @@ f_scale_vars <- function(data, vars){
     for(i in vars){
       data[,paste0(i,".z")] <- as.numeric(scale(data[,i]))
     }
-    return(data)
+    
     cat("Done: Scaling of all variables completed.")
+    return(data)
   }
 }
 
@@ -210,12 +213,12 @@ f_check_pairs <- function(data, col_id, col_lc, vars_z){
   pa_noPair
   nrow(pa_noPair) #nrow=12
   
-  unpaired_pa <- data_glob[data_glob$Order_ID %in% pa_noPair,] #12 PA sites can't be paired
-  write.csv(unpaired_pa, file=paste0(here::here(), "/intermediates/", "Unpaired_protected_sites_", Sys.Date(), ".csv"), row.names = F)
+  unpaired_pa <- data[data[,col_id] %in% pa_noPair,] #12 PA sites can't be paired
+  write.csv(unpaired_pa, file=paste0(here::here(), "/intermediates/", temp_scale,  "/Unpaired_protected_sites_", Sys.Date(), ".csv"), row.names = F)
   
   cat("#---------------------------------------------------", sep="\n")
   cat(paste0("Saved: csv file with unpaired sites is saved under: "), 
-      paste0(here::here(), "/intermediates/", "Unpaired_protected_sites_", Sys.Date(), ".csv"),
+      paste0(here::here(), "/intermediates/", temp_scale, "/Unpaired_protected_sites_", Sys.Date(), ".csv"),
       sep="\n")
   cat("#---------------------------------------------------", sep="\n")
   
@@ -223,12 +226,12 @@ f_check_pairs <- function(data, col_id, col_lc, vars_z){
   #all_nonPA
   
   # count how many "options" exist for one PA
-  count_nonPA <- data.frame("Order_ID"=NA, "No_nonPA"=NA)
+  count_nonPA <- data.frame("SampleID"=NA, "No_nonPA"=NA)
   for(i in colnames(all_nonPA)[!is.na(as.numeric(colnames(all_nonPA)))]){
     temp_column <- all_nonPA[,i]
     
     count_nonPA <- rbind(count_nonPA,
-                         c(i, nrow(all_nonPA[which(temp_column<=mahal_thres),"Order_ID"]) ))
+                         c(i, nrow(all_nonPA[which(temp_column<=mahal_thres),col_id]) ))
     
   }
   
@@ -238,9 +241,10 @@ f_check_pairs <- function(data, col_id, col_lc, vars_z){
   
   print("Number of nonPA sites per PA (col_ID)")
   print(head(count_nonPA))
-  return(count_nonPA) #number of nonPA sites per PA (Order_ID)
   
   rm(temp_PA, temp_nonPA, temp_column, unpaired_pa, pa_noPair, min_mahal, nonpa, pa)
+  
+  return(list(count_nonPA, all_nonPA)) #number of nonPA sites per PA (Order_ID)
 }
 
 #- - - - - - - - - - - - - - - - - - - - - -
@@ -302,7 +306,7 @@ f_pairing <- function(data, col_id, col_lc, vars_z){
       temp_PA[, c("nonPA", "mahal.min")]  <- NA
       #temp.col <- 0
       
-      for(k in temp_PA %>% pull(col_id)){
+      for(k in temp_PA %>% pull(col_id) %>% sample(size = nrow(temp_PA))){
         
         # if Mahal. distances compared to all relevant nonPA are above threshold...
         if(min(temp_nonPA[,as.character(k)])>=mahal_thres){
@@ -332,7 +336,7 @@ f_pairing <- function(data, col_id, col_lc, vars_z){
       # do run again if there is an error (i.e. if no nonPA site with distance lower than threshold)
       if(nrow(temp_PA) < min_size) {
         times <- times-1
-        break("Not enough PA sites paired.")
+        print("Not enough PA sites paired.")
         
       } else {
         temp_PA <- temp_PA %>% sample_n(size = min_size, replace = FALSE)
@@ -373,7 +377,7 @@ f_compare_pa_nonpa <- function(data, data_pairs, col_id, col_fns){
   d_list <- vector("list", length = number_times)
   
   # progress bar
-  progress_bar <- txtProgressBar(min = 0, max = length(p_list), initial = 0,
+  progress_bar <- txtProgressBar(min = 0, max = length(d_list), initial = 0,
                                  style=3, title = "Processing") 
   
   for(x in unique(data_pairs$times)){
@@ -393,11 +397,11 @@ f_compare_pa_nonpa <- function(data, data_pairs, col_id, col_fns){
       
       # subset data based on land cover type
       temp_PA <- temp_pairs %>% 
-        left_join(data_glob[,c(col_id, "PA", col_fns)], by=c("ID"=as.character(col_id))) %>% 
+        left_join(data[,c(col_id, "PA", col_fns)], by=c("ID"=as.character(col_id))) %>% 
         filter(LC==lc) %>% 
         dplyr::select(-nonPA, -mahal.min)
       temp_nonPA <- temp_pairs %>% 
-        left_join(data_glob[,c(col_id, "PA", col_fns)], by=c("nonPA"=as.character(col_id))) %>% 
+        left_join(data[,c(col_id, "PA", col_fns)], by=c("nonPA"=as.character(col_id))) %>% 
         filter(LC==lc) %>% 
         mutate("ID"=nonPA) %>% 
         dplyr::select(-nonPA, -mahal.min)
@@ -461,7 +465,7 @@ f_compare_pa_types <- function(data, protect_levels, col_fns) {
     print(paste0("Run land cover ", lc))
     
     # subset data based on land cover type
-    temp_data <- data_glob %>%
+    temp_data <- data %>%
       full_join(protect_levels, by=c("LC", "PA_rank", "PA_type")) %>%
       filter(LC==lc) %>%
       arrange(PA_rank)
