@@ -17,70 +17,99 @@ library(igraph)  # to map network (pairing)
 source("src/00_Parameters.R")
 source("src/00_Functions.R")
 
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## GLOBAL ####
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# temp_scale <- "global"
+# temp_scale <- "continental"
+temp_scale <- "regional"
+
+# create directory for intermediate results
+if(!dir.exists(paste0(here::here(), "/intermediates/", temp_scale))){
+  dir.create(paste0(here::here(), "/intermediates/", temp_scale))
+}
+
+# set date of latest analysis
+if(temp_scale == "global") temp_date <- "2023-12-01"
+if(temp_scale == "continental") temp_date <- "2023-12-04"
+if(temp_scale == "regional") temp_date <- "2023-12-04"
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Load soil biodiversity data ####
-data_glob <- read_csv(paste0(here::here(), "/intermediates/Data_global.csv"))
-data_glob
+
+data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+data_clean
 
 ## Explore data
-summary(as.factor(data_glob$PA)) #248 nonPA and 135 PAs
+summary(as.factor(data_clean$PA)) #G: 309 nonPA and 74 PAs, C: 753 vs. 65, R: 302 vs. 52
 # number of observations (raw)
-nrow(data_glob); nrow(data_glob[data_glob$PA,])  #383 with 135 PAs
+nrow(data_clean); nrow(data_clean[data_clean$PA,])  #G: 383 with 74 PAs, C: 818 vs. 65, R: 354 vs. 52
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Scale variables for mahalanobis distance ####
 
-data_glob <- f_scale_vars(data = data_glob, vars = mahal_vars)
+data_clean <- f_scale_vars(data = data_clean, vars = mahal_vars)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Check for pairing ####
 
-count_nonPA <- f_check_pairs(data = data_glob, 
-                             col_id = "Order_ID", col_lc = "LC", 
+count_nonPA <- f_check_pairs(data = data_clean, 
+                             col_id = "SampleID", col_lc = "LC", 
                              vars_z = mahal_vars_z)
-head(count_nonPA)
+all_nonPA <- count_nonPA[[2]]
+count_nonPA <- count_nonPA[[1]]
+#head(count_nonPA)
 
-#View(all_nonPA %>% dplyr::select(Order_ID, count_nonPA[count_nonPA$n<10 & !is.na(count_nonPA$Order_ID), "Order_ID"]))
+#View(all_nonPA %>% dplyr::select(SampleID, count_nonPA[count_nonPA$n<10 & !is.na(count_nonPA$SampleID), "SampleID"]))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Network of possible combinations ####
-# l <- lapply(colnames(all_nonPA)[!is.na(as.numeric(colnames(all_nonPA)))],
-#        function(x) tibble("PA_ID"=rep(x, nrow(all_nonPA[which(all_nonPA[,x]<=mahal_thres),])),
-#                          all_nonPA[which(all_nonPA[,x]<=mahal_thres),"Order_ID"]))
-# l <- do.call(rbind, l)
-# l
-# network <- igraph::graph_from_data_frame(d=l, directed=T) 
-# plot(network,
-#      vertex.size=0.5, vertex.label.cex=0.2,
-#      edge.arrow.size = 0.2, edge.arrow.width = 0.2)
+l <- lapply(colnames(all_nonPA)[!is.na(as.numeric(colnames(all_nonPA)))],
+       function(x) tibble("PA_ID"=rep(x, nrow(all_nonPA[which(all_nonPA[,x]<=mahal_thres),])),
+                         all_nonPA[which(all_nonPA[,x]<=mahal_thres),"SampleID"]))
+l <- do.call(rbind, l)
+l
+network <- igraph::graph_from_data_frame(d=l, directed=T)
+plot(network,
+     vertex.size=0.5, vertex.label.cex=0.2,
+     edge.arrow.size = 0.2, edge.arrow.width = 0.2)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Remove sites ####
 
-unpaired_pa <- read.csv(paste0(here::here(), "/intermediates/", "Unpaired_protected_sites_global.csv"))
-head(unpaired_pa)
+unpaired_pa <- read.csv(paste0(here::here(), "/intermediates/", temp_scale, "/Unpaired_protected_sites_", temp_date, ".csv"))
+head(unpaired_pa) 
 
 # Note: There were nonPA sites with mahalanobis distance below threshold
-# for three protected sites with Order_ID. They have to been removed.
-data_glob <- data_glob[!(data_glob$Order_ID %in% unpaired_pa$Order_ID),] 
-nrow(data_glob); nrow(data_glob[data_glob$PA,]) #nrow=371 with 123 PAs
+# for three protected sites with SampleID. They have to been removed.
+data_clean <- data_clean[!(data_clean$SampleID %in% unpaired_pa$SampleID),] 
+nrow(data_clean); nrow(data_clean[data_clean$PA,]) #G: nrow=383 with 74 PAs, C: 818 vs. 65
 
-# # Remove sites that can only be paired once
-# data_glob <- data_glob[!(data_glob$Order_ID %in% count_nonPA[count_nonPA$n<3, "Order_ID"]),]
-# nrow(data_glob); nrow(data_glob[data_glob$PA,]) #nrow=364 with 116 PAs
-data_glob %>% group_by(LC, PA) %>% count()
+# Remove sites that can only be paired less than 10 times
+data_clean <- data_clean[!(data_clean$SampleID %in% count_nonPA[count_nonPA$No_nonPA<10, "SampleID"]),]
+nrow(data_clean); nrow(data_clean[data_clean$PA,]) #nrow=365 with 56 PAs; C: 814 vs. 61
+data_clean %>% group_by(LC, PA) %>% count()
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Randomization ####
 
-list_pairs <- f_pairing(data = data_glob, 
-                        col_id = "Order_ID", col_lc = "LC",
+# check LC types and number of (protected) sites
+table(data_clean$LC, data_clean$PA)
+
+# based on number of sites per LC, exclude LC
+# e.g. global: only 3 unprotected on 0 protected for Other
+# continental: only 1 Shrubland protected, 28 unprotected; and 0 PA in Other
+# regional: PA only min. 7 -> decrease minimum size number to 7, 
+#           exclude Shrublands & Others to get it running (otherwise no complete pairing achieved) 
+if(temp_scale == "global") lc_names <- lc_names[lc_names != "Other"]
+if(temp_scale == "continental") lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
+if(temp_scale == "regional"){
+  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
+  min_size <- 7
+}
+# The following function will print the number of times it successfully 
+# paired sites. It will show the same number multiple times if it didn't 
+# reach a successful pairing (i.e., min_size pairs per lc_names).
+list_pairs <- f_pairing(data = data_clean, 
+                        col_id = "SampleID", col_lc = "LC",
                         vars_z = mahal_vars_z)
 
 
@@ -95,29 +124,11 @@ pa_pairs <- list_pairs$pa_pairs
 
 # check for runs that failed (i.e. count < number of PA sites), and remove the respective pairs
 # note: other result objects are not effected as they were overwritten
-nrow(pa_pairs)  # should be 3 * min_size * 1000
+nrow(pa_pairs)  # should be length(lc_names) * min_size * 1000
 pa_pairs <- pa_pairs %>% add_count(times.with.error) %>%
-  filter(n==3*min_size)
-nrow(pa_pairs)  # exactly 3 * min_size * 1000
+  filter(n==length(lc_names)*min_size)
+nrow(pa_pairs)  # exactly length(lc_names)* min_size * 1000
 
-# look what non-protected sites have (not) been paired to any PA
-hist(table(pa_pairs$nonPA))  # frequency distribution of the use of sites from all runs
-length(setdiff(data_glob[data_glob$PA==0,]$Order_ID, pa_pairs$nonPA))  # nonPA sites never used
-
-mean(table(pa_pairs$nonPA))
-mean(table(pa_pairs$ID))
-
-sd(table(pa_pairs$nonPA))
-sd(table(pa_pairs$ID))
-
-min(table(pa_pairs$nonPA))
-min(table(pa_pairs$ID))
-max(table(pa_pairs$nonPA))
-max(table(pa_pairs$ID))
-
-pa_pairs %>% group_by(LC) %>% dplyr::select(ID) %>% unique() %>% count()
-pa_pairs %>% group_by(LC) %>% dplyr::select(nonPA) %>% unique() %>% count()
-
-#save(pa_pairs, file=paste0(here::here(), "/intermediates/Pairs_paNonpa_1000trails_", Sys.Date(),".RData"))
-write.csv(pa_pairs, file=paste0(here::here(), "/intermediates/Pairs_paNonpa_1000trails_", Sys.Date(),".csv"), row.names=F)
+#save(pa_pairs, file=paste0(here::here(), "/intermediates/", temp_scale, "/Pairs_paNonpa_1000trails_", Sys.Date(),".RData"))
+write_csv(pa_pairs, file=paste0(here::here(), "/intermediates/", temp_scale, "/Pairs_paNonpa_1000trails_", Sys.Date(),".csv"))
 
