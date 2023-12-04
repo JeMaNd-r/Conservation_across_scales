@@ -6,33 +6,36 @@
 #                                           #
 #- - - - - - - - - - - - - - - - - - - - - -#
 
-set.seed(1759)
+set.seed(1759) #& sample PA ID in pairing [last option used]
+#set.seed(5738375)
 
 ## define functions to be compared
-fns <- c("Soil_carbon_service", "OM_decomposition_service", "Water_regulation_service", 
+fns <- c("Soil_carbon_service", "OM_decomposition_service", #"Water_regulation_service", #water only for global
         "Soil_stability_service", "Nutrient_service", "Pathogen_control", 
-        "Richness_bacteria", "Fungi_18s_richness", "Invertebrate_18s_richness", 
-        "Protist_18s_richness", "Ectomycorrhizal_18s_richness", 
-        "Arbuscular_mycorrhizal_18s_richness", "Decomposers_18s_richness", 
-        "Diss_Bacteria_std", "Diss_Fungi_std", "Diss_Protists_std", "Diss_invert_std")
+        "Bac_richness", "Fungi_richness", "Invertebrate_richness", 
+        "Protist_richness", "Nematode_richness", 
+        "Bac_shannonDiv", "Fungi_shannonDiv", "Invertebrate_shannonDiv", "Protist_shannonDiv",
+        "Ectomycorrhizal_richness", "Arbuscularmycorrhizal_richness", "Decomposer_richness",
+        "Bac_JaccDist_av", "Fungi_JaccDist_av", "Protist_JaccDist_av",
+        "Invertebrate_JaccDist_av")
 
 fns_labels <- read.csv(paste0(here::here(), "/data_raw/LABELS_functions.csv"),
                        fileEncoding = "UTF-8-BOM")
 
 ## define variables to be compared between PA and nonPA, & threshold
-mahal_vars <- c("Latitude_c", "Longitude_c", "Elevation", "AnnualPrec", "AnnualTemp", 
+mahal_vars <- c("Latitude", "Longitude", "Elevation", "AnnualPrec", "AnnualTemp", 
                 #"MonthlyPrecipSum","MonthlyMeanTemp", 
-                "Soil_pH", "Soil_salinity", "Clay_silt_c")
+                "Soil_pH", "Soil_salinity", "Soil_texture")
 
 mahal_thres <- qchisq(.975, df=length(mahal_vars)) #21.92005
 
 mahal_vars_z <- paste0(mahal_vars, ".z")
 
 # define each land cover type
-lc_names <- c("Grassland", "Shrubland", "Woodland")
+lc_names <- c("Grassland", "Shrubland", "Woodland", "Other")
 
 # number of samples/ sites that should be paired per LC type
-min_size <- 15
+min_size <- 10 #start with something small, then check how many possible
 
 # number of randomization = number of pairings 
 number_times <- 1000
