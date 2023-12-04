@@ -33,10 +33,10 @@ f_extract_pa <- function(data, col_lon, col_lat, col_id, shp, col_pa){
   
   temp_pa <- temp_pa %>% 
     full_join(data %>% 
-                dplyr::select(all_of(col_id, col_lon, col_lat)) %>% 
+                dplyr::select(all_of(c(col_id, col_lon, col_lat))) %>% 
                 mutate(id.y=1:nrow(data))) %>%
     dplyr::select(-id.y) %>%
-    dplyr::select(all_of(col_id, col_lon, col_lat, PA), everything())
+    dplyr::select(all_of(c(col_id, col_lon, col_lat, "PA")), everything())
   
   return(temp_pa)
 }
@@ -66,7 +66,7 @@ f_extract_env <- function(data, col_lon, col_lat){
 }
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## Add location in or outside of protected area ####
+### Add location in or outside of protected area ####
 f_add_protect <- function(data, data_pa, col_id){
   
   # data:    focal dataframe 
@@ -98,7 +98,7 @@ f_add_protect <- function(data, data_pa, col_id){
   
   # add column with information about protected and non-protected sites
   data <- data %>% 
-    full_join(data_pa %>% dplyr::select(all_of(col_id), PA_type_min, PA_protected_min, PA_rank_min),
+    full_join(data_pa %>% dplyr::select(all_of(c(col_id, PA_type_min, PA_protected_min, PA_rank_min))),
               by=as.character(col_id)) %>%
     rename("PA" = PA_protected_min,
            "PA_type" = PA_type_min,
@@ -288,10 +288,10 @@ f_pairing <- function(data, col_id, col_lc, vars_z){
       sigma <- cov(temp_nonPA[,vars_z]) # covariance/correlation between variables
       
       # random order of PA sites
-      temp_PA <- temp_PA[order(sample(temp_PA %>% pull(col_id))),]
+      temp_PA <- temp_PA[order(f_resample(temp_PA %>% pull(all_of(col_id)), size = nrow(temp_PA))),]
       
       # add empty columns
-      temp_nonPA[,as.character(temp_PA %>% pull(col_id))] <- NA
+      temp_nonPA[,as.character(temp_PA %>% pull(all_of(col_id)))] <- NA
       
       # calculate Mahalanobis distance
       for(j in 1:nrow(temp_PA)){
@@ -306,7 +306,7 @@ f_pairing <- function(data, col_id, col_lc, vars_z){
       temp_PA[, c("nonPA", "mahal.min")]  <- NA
       #temp.col <- 0
       
-      for(k in temp_PA %>% pull(col_id) %>% sample(size = nrow(temp_PA))){
+      for(k in f_resample(temp_PA %>% pull(all_of(col_id)), size = nrow(temp_PA))){
         
         # if Mahal. distances compared to all relevant nonPA are above threshold...
         if(min(temp_nonPA[,as.character(k)])>=mahal_thres){
@@ -314,9 +314,9 @@ f_pairing <- function(data, col_id, col_lc, vars_z){
           missing_pa <- rbind(missing_pa,c(times, k))  # to know why we've stopped
           print(paste0("Not all PA sites paired. Check PA ", k, "."))
           
-          pa[pa %>% pull(col_id)==k, c("nonPA", "mahal.min")] <-
+          pa[pa %>% pull(all_of(col_id))==k, c("nonPA", "mahal.min")] <-
             cbind(NA, min(temp_nonPA[,as.character(k)]))
-          temp_PA <- temp_PA[temp_PA %>% pull(col_id)!=k,] # remove respective PA site
+          temp_PA <- temp_PA[temp_PA %>% pull(all_of(col_id))!=k,] # remove respective PA site
           
         }else{
           # select (max. 10) nonPA sites with mahalanobis distance below threshold
@@ -326,11 +326,11 @@ f_pairing <- function(data, col_id, col_lc, vars_z){
           nonPA.pair <- nonPA.pair[c(1:10),1]
           
           # sample one of the top 10 nonPA site that isn't NA 
-          temp_PA[temp_PA %>% pull(col_id)==k,"nonPA"] <- f_resample(as.numeric(nonPA.pair[!is.na(nonPA.pair)]),1)
+          temp_PA[temp_PA %>% pull(all_of(col_id))==k,"nonPA"] <- f_resample(as.numeric(nonPA.pair[!is.na(nonPA.pair)]),1)
           
           # add value of distance
-          temp_PA[temp_PA %>% pull(col_id)==k,"mahal.min"] <- unique(temp_nonPA[temp_nonPA %>% pull(col_id)==as.numeric(temp_PA[temp_PA %>% pull(col_id)==k,"nonPA"]),as.character(k)])
-          temp_nonPA <- temp_nonPA[temp_nonPA %>% pull(col_id)!=as.character(temp_PA[temp_PA %>% pull(col_id)==k,"nonPA"]),]
+          temp_PA[temp_PA %>% pull(all_of(col_id))==k,"mahal.min"] <- unique(temp_nonPA[temp_nonPA %>% pull(all_of(col_id))==as.numeric(temp_PA[temp_PA %>% pull(all_of(col_id))==k,"nonPA"]),as.character(k)])
+          temp_nonPA <- temp_nonPA[temp_nonPA %>% pull(all_of(col_id))!=as.character(temp_PA[temp_PA %>% pull(all_of(col_id))==k,"nonPA"]),]
         }
       }
       # do run again if there is an error (i.e. if no nonPA site with distance lower than threshold)
@@ -342,11 +342,11 @@ f_pairing <- function(data, col_id, col_lc, vars_z){
         temp_PA <- temp_PA %>% sample_n(size = min_size, replace = FALSE)
         
         # add to result table
-        pa[(pa %>% pull(col_id)) %in% (temp_PA %>% pull(col_id)), c("nonPA", "mahal.min")] <-
+        pa[(pa %>% pull(all_of(col_id))) %in% (temp_PA %>% pull(all_of(col_id))), c("nonPA", "mahal.min")] <-
           cbind(temp_PA[order(as.numeric(rownames(temp_PA))),c("nonPA", "mahal.min")])
         
         # add to result table to analyse all at once below
-        pa_pairs <- rbind(pa_pairs, cbind(temp_PA %>% dplyr::select(all_of(col_id), "nonPA", "mahal.min") %>% rename(ID=col_id),
+        pa_pairs <- rbind(pa_pairs, cbind(temp_PA %>% dplyr::select(all_of(c(col_id, "nonPA", "mahal.min"))) %>% rename(ID=col_id),
                                           "LC"=lc_names[i], times.with.error, times))
         
       }
