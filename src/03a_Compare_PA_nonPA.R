@@ -16,24 +16,40 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
-data_glob <- read_csv(paste0(here::here(), "/intermediates/Data_global.csv"))
-data_glob
+# temp_scale <- "global"
+# temp_scale <- "continental"
+temp_scale <- "regional"
+
+# set date of latest analysis
+if(temp_scale == "global") temp_date <- "2023-12-01"
+if(temp_scale == "continental") temp_date <- "2023-12-04"
+if(temp_scale == "regional") temp_date <- "2023-12-04"
+
+if(temp_scale == "global") lc_names <- lc_names[lc_names != "Other"]
+if(temp_scale == "continental") lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
+if(temp_scale == "regional"){
+  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
+  min_size <- 7
+}
+
+data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+data_clean
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load PA-nonPA pairs ####
-pa_pairs <- read.csv(file=paste0(here::here(), "/intermediates/Pairs_paNonpa_1000trails_global.csv"))
+pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale, "/Pairs_paNonpa_1000trails_", temp_date,".csv"))
 head(pa_pairs)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Compare difference between PA and nonPA sites ####
 # using Cohen's D
-d_list <- f_compare_pa_nonpa(data = data_glob,
+d_list <- f_compare_pa_nonpa(data = data_clean,
                              data_pairs = pa_pairs,
-                             col_id = "Order_ID",
+                             col_id = "SampleID",
                              col_fns = fns)
 head(d_list)
 
 ## Save total df with effect sizes 
-save(d_list,  file=paste0(here::here(), "/results/d_1000_trails_global.RData"))
+save(d_list,  file=paste0(here::here(), "/results/d_1000_trails_", temp_scale, ".RData"))
 
 
