@@ -11,6 +11,7 @@ library(tidyverse)
 library(terra)
 library(ggdist) #to plot distributions (Bayesian)
 library(gridExtra) #to add table in plot
+library(ggrepel) #to add text not overlapping (geom_text_repel)
 
 # load background map
 world.inp <- map_data("world")
@@ -18,20 +19,24 @@ world.inp <- map_data("world")
 source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
 
+temp_scale <- "global"
+#temp_scale <- "continental"
+#temp_scale <- "regional"
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
-data_glob <- read_csv(paste0(here::here(), "/intermediates/Data_global.csv"))
-data_glob
+data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+data_clean
 
 # load pairs of PA and nonPA
-pa_pairs <- read.csv(file=paste0(here::here(), "/intermediates/Pairs_paNonpa_1000trails_global.csv"))
+pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/Pairs_paNonpa_1000trails_", temp_scale, ".csv"))
 head(pa_pairs)
 
 # load effect sizes
-load(file=paste0(here::here(), "/results/d_1000_trails_global.RData")) #d_list
+load(file=paste0(here::here(), "/results/d_1000_trails_", temp_scale, ".RData")) #d_list
 
 # load Bayesian results from PA_type comparison
-load(file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_global.RData")) #pars_sample
+load(file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_", temp_scale, ".RData")) #pars_sample
 
 #pars_sample <- pars_sample %>% group_by(fns, lc) %>% slice_sample(n=10000)
 
@@ -40,22 +45,27 @@ load(file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_global.RData")
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # extract list of sampling locations actually used in comparison
-data_locations <- data_glob %>% 
-  filter(Order_ID %in% unique(pa_pairs$ID) | 
-         Order_ID %in% unique(pa_pairs$nonPA)) %>%
-  dplyr::select(Longitude_c,Latitude_c,Order_ID, PA, LC)
-data_locations #nrow=262
-nrow(data_locations %>% filter(PA==1)) #68 PAs
+data_locations <- data_clean %>% 
+  filter(SampleID %in% unique(pa_pairs$ID) | 
+         SampleID %in% unique(pa_pairs$nonPA)) %>%
+  dplyr::select(Longitude,Latitude,SampleID, PA, LC)
+data_locations #G: nrow=262
+nrow(data_locations %>% filter(PA==1)) #G: 62 PAs
+nrow(data_locations %>% filter(PA==0)) #G: 200 PAs
 
 ggplot()+
-  geom_map(data = world.inp, map = world.inp, aes(map_id = region),  show.legend = FALSE, fill = "grey80", color="grey75") +
+  geom_map(data = world.inp, map = world.inp, aes(map_id = region),  show.legend = FALSE, 
+           fill="white", color = "grey90", linewidth = 0.15) + #fill = "grey80", color="grey75"
   xlim(-180, 180) +
   ylim(-180, 180) +
   
-  geom_point(data=data_locations, aes(x=Longitude_c, y=Latitude_c, shape=as.character(PA), color=LC), size=2)+
-  scale_shape_manual(values = c(1,4))+ #label = c("Protected", "Unprotected")
-  scale_color_manual(values = c("gold3", "limegreen", "forestgreen"))+
-  
+  geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
+                                      shape = as.character(PA), color=LC, 
+                                      size = as.character(PA)))+
+  scale_shape_manual(values = c(19,1))+ #label = c("Protected", "Unprotected")
+  scale_size_manual(values = c(0.6,1.2))+
+  scale_color_manual(values = c("#E69F00", "#0072B2", "#009E73", "#000000"))+ #"#56B4E9",
+  coord_map()+
   theme_bw()+
   theme(axis.title = element_blank(), legend.title = element_blank(),
         legend.position ="right",
@@ -64,10 +74,58 @@ ggplot()+
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
-        panel.background = element_blank())
-ggsave(filename=paste0(here::here(), "/figures/Data_locations_global.png"),
+        panel.background = element_rect(fill= "grey80"))
+ggsave(filename=paste0(here::here(), "/figures/Data_locations_", temp_scale,".png"),
        plot = last_plot())
 
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Pairing ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+## Save some numbers
+sink(paste0(here::here(), "/results/Numbers_", temp_scale, ".txt"))
+
+print(temp_scale)
+# look what non-protected sites have (not) been paired to any PA
+cat("Number of non-protected sites have never been paired to any PA:")
+hist(table(pa_pairs$nonPA))  # frequency distribution of the use of sites from all runs
+length(setdiff(data_clean[data_clean$PA==0,]$SampleID, pa_pairs$nonPA))  
+# nonPA sites never used: G 131
+
+cat(paste0("On average, each protected and unprotected site was used in ",
+           round(mean(table(pa_pairs$ID)),0), 
+           " (SD=", round(sd(table(pa_pairs$ID)),0),
+           ", min=", round(min(table(pa_pairs$ID)),0),
+           ", max=", round(max(table(pa_pairs$ID)),0), ") and ",
+           round(mean(table(pa_pairs$nonPA)),0),
+           " (SD=", round(sd(table(pa_pairs$nonPA)),0),
+           ", min=", round(min(table(pa_pairs$nonPA)),0),
+           ", max=", round(max(table(pa_pairs$nonPA)),0), 
+           ") of the 1000 randomizations, respectively."))
+
+# cat("Mean number of nonPA sites per PA.")
+# mean(table(pa_pairs$nonPA))
+# 
+# cat("SD number of nonPA sites per PA.")
+# sd(table(pa_pairs$nonPA))
+# 
+# cat("Min/max number of nonPA sites per PA.")
+# min(table(pa_pairs$nonPA))
+# max(table(pa_pairs$nonPA))
+# 
+# cat("Mean/SD/min/max number of times individual PA were used.")
+# mean(table(pa_pairs$ID))
+# sd(table(pa_pairs$ID))
+# min(table(pa_pairs$ID))
+# max(table(pa_pairs$ID))
+
+table(pa_pairs$ID)
+
+cat("Number of sites (PA/ nonPA) per LC.")
+pa_pairs %>% group_by(LC) %>% dplyr::select(ID) %>% unique() %>% count()
+pa_pairs %>% group_by(LC) %>% dplyr::select(nonPA) %>% unique() %>% count()
+
+sink()
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Boxplot mahalanobis distance ####
@@ -80,7 +138,7 @@ ggplot(pa_pairs, aes(x = LC, y = mahal.min, fill = LC))+
   labs(x="Land-cover type",y="Mahalanobis distance") +
   theme(axis.text.x=element_text(size=15),text = element_text(size=20),  
         legend.position = "none", axis.text.y = element_text(size=15), legend.title = element_blank())+
-  scale_fill_manual(values=c("gold3", "limegreen", "forestgreen"))
+  scale_fill_manual(values=c("#E69F00", "#0072B2", "#009E73", "#000000")) #"gold3", "limegreen", "forestgreen"
 ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_mahal.distance_global.png"),
        plot = last_plot())
 
@@ -127,9 +185,9 @@ d_df <- d_df %>% full_join(fns_labels, by=c("fns"="Function")) %>%
 #        plot = last_plot())
 
 # save data for plot
-write.csv(d_df, file=paste0(here::here(), "/figures/Data_pointrange_d-value_global.csv"), row.names = FALSE)
+write.csv(d_df, file=paste0(here::here(), "/figures/Data_pointrange_d-value_", temp_scale, ".csv"), row.names = FALSE)
 
-d_df <- read.csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_global.csv"))
+d_df <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_", temp_scale, ".csv"))
 
 d_summary <- d_df %>% 
   dplyr::select(-run) %>%
@@ -142,10 +200,10 @@ d_summary <- d_df %>%
                                        "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
                                        "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE))))
 d_summary
-write.csv(d_summary, file=paste0(here::here(), "/figures/Results_pointrange_d-value_summary_global.csv"))
+write.csv(d_summary, file=paste0(here::here(), "/figures/Results_pointrange_d-value_summary_", temp_scale, ".csv"))
 
 # mean per lc type
-d_summary <- read.csv(file=paste0(here::here(), "/figures/Results_pointrange_d-value_summary_global.csv"))
+d_summary <- read.csv(file=paste0(here::here(), "/figures/Results_pointrange_d-value_summary_", temp_scale, ".csv"))
 
 d_summary %>% ungroup() %>% group_by(lc) %>% 
   summarize(across(c(effect_median, effect_ci_2.5:effect_ci_97.5), 
@@ -164,7 +222,7 @@ d_summary %>% ungroup() %>% group_by(Group_function) %>%
 # check for significant mean p-values
 #d_summary %>% arrange(p_value_mean)
 
-sink(file=paste0(here::here(), "/results/D-values_global.txt"))
+sink(file=paste0(here::here(), "/results/D-values_", temp_scale, ".txt"))
 cat("#################################################", sep="\n")
 cat("##  Significant d-values from global analysis  ##", sep="\n")
 cat(paste0("##  Sys.Date() ", Sys.Date(), "  ##"), sep="\n")
@@ -172,15 +230,17 @@ cat("#################################################", sep="\n")
 print(d_summary %>% ungroup() %>%
   filter(abs(effect_mean) >= 0.2) %>%
   dplyr::select(lc, fns, starts_with("effect")) %>%
-    arrange(effect_median),
-  n=nrow(d_summary %>% filter(abs(effect_mean) >= 0.2))) #for print() command
+    arrange(desc(abs(effect_median))),
+  #n=nrow(d_summary %>% filter(abs(effect_mean) >= 0.2))
+  ) #for print() command
 sink()
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Pointrange effect size per LC type ####
 # with confidence intervals 
-
-ggplot(data = d_df %>% mutate(Label=factor(Label, levels = rev(fns_labels$Label))), 
+ggplot(data = d_df %>% 
+         filter(lc %in% lc_names) %>%
+         mutate(Label=factor(Label, levels = rev(fns_labels$Label))), 
        aes(y = effect, x = Label))+
   
   geom_hline(aes(yintercept=0.8, linetype = "-0.8 / 0.8"), color="grey60")+
@@ -195,10 +255,11 @@ ggplot(data = d_df %>% mutate(Label=factor(Label, levels = rev(fns_labels$Label)
                                    "-0.2 / 0.2" = "solid"), name="Strength of effect")+
   annotate("rect", ymin = -0.2, ymax = 0.2, xmin=-Inf, xmax=Inf, fill = "grey95")+
 
-  # fill background of Group_function
-  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=Inf, fill = "chocolate4", alpha=0.1)+
-  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=11+0.5, fill = "chocolate4", alpha=0.1)+
-  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=4+0.5, fill = "chocolate4", alpha=0.1)+
+  # fill background of Group_function (code order matters)
+  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=Inf, fill = "grey", alpha=0.1)+ #chocolate4
+  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=15+0.5, fill = "grey", alpha=0.1)+
+  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=8+0.5, fill = "grey", alpha=0.1)+
+  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=4+0.5, fill = "grey", alpha=0.1)+
   
   ggdist::stat_pointinterval(fatten_point=1.2, shape=21) +
   coord_flip()+
@@ -210,29 +271,166 @@ ggplot(data = d_df %>% mutate(Label=factor(Label, levels = rev(fns_labels$Label)
         axis.text.x = element_text(size=10),
         panel.grid.minor = element_blank(),
         panel.grid.major.y = element_blank(),
-        strip.background = element_rect(fill="chocolate4"),
-        strip.text = element_text(color="white"))
-ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_global.png"),
+        strip.background = element_rect(fill="white"), #chocolate4
+        strip.text = element_text(color="black")) #white
+ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_", temp_scale, ".png"),
        plot = last_plot(),
        width=5, height=4)
 
+## different visualisation in grid
+# ggplot(data = d_summary %>% 
+#          filter(lc %in% lc_names), 
+#        aes(y = effect_ci_17, x = effect_ci_83, 
+#            #color=as.factor(sign(effect_median))
+#            ))+
+# 
+#   # geom_vline(aes(xintercept=0.8, linetype = "0.8"), color="grey60")+
+#   # geom_vline(aes(xintercept=0.5, linetype = "0.5"), color="grey60")+
+#   # geom_vline(aes(xintercept=0.2, linetype = "0.2"), color="grey60")+
+#   # scale_linetype_manual(values = c("0.8" = "dotted",
+#   #                                  "0.5" = "dashed",
+#   #                                  "0.2" = "solid"),
+#   #                       name="Strength of effect")+
+#   #annotate("rect", ymin = 0, ymax = 0.2, xmin=0, xmax=0.2, fill = "grey", alpha=0.1)+ #chocolate4
+#   annotate("rect", ymin = -0.2, ymax = 0.2, xmin=-0.2, xmax=0.2, fill = "grey", alpha=0.3)+
+#   annotate("rect", ymin = -0.5, ymax = 0.5, xmin=-0.5, xmax=0.5, fill = "grey", alpha=0.3)+
+#   annotate("rect", ymin = -0.8, ymax = 0.8, xmin=-0.8, xmax=0.8, fill = "grey", alpha=0.3)+
+#   
+#   geom_abline(slope = -1, intercept = 0, linetype = "dashed", color = "grey")+
+#   
+#   # geom_pointrange(aes(xmin = abs(effect_ci_2.5), xmax = abs(effect_ci_97.5),
+#   #                     shape = Group_function))+
+#   # geom_linerange(aes(xmin = ifelse(sign(effect_ci_17) != sign(effect_ci_83), 
+#   #                                  abs(effect_ci_17)), xmax = abs(effect_ci_83),
+#   #                     #shape = Group_function
+#   #                    ), linewidth=1, alpha = 0.2)+
+#   geom_point(aes(color = Group_function), size = 5)+
+#   ggrepel::geom_text_repel(aes(label = Label, color = Group_function), size = 3)+
+#   #geom_text(aes(label = Label), size = 1.5, nudge_y = 0.005)+
+#   
+#   xlab("Upper CI (83%)")+ ylab("Lower CI (17%)")+
+#   scale_y_continuous(breaks = c())+
+#   scale_x_continuous(breaks = c())+
+#   # scale_y_continuous(limits = c(0, 0.7),
+#   #                    expand = c(0,0), breaks = c(0, 0.25, 0.5))+
+#   #scale_color_manual(c(""))+
+#   
+#   facet_wrap(vars(lc), scales = "free")+
+#   theme_bw() + # use a white background
+#   theme(legend.position = "bottom", 
+#         legend.direction = "vertical",
+#         #axis.title.y =element_blank(),
+#         axis.text.y = element_text(size=10),  
+#         axis.text.x = element_text(size=10),
+#         #panel.grid.major.y = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         strip.background = element_rect(fill="white"), #chocolate4
+#         strip.text = element_text(color="black")) #white
+# ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianSD_", temp_scale, ".png"),
+#        plot = last_plot())
+
+## one-sided
+ggplot(data = d_summary %>%
+         filter(lc %in% lc_names) %>%
+         mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
+                                         abs(effect_ci_17), 
+                                         abs(effect_ci_83))),
+       aes(y = abs(effect_ci_min66), x = abs(effect_median),
+           color=as.factor(sign(effect_median))
+           ))+
+
+  # geom_vline(aes(xintercept=0.8, linetype = "0.8"), color="grey60")+
+  # geom_vline(aes(xintercept=0.5, linetype = "0.5"), color="grey60")+
+  # geom_vline(aes(xintercept=0.2, linetype = "0.2"), color="grey60")+
+  # scale_linetype_manual(values = c("0.8" = "dotted",
+  #                                  "0.5" = "dashed",
+  #                                  "0.2" = "solid"),
+  #                       name="Strength of effect")+
+  #annotate("rect", ymin = 0, ymax = 0.2, xmin=0, xmax=0.2, fill = "grey", alpha=0.1)+ #chocolate4
+  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.2, fill = "grey", alpha=0.3)+
+  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.5, fill = "grey", alpha=0.3)+
+  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.8, fill = "grey", alpha=0.3)+
+
+  # geom_pointrange(aes(xmin = abs(effect_ci_2.5), xmax = abs(effect_ci_97.5),
+  #                     shape = Group_function))+
+  # geom_linerange(aes(xmin = ifelse(sign(effect_ci_17) != sign(effect_ci_83),
+  #                                  abs(effect_ci_17)), xmax = abs(effect_ci_83),
+  #                     #shape = Group_function
+  #                    ), linewidth=1, alpha = 0.2)+
+  geom_point(aes(shape = Group_function), size = 5)+
+  ggrepel::geom_text_repel(aes(label = Label, shape = Group_function), size = 3)+
+  #geom_text(aes(label = Label), size = 1.5, nudge_y = 0.005)+
+
+  xlab("Median effect")+ ylab("Lower CI (17%)")+
+  scale_y_continuous(breaks = c(0.2, 0.5, 0.8))+
+  scale_x_continuous(breaks = c(0.2, 0.5, 0.8))+
+  # scale_y_continuous(limits = c(0, 0.7),
+  #                    expand = c(0,0), breaks = c(0, 0.25, 0.5))+
+  #scale_color_manual(c(""))+
+
+  facet_wrap(vars(lc), scales = "free")+
+  theme_bw() + # use a white background
+  theme(legend.position = "bottom",
+        legend.direction = "vertical",
+        #axis.title.y =element_blank(),
+        axis.text.y = element_text(size=10),
+        axis.text.x = element_text(size=10),
+        #panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.background = element_rect(fill="white"), #chocolate4
+        strip.text = element_text(color="black")) #white
+ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianSD_", temp_scale, ".png"),
+       plot = last_plot())
+
+## heatmap
+ggplot(data = d_summary %>%
+         filter(lc %in% lc_names) %>%
+         mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
+                                         abs(effect_ci_17), 
+                                         abs(effect_ci_83))) %>%
+         mutate(effect_ci_min66f = cut(effect_ci_min66,
+                                       breaks=c(0, 0.2, 0.5, 0.8, Inf),
+                                       labels=c("ns", "small", "medium", "large"))) %>%
+         filter(!is.na(effect_ci_min66)),
+       aes(x = lc, y = Label, alpha=effect_ci_min66f, 
+           fill=as.factor(sign(effect_median))))+
+
+  geom_tile()+
+  scale_fill_manual(values = c("-1" = "#fc8d59", "0" = "#ffffbf", "1" = "#91bfdb"),
+                    name = "Direction of effect")+
+  scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
+                     name = "Minimum effect size (66% CI)")+
+  theme_bw() + # use a white background
+  theme(legend.position = "bottom",
+        legend.direction = "vertical",
+        #axis.title.y =element_blank(),
+        axis.text.y = element_text(size=10),
+        axis.text.x = element_text(size=10),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.background = element_rect(fill="white"), #chocolate4
+        strip.text = element_text(color="black")) #white
+ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianSD_", temp_scale, ".png"),
+       plot = last_plot())
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Boxplots values ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # extract list of sampling locations actually used in comparison
-data_values <- data_glob %>% 
-  filter(Order_ID %in% unique(pa_pairs$ID) | 
-         Order_ID %in% unique(pa_pairs$nonPA)) %>%
-  dplyr::select(Order_ID, PA, LC, all_of(fns)) %>%
-  mutate(across(fns, .fns = function(x) { (x - mean(x)) / sd(x)})) %>%
+data_values <- data_clean %>% 
+  filter(SampleID %in% unique(pa_pairs$ID) | 
+         SampleID %in% unique(pa_pairs$nonPA)) %>%
+  dplyr::select(SampleID, PA, LC, all_of(fns)) %>%
+  mutate(across(all_of(fns), .fns = function(x) { (x - mean(x)) / sd(x)})) %>%
   
   pivot_longer(cols = c(fns), names_to = "fns") %>%
   full_join(fns_labels, by=c("fns"="Function")) %>%
   mutate("Label" = factor(Label, levels = rev(fns_labels$Label)),
          "Organism" = factor(Organism, levels = unique(fns_labels$Organism)))
 data_values
+
+data_values <- data_values %>% filter(LC %in% lc_names)
 
 ggplot(data_values, aes(x = Label, y = value)) +
   geom_hline(yintercept = 0, lty="dashed", color="grey60") +
@@ -241,14 +439,56 @@ ggplot(data_values, aes(x = Label, y = value)) +
   #scale_y_continuous(limits=c(-3,13)) + 
   
   xlab("")+ ylab("")+
-  facet_wrap(vars(LC), ncol=1, nrow=3)+
+  facet_wrap(vars(LC), ncol=1, nrow=4)+
   theme_bw() +
   theme(axis.text.x=element_text(size=5, angle=45, hjust=1),
         panel.grid.minor.y = element_blank(), panel.grid.major.x = element_blank(),
         legend.position = "none", legend.text = element_text(size=15), axis.text.y = element_text(size=15))
-ggsave(filename=paste0(here::here(), "/figures/Results_boxplot_estimates_global.png"),
+ggsave(filename=paste0(here::here(), "/figures/Results_boxplot_estimates_", temp_scale, ".png"),
        plot = last_plot())
 
+
+# #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# ## Combine all 3 scales into one ####
+# #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# 
+# d_df_glob <- read.csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_global.csv"))
+# d_df_cont <- read.csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_continental.csv"))
+# d_df_regi <- read.csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_regional.csv"))
+# 
+# # heatmap
+# 
+# ggplot(data = d_df %>% 
+#          filter(lc %in% lc_names) %>%
+#          mutate(Label=factor(Label, levels = rev(fns_labels$Label))), 
+#        aes(y = effect, x = Label))+
+#   
+#   geom_hline(aes(yintercept=0.8, linetype = "-0.8 / 0.8"), color="grey60")+
+#   geom_hline(aes(yintercept=-0.8, linetype = "-0.8 / 0.8"), color="grey60")+ #large effect
+#   geom_hline(aes(yintercept=0.5, linetype = "-0.5 / 0.5"), color="grey60")+
+#   geom_hline(aes(yintercept=-0.5, linetype = "-0.5 / 0.5"), color="grey60")+ #medium effect
+#   geom_hline(aes(yintercept=0.2, linetype = "-0.2 / 0.2"), color="grey90")+ #small effect
+#   geom_hline(aes(yintercept=-0.2, linetype = "-0.2 / 0.2"), color="grey90")+
+#   #geom_hline(aes(yintercept=0, linetype = "0"))+
+#   scale_linetype_manual(values = c("-0.8 / 0.8" = "dotted",
+#                                    "-0.5 / 0.5" = "dashed", 
+#                                    "-0.2 / 0.2" = "solid"), name="Strength of effect")+
+#   annotate("rect", ymin = -0.2, ymax = 0.2, xmin=-Inf, xmax=Inf, fill = "grey95")+
+#   
+#   ggdist::stat_pointinterval(fatten_point=1.2, shape=21) +
+#   coord_flip()+
+#   ylab("Effect size")+
+#   facet_wrap(vars(lc))+
+#   theme_bw() + # use a white background
+#   theme(legend.position = "bottom", axis.title.y =element_blank(),
+#         axis.text.y = element_text(size=10),  
+#         axis.text.x = element_text(size=10),
+#         panel.grid.minor = element_blank(),
+#         panel.grid.major.y = element_blank(),
+#         strip.text = element_text(color="white"))
+# ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_allScales.png"),
+#        plot = last_plot(),
+#        width=5, height=4)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Bayesian results (PA types) ####
@@ -277,23 +517,21 @@ pars_summary <- pars_long %>% group_by(lc, fns) %>%
                                "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE)))) %>%
   arrange(lc, fns)
 pars_summary
-write.csv(pars_summary, file=paste0(here::here(), "/figures/Results_pointrange_parsBayesian_summary_global.csv"),
-          row.names=FALSE)
+write_csv(pars_summary, file=paste0(here::here(), "/figures/Results_pointrange_parsBayesian_summary_", temp_scale, ".csv"))
 
 # extract sample size
-n_table <- data_glob %>% filter(LC!="Other") %>%
+n_table <- data_clean %>% filter(LC!="Other") %>%
   group_by(LC, PA, PA_type, PA_rank) %>% count() %>%
   pivot_wider(id_cols = c("PA", "PA_type", "PA_rank"), 
               names_from = LC, values_from = n) %>% 
   arrange(PA_rank) %>% ungroup() %>%
   dplyr::select(-PA_rank)
 n_table
-write.csv(n_table, file=paste0(here::here(), "/figures/Results_pointrange_parsBayesian_nTable_global.csv"),
-          row.names=FALSE)
+write_csv(n_table, file=paste0(here::here(), "/figures/Results_pointrange_parsBayesian_nTable_", temp_scale, ".csv"))
 
-plot_all <- ggplot(pars_long %>% filter(!is.na(Label)) %>%
+plot_all <- ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
                      # add number of sizes to plot
-                     rbind(data_glob %>% filter(LC!="Other") %>%
+                     rbind(data_clean %>% filter(LC!="Other") %>%
                              group_by(LC, PA_type) %>% count() %>%
                              rename(lc=LC, value=n) %>%
                              mutate(fns="Number of sites",
@@ -314,13 +552,13 @@ plot_all <- ggplot(pars_long %>% filter(!is.na(Label)) %>%
                              position=position_dodgejust(width=0.5))+ 
   facet_wrap(vars(Label_fns), scales = "free_x")+
   
-  scale_color_manual(values=c("gold3", "limegreen", "forestgreen"), name="Land-cover type")+
+  scale_color_manual(values=c("#E69F00", "#0072B2", "#009E73", "#000000"), name="Land-cover type")+
   ylab("")+ xlab("")+
   theme_bw()+
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.y = element_blank(),
         legend.position = c(0.8, 0.12))
 plot_all
-ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_parsBayesian_global.png"),
+ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_parsBayesian_", temp_scale, ".png"),
        plot = last_plot(),
        width=10, height=10)
