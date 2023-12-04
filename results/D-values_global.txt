@@ -1,45 +1,54 @@
 #################################################
 ##  Significant d-values from global analysis  ##
-##  Sys.Date() 2023-03-24  ##
+##  Sys.Date() 2023-12-01  ##
 #################################################
-# A tibble: 36 × 9
-   lc        fns                  effec…¹ effec…² effec…³ effect…⁴ effect…⁵ effect…⁶ effect…⁷
-   <chr>     <chr>                  <dbl>   <dbl>   <dbl>    <dbl>    <dbl>    <dbl>    <dbl>
- 1 Shrubland Diss_invert_std       -1.11    0.273  -1.08  -1.58    -1.36    -0.855   -0.669  
- 2 Shrubland Diss_Fungi_std        -0.873   0.237  -0.845 -1.31    -1.10    -0.659   -0.455  
- 3 Woodland  Richness_bacteria     -0.783   0.317  -0.770 -1.31    -1.08    -0.479   -0.243  
- 4 Grassland Decomposers_18s_ric…  -0.713   0.261  -0.707 -1.14    -0.960   -0.461   -0.237  
- 5 Grassland Nutrient_service      -0.671   0.196  -0.686 -0.967   -0.850   -0.489   -0.248  
- 6 Shrubland Nutrient_service      -0.626   0.173  -0.637 -0.889   -0.788   -0.468   -0.248  
- 7 Shrubland Water_regulation_se…  -0.524   0.232  -0.540 -0.874   -0.732   -0.320   -0.00575
- 8 Shrubland Diss_Bacteria_std     -0.486   0.247  -0.459 -0.928   -0.681   -0.261   -0.0832 
- 9 Grassland Fungi_18s_richness    -0.442   0.262  -0.430 -0.882   -0.687   -0.189    0.0155 
-10 Grassland Protist_18s_richness  -0.427   0.280  -0.419 -0.877   -0.684   -0.154    0.117  
-11 Woodland  Water_regulation_se…  -0.414   0.262  -0.416 -0.840   -0.647   -0.168    0.0911 
-12 Woodland  Protist_18s_richness  -0.347   0.307  -0.326 -0.876   -0.627   -0.0702   0.238  
-13 Shrubland Diss_Protists_std     -0.302   0.228  -0.294 -0.716   -0.512   -0.0976   0.120  
-14 Grassland Diss_invert_std       -0.286   0.272  -0.270 -0.757   -0.545   -0.0306   0.224  
-15 Woodland  Fungi_18s_richness    -0.245   0.307  -0.234 -0.771   -0.527    0.0535   0.337  
-16 Shrubland Pathogen_control      -0.305   0.317  -0.230 -0.886   -0.634   -0.00696  0.184  
-17 Grassland OM_decomposition_se…  -0.206   0.270  -0.224 -0.603   -0.457    0.0421   0.414  
-18 Shrubland Ectomycorrhizal_18s…   0.228   0.218   0.217 -0.106    0.0365   0.415    0.721  
-19 Shrubland Soil_stability_serv…   0.226   0.229   0.219 -0.135    0.0207   0.434    0.690  
-20 Shrubland Soil_carbon_service    0.277   0.306   0.240 -0.169   -0.0175   0.587    0.937  
-21 Woodland  Invertebrate_18s_ri…   0.283   0.315   0.269 -0.213   -0.00729  0.576    0.921  
-22 Woodland  OM_decomposition_se…   0.268   0.256   0.296 -0.175    0.0395   0.499    0.713  
-23 Woodland  Arbuscular_mycorrhi…   0.260   0.286   0.297 -0.271    0        0.521    0.727  
-24 Woodland  Diss_invert_std        0.335   0.308   0.324 -0.135    0.0376   0.621    0.962  
-25 Grassland Diss_Protists_std      0.322   0.236   0.330 -0.0786   0.0892   0.543    0.777  
-26 Grassland Diss_Fungi_std         0.346   0.256   0.343 -0.0601   0.0928   0.601    0.867  
-27 Woodland  Diss_Fungi_std         0.382   0.312   0.378 -0.103    0.0923   0.683    0.994  
-28 Woodland  Pathogen_control       0.335   0.260   0.379 -0.184    0.0939   0.562    0.756  
-29 Grassland Invertebrate_18s_ri…   0.393   0.245   0.379  0.00334  0.174    0.630    0.886  
-30 Woodland  Diss_Protists_std      0.492   0.301   0.475  0.0141   0.209    0.787    1.10   
-31 Woodland  Diss_Bacteria_std      0.601   0.303   0.588  0.127    0.321    0.882    1.25   
-32 Shrubland Richness_bacteria      0.640   0.257   0.603  0.288    0.406    0.873    1.23   
-33 Shrubland Decomposers_18s_ric…   0.717   0.225   0.701  0.379    0.506    0.930    1.19   
-34 Shrubland Arbuscular_mycorrhi…   1.12    0.306   1.09   0.676    0.842    1.41     1.81   
-35 Shrubland Invertebrate_18s_ri…   1.12    0.240   1.11   0.752    0.883    1.36     1.62   
-36 Shrubland Fungi_18s_richness     1.38    0.277   1.35   0.966    1.11     1.62     2.01   
-# … with abbreviated variable names ¹​effect_mean, ²​effect_SD, ³​effect_median,
-#   ⁴​effect_ci_2.5, ⁵​effect_ci_17, ⁶​effect_ci_83, ⁷​effect_ci_97.5
+          lc                            fns effect_mean effect_SD effect_median effect_ci_2.5 effect_ci_17 effect_ci_83 effect_ci_97.5
+1  Shrubland          Invertebrate_richness   1.5298641 0.4164908     1.4883807    0.92959091  1.133841325  1.935546552     2.49217109
+2  Shrubland                 Fungi_richness   1.4399701 0.4942836     1.3708188    0.76792525  0.984737302  1.915271870     2.55696374
+3  Shrubland              Nematode_richness   1.3658790 0.4310228     1.3252018    0.74092373  0.972666060  1.743318735     2.35372318
+4  Shrubland               Fungi_shannonDiv   1.3563664 0.5245119     1.2529585    0.70647785  0.904202711  1.752372519     2.78189445
+5  Shrubland Arbuscularmycorrhizal_richness   1.3053171 0.4879127     1.2389640    0.62162888  0.866232320  1.751733427     2.48867952
+6  Shrubland            Decomposer_richness   1.2086307 0.4012934     1.1561020    0.63381309  0.834320924  1.576144847     2.08129418
+7  Shrubland              Fungi_JaccDist_av  -1.2858396 0.5616842    -1.0933240   -2.34698842 -1.905967282 -0.796863599    -0.54118445
+8  Grassland          Invertebrate_richness   1.0615308 0.3547078     1.0801164    0.45046066  0.688538070  1.393471396     1.74478203
+9  Shrubland       Invertebrate_JaccDist_av  -1.1293318 0.4259833    -1.0769502   -1.89476515 -1.553478930 -0.731596161    -0.45458072
+10 Grassland       Invertebrate_JaccDist_av  -0.9652762 0.3746054    -0.9535753   -1.63810481 -1.312171205 -0.614200635    -0.31012670
+11 Shrubland        Invertebrate_shannonDiv   0.9503226 0.3649770     0.9342107    0.40176688  0.601810519  1.307738480     1.69006712
+12  Woodland                 Bac_shannonDiv  -0.8529192 0.4602538    -0.8115507   -1.60270412 -1.284961062 -0.440679328    -0.06047836
+13 Shrubland                 Bac_shannonDiv   0.8518530 0.4167886     0.7659914    0.26770811  0.463602534  1.297045843     1.74297969
+14 Grassland              Nematode_richness   0.6595101 0.3542721     0.6785444    0.05012581  0.295354947  0.989081378     1.33089108
+15  Woodland                   Bac_richness  -0.7041740 0.4037758    -0.6737942   -1.39199682 -1.088931269 -0.320631846     0.02226365
+16 Shrubland               Nutrient_service  -0.6322618 0.2635099    -0.6582504   -1.01998407 -0.861579568 -0.405951199    -0.04013496
+17  Woodland                Bac_JaccDist_av   0.6402366 0.4255684     0.6177199   -0.02612401  0.248358631  1.039378112     1.56429093
+18 Shrubland            Soil_carbon_service   0.6753464 0.4703730     0.5893236    0.03309653  0.223764443  1.151274433     1.70948180
+19 Grassland               Nutrient_service  -0.5437301 0.3246357    -0.5738031   -0.97912940 -0.835251223 -0.283750949     0.21382832
+20 Grassland                Bac_JaccDist_av   0.6850519 0.5239495     0.5734346    0.02105274  0.220601969  1.172290325     1.87204178
+21 Shrubland                Bac_JaccDist_av  -0.6775090 0.4696422    -0.5727860   -1.68088844 -1.049414211 -0.273131407    -0.02225908
+22 Grassland                 Fungi_richness   0.5564092 0.3506753     0.5681926   -0.01350645  0.194446606  0.898915280     1.18955839
+23 Shrubland             Protist_shannonDiv   0.5696019 0.3662855     0.5669388   -0.01094714  0.217458273  0.894996233     1.35131158
+24 Shrubland            Protist_JaccDist_av  -0.6671920 0.4705913    -0.5610878   -1.53786422 -1.162441947 -0.250338323     0.02288686
+25 Grassland             Protist_shannonDiv   0.5215076 0.3564953     0.5419052   -0.08706190  0.169034597  0.858000361     1.16613051
+26 Grassland       Ectomycorrhizal_richness   0.5362294 0.2983918     0.5399738    0.06326452  0.235983857  0.813648648     1.10008277
+27 Shrubland       Ectomycorrhizal_richness   0.5466264 0.3642885     0.5210241    0.02211063  0.204649422  0.877343200     1.34031356
+28 Grassland               Pathogen_control   0.5102517 0.3301820     0.5158605   -0.03449204  0.197832361  0.831049240     1.15907559
+29  Woodland       Water_regulation_service  -0.4585377 0.3948163    -0.4595417   -1.09397892 -0.832551173 -0.074938128     0.28038614
+30 Shrubland       Water_regulation_service  -0.4170995 0.3457409    -0.4422328   -0.93677633 -0.735747397 -0.093360801     0.35733966
+31 Shrubland                   Bac_richness   0.4510784 0.3898194     0.4101636   -0.12527927  0.098408602  0.809709418     1.35246880
+32 Grassland              Fungi_JaccDist_av  -0.3828489 0.3048136    -0.3932132   -0.87177038 -0.655633961 -0.092123326     0.24777555
+33 Grassland Arbuscularmycorrhizal_richness   0.3966876 0.3663514     0.3883961   -0.19365389  0.040627876  0.738144300     1.11700253
+34 Shrubland               Protist_richness   0.4345445 0.4345922     0.3860461   -0.18615409  0.037858999  0.812486984     1.49528987
+35 Shrubland               Pathogen_control   0.3816628 0.3626143     0.3769435   -0.22120766  0.044017734  0.725029248     1.06705384
+36  Woodland          Invertebrate_richness   0.3869121 0.4273156     0.3708291   -0.26689201 -0.008481576  0.801218471     1.25102628
+37  Woodland            Decomposer_richness  -0.3919385 0.4590117    -0.3675671   -1.19018685 -0.816626677  0.036441999     0.43828193
+38  Woodland            Protist_JaccDist_av   0.3837292 0.4376130     0.3602497   -0.28168364 -0.034510094  0.801545287     1.21868033
+39 Grassland         Soil_stability_service  -0.3426030 0.3085875    -0.3394765   -0.86099027 -0.626794812 -0.058384833     0.24793753
+40 Grassland            Protist_JaccDist_av  -0.3181665 0.3306117    -0.3294833   -0.84511274 -0.622632151  0.007989463     0.31331743
+41  Woodland               Pathogen_control  -0.2745383 0.4042586    -0.3078818   -0.85845839 -0.645592543  0.085249873     0.62949905
+42 Grassland               Protist_richness   0.3143251 0.3585684     0.3054974   -0.23150062 -0.038095937  0.655600575     1.06636952
+43  Woodland       OM_decomposition_service   0.2522640 0.3669051     0.2865655   -0.38140969 -0.075592171  0.569318144     0.89843356
+44 Grassland            Decomposer_richness   0.2581499 0.3354720     0.2638279   -0.29268941 -0.070002554  0.597078888     0.84251031
+45  Woodland              Fungi_JaccDist_av   0.2460217 0.4684679     0.2178477   -0.46434331 -0.195358855  0.671334545     1.24690212
+46  Woodland             Protist_shannonDiv  -0.2131047 0.4040070    -0.2167979   -0.86687540 -0.584360599  0.157376416     0.60809549
+47  Woodland        Invertebrate_shannonDiv  -0.2210494 0.4403926    -0.2029091   -0.97358054 -0.628886551  0.188628524     0.56171949
+48  Woodland               Protist_richness  -0.2154800 0.4437729    -0.1985887   -0.94064004 -0.633674895  0.211127673     0.59005106
+49 Grassland                   Bac_richness  -0.2093131 0.3412180    -0.1979581   -0.76519988 -0.514673414  0.109596905     0.42900744
