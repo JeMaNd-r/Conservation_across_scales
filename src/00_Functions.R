@@ -98,7 +98,7 @@ f_add_protect <- function(data, data_pa, col_id){
   
   # add column with information about protected and non-protected sites
   data <- data %>% 
-    full_join(data_pa %>% dplyr::select(all_of(c(col_id, PA_type_min, PA_protected_min, PA_rank_min))),
+    full_join(data_pa %>% dplyr::select(all_of(c(col_id, "PA_type_min", "PA_protected_min", "PA_rank_min"))),
               by=as.character(col_id)) %>%
     rename("PA" = PA_protected_min,
            "PA_type" = PA_type_min,
