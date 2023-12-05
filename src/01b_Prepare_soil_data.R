@@ -274,8 +274,8 @@ data_regi <- data_regi %>%
   mutate("Pathogen_control" = 1 - (Plant_pathogen_richness / Fungi_richness))
 
 data_regi <- data_regi %>%
-  mutate("P_z" = scale(Phosphorous)[,1], "K_z" = scale(Potassium)[,1], "Ca_z" = scale(Ca)[,1], "Mg_z" = scale(Mg)[,1],
-         "Nutrient_service" = mean(c(P_z, K_z, Ca_z, Mg_z), na.rm=T),
+  mutate("P_z" = scale(Phosphorous)[,1], "K_z" = scale(Potassium)[,1], 
+         "Ca_z" = scale(Ca)[,1], "Mg_z" = scale(Mg)[,1],
          "Soil_stability_service" = scale(Water_stable_aggregates_mean)[,1], 
          "OM_decomposition_service" = scale(Microbial_Respiration)[,1]) %>%
   rename("Soil_texture" = ClaySilt,
@@ -283,6 +283,8 @@ data_regi <- data_regi %>%
          "Soil_carbon_service" = Org_M, 
          "Water_regulation_service" = SWR,
          "Soil_salinity" = 'Electr_conductivity uS/cm')
+# calculate Nutrient_service separately (mutate and mean did not work)
+data_regi$Nutrient_service <- rowMeans(data_regi[,c("P_z", "K_z", "Ca_z", "Mg_z")], na.rm = T)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Add missing environmental covariates (elevation & annual climate) ####
@@ -352,9 +354,4 @@ list_colinear <- f_colinearity(data = data_regi,
 write.csv(list_colinear$env_vif, file=paste0(here::here(), "/results/VIF_envVars_regional.csv"), row.names=F)
 write.csv(list_colinear$corMatSpearman, paste0("./results/corMatSpearman_envVars_regional.csv"), row.names=T)
 write.csv(list_colinear$corMatPearson, paste0("./results/corMatPearson_envVars_regional.csv"), row.names=T)
-
-
-
-
-
 
