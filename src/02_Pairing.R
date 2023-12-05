@@ -30,7 +30,7 @@ if(!dir.exists(paste0(here::here(), "/intermediates/", temp_scale))){
 # set date of latest analysis
 if(temp_scale == "global") temp_date <- "2023-12-01"
 if(temp_scale == "continental") temp_date <- "2023-12-04"
-if(temp_scale == "regional") temp_date <- "2023-12-04"
+if(temp_scale == "regional") temp_date <- "2023-12-05"
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Load soil biodiversity data ####

@@ -23,7 +23,7 @@ temp_scale <- "regional"
 # set date of latest analysis
 if(temp_scale == "global") temp_date <- "2023-12-01"
 if(temp_scale == "continental") temp_date <- "2023-12-04"
-if(temp_scale == "regional") temp_date <- "2023-12-04"
+if(temp_scale == "regional") temp_date <- "2023-12-05"
 
 if(temp_scale == "global") lc_names <- lc_names[lc_names != "Other"]
 if(temp_scale == "continental") lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
