@@ -31,6 +31,13 @@ if(temp_scale == "global") temp_date <- "2023-12-01"
 if(temp_scale == "continental") temp_date <- "2023-12-04"
 if(temp_scale == "regional") temp_date <- "2023-12-05"
 
+if(temp_scale == "global") lc_names <- lc_names[lc_names != "Other"]
+if(temp_scale == "continental") lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
+if(temp_scale == "regional"){
+  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
+  min_size <- 7
+}
+
 data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
 data_clean
 
