@@ -1,6 +1,6 @@
 #################################################
 ##  Significant d-values from global analysis  ##
-##  Sys.Date() 2023-12-01  ##
+##  Sys.Date() 2023-12-12  ##
 #################################################
           lc                            fns effect_mean effect_SD effect_median effect_ci_2.5 effect_ci_17 effect_ci_83 effect_ci_97.5
 1  Shrubland          Invertebrate_richness   1.5298641 0.4164908     1.4883807    0.92959091  1.133841325  1.935546552     2.49217109
