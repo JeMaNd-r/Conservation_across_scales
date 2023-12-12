@@ -12,16 +12,41 @@ library(terra)
 library(ggdist) #to plot distributions (Bayesian)
 library(gridExtra) #to add table in plot
 library(ggrepel) #to add text not overlapping (geom_text_repel)
+library(ggtext) #to add icons as axis labels
+
+#temp_scale <- "global"
+#temp_scale <- "continental"
+temp_scale <- "regional"
 
 # load background map
 world.inp <- map_data("world")
+if(temp_scale != "global"){
+  world.inp <- subset(world.inp, region %in% c("Albania", "Andorra", "Armenia", "Austria", "Azerbaijan",
+                                      "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria",
+                                      "Croatia", "Cyprus", "Czechia","Denmark","Estonia","Finland", 
+                                      "France","Georgia", "Germany", "Greece","Hungary","Iceland", 
+                                      "Ireland", "Italy","Kazakhstan", "Kosovo", "Latvia","Liechtenstein", 
+                                      "Lithuania", "Luxembourg","Malta","Moldova","Monaco","Montenegro",
+                                      "Macedonia", "Netherlands","Norway","Poland","Portugal","Romania",
+                                      "Russia","San Marino","Serbia","Slovakia","Slovenia","Spain",
+                                      "Sweden","Switzerland","Turkey","Ukraine","UK","Vatican"))
+}
+
 
 source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
 
-temp_scale <- "global"
-#temp_scale <- "continental"
-#temp_scale <- "regional"
+# set date of latest analysis
+if(temp_scale == "global") temp_date <- "2023-12-01"
+if(temp_scale == "continental") temp_date <- "2023-12-04"
+if(temp_scale == "regional") temp_date <- "2023-12-05"
+
+if(temp_scale == "global") lc_names <- lc_names[lc_names != "Other"]
+if(temp_scale == "continental") lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
+if(temp_scale == "regional"){
+  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
+  min_size <- 7
+}
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
@@ -29,7 +54,7 @@ data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_s
 data_clean
 
 # load pairs of PA and nonPA
-pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/Pairs_paNonpa_1000trails_", temp_scale, ".csv"))
+pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
 head(pa_pairs)
 
 # load effect sizes
@@ -49,22 +74,36 @@ data_locations <- data_clean %>%
   filter(SampleID %in% unique(pa_pairs$ID) | 
          SampleID %in% unique(pa_pairs$nonPA)) %>%
   dplyr::select(Longitude,Latitude,SampleID, PA, LC)
-data_locations #G: nrow=262
-nrow(data_locations %>% filter(PA==1)) #G: 62 PAs
-nrow(data_locations %>% filter(PA==0)) #G: 200 PAs
+data_locations #G: nrow=262, C: 191, R: 120
+nrow(data_locations %>% filter(PA==1)) #G: 62 PAs, C: 44, R: 29
+nrow(data_locations %>% filter(PA==0)) #G: 200 PAs, C: 147, R: 91
+
+# set limits for point maps
+if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
+if(temp_scale == "continental") temp_limits <- c(-10, 35, 35, 70)
+if(temp_scale == "regional") temp_limits <- c(-9, -6, 40.5, 42.5)
 
 ggplot()+
-  geom_map(data = world.inp, map = world.inp, aes(map_id = region),  show.legend = FALSE, 
+  geom_map(data = world.inp, map = world.inp, 
+           aes(map_id = region),  show.legend = FALSE, 
            fill="white", color = "grey90", linewidth = 0.15) + #fill = "grey80", color="grey75"
-  xlim(-180, 180) +
-  ylim(-180, 180) +
+  #xlim(-180, 180) +  ylim(-180, 180) + #global
+  #xlim(-10, 35) +  ylim(35, 70) + #continental
+  #xlim(-9.5, -6) +  ylim(40.5, 42.5) + #regional
+  xlim(temp_limits[1], temp_limits[2])+
+  ylim(temp_limits[3], temp_limits[4])+
   
   geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
                                       shape = as.character(PA), color=LC, 
-                                      size = as.character(PA)))+
+                                      size = as.character(PA)),
+             stroke = 3)+ #increase circle line width
   scale_shape_manual(values = c(19,1))+ #label = c("Protected", "Unprotected")
-  scale_size_manual(values = c(0.6,1.2))+
-  scale_color_manual(values = c("#E69F00", "#0072B2", "#009E73", "#000000"))+ #"#56B4E9",
+  scale_size_manual(values = c(3,8))+
+  scale_color_manual(values = c("Cropland" = "#4A2040",
+                                "Grassland" = "#E69F00",
+                                "Shrubland" = "#0072B2", 
+                                "Woodland" = "#009E73", 
+                                "Other" = "#000000"))+ 
   coord_map()+
   theme_bw()+
   theme(axis.title = element_blank(), legend.title = element_blank(),
@@ -138,7 +177,11 @@ ggplot(pa_pairs, aes(x = LC, y = mahal.min, fill = LC))+
   labs(x="Land-cover type",y="Mahalanobis distance") +
   theme(axis.text.x=element_text(size=15),text = element_text(size=20),  
         legend.position = "none", axis.text.y = element_text(size=15), legend.title = element_blank())+
-  scale_fill_manual(values=c("#E69F00", "#0072B2", "#009E73", "#000000")) #"gold3", "limegreen", "forestgreen"
+  scale_fill_manual(values=c("Cropland" = "#4A2040",
+                             "Grassland" = "#E69F00",
+                             "Shrubland" = "#0072B2", 
+                             "Woodland" = "#009E73", 
+                             "Other" = "#000000")) #"gold3", "limegreen", "forestgreen"
 ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_mahal.distance_global.png"),
        plot = last_plot())
 
@@ -414,6 +457,136 @@ ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_median
        plot = last_plot())
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Heatmap all 3 scales ####
+# mean per lc type and all 3 scales
+d_sum_glob <- read.csv(file=paste0(here::here(), "/figures/Results_pointrange_d-value_summary_global.csv"))
+d_sum_cont <- read.csv(file=paste0(here::here(), "/figures/Results_pointrange_d-value_summary_continental.csv"))
+d_sum_regi <- read.csv(file=paste0(here::here(), "/figures/Results_pointrange_d-value_summary_regional.csv"))
+
+d_sum_all <- rbind(d_sum_glob %>% mutate("scale" = "global"), 
+                   d_sum_cont %>% mutate("scale" = "continental")) %>%
+  rbind(d_sum_regi %>% mutate("scale" = "regional"))
+rm(d_sum_glob, d_sum_cont, d_sum_regi)
+
+d_sum_all %>% ungroup() %>% group_by(lc) %>% 
+  summarize(across(c(effect_median, effect_ci_2.5:effect_ci_97.5), 
+                   function(x) mean(x)))
+d_sum_all %>% ungroup() %>% group_by(lc) %>% 
+  summarize(across(c(effect_median), 
+                   list(mean=function(x) mean(abs(x)),
+                        sd=function(x) sd(abs(x)))))
+
+# mean per Group_function
+d_sum_all %>% ungroup() %>% group_by(Group_function) %>% 
+  summarize(across(c(effect_median), 
+                   list(mean=function(x) mean(abs(x)),
+                        sd=function(x) sd(abs(x)))))
+
+# heatmap
+# define each land cover type
+lc_names_all <- c("Grassland", "Shrubland", "Woodland", "Other")
+
+ggplot(data = d_sum_all %>%
+         filter(lc %in% lc_names_all) %>%
+         mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
+                                         abs(effect_ci_17), 
+                                         abs(effect_ci_83))) %>%
+         mutate(effect_ci_min66f = cut(effect_ci_min66,
+                                       breaks=c(0, 0.2, 0.5, 0.8, Inf),
+                                       labels=c("ns", "small", "medium", "large"))) %>%
+         filter(!is.na(effect_ci_min66)) %>%
+         full_join(expand.grid(scale = c("global", "continental", "regional"), 
+                               lc = lc_names_all, 
+                               Label = fns_labels$Label)) %>%
+         mutate(scale = factor(scale, levels = c("global", "continental", "regional")),
+                Label = factor(Label, levels = rev(fns_labels %>% arrange(Group_function, Label) %>% pull(Label))),
+                lc = factor(lc, levels = c("Grassland", "Woodland", "Shrubland"))) %>%
+         filter(lc != "Other" & !is.na(Label)),
+       
+       aes(x = scale, y = Label, alpha=effect_ci_min66f, 
+           fill=as.factor(sign(effect_median))))+
+  
+  geom_tile()+
+  facet_grid(cols=vars(lc), drop=FALSE)+
+  scale_fill_manual(values = c("-1" = "#fc8d59", "0" = "#ffffbf", "1" = "#91bfdb"),
+                    name = "Direction of effect",
+                    na.value = "grey80")+
+  scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
+                     name = "Minimum effect size (66% CI)")+
+  theme_bw() + # use a white background
+  theme(legend.position = "right",
+        legend.direction = "vertical",
+        #axis.title.y =element_blank(),
+        axis.text.y = element_text(size=10),
+        axis.text.x = element_text(size=10),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.background = element_rect(fill="white"), #chocolate4
+        strip.text = element_text(color="black")) #white
+ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianSD_allScales.png"),
+       plot = last_plot())
+
+
+## switch lc and scales
+ggplot(data = d_sum_all %>%
+         filter(lc %in% lc_names_all) %>%
+         mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
+                                         abs(effect_ci_17), 
+                                         abs(effect_ci_83))) %>%
+         mutate(effect_ci_min66f = cut(effect_ci_min66,
+                                       breaks=c(0, 0.2, 0.5, 0.8, Inf),
+                                       labels=c("ns", "small", "medium", "large"))) %>%
+         filter(!is.na(effect_ci_min66)) %>%
+         full_join(expand.grid(scale = c("global", "continental", "regional"), 
+                               lc = lc_names_all, 
+                               Label = fns_labels$Label)) %>%
+         mutate(scale = factor(scale, levels = rev(c("global", "continental", "regional"))),
+                Label = factor(Label, levels = rev(fns_labels %>% arrange(Group_function, Label) %>% pull(Label))),
+                lc = factor(lc, levels = c("Grassland", "Woodland", "Shrubland"))) %>%
+         filter(lc != "Other" & !is.na(Label)),
+       
+       aes(x = lc, y = scale, alpha=effect_ci_min66f, 
+           fill=as.factor(sign(effect_median))))+
+  
+  geom_tile()+
+  facet_wrap(vars(Label), ncol=6, drop=FALSE)+
+  scale_fill_manual(values = c("-1" = "#fc8d59", "0" = "#ffffbf", "1" = "#91bfdb"),
+                    name = "Direction of effect",
+                    na.value = "grey80")+
+  scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
+                     name = "Effect size")+
+  scale_x_discrete(labels = c(
+    "Grassland" = "<img src='figures/icon_grass.png' width='12'>",
+    "Woodland" = "<img src='figures/icon_forest.png' width='20'>",
+    "Shrubland" = "<img src='figures/icon_shrub-crop.png' width='25'>"
+  ))+
+  
+  scale_y_discrete(labels = c(
+    "global" = "<img src='figures/icon_earth-globe-with-continents-maps.png' width='20'>",
+    "continental" = "<img src='figures/icon_location-black.png' width='20'>",
+    "regional" = "<img src='figures/icon_flag-Portugal.png' width='20'>"
+  ))+
+  xlab("")+ylab("")+
+  theme_bw() + # use a white background
+  theme(legend.position = c(0.98, -0.01),
+        legend.justification = c(1, 0),
+        legend.box = "horizontal",
+        legend.direction = "vertical",
+        #legend.key.size = unit(20, "pt"),
+        legend.title = element_text(size = 40),
+        legend.text = element_text(size = 40),
+        #axis.title.y =element_blank(),
+        axis.text.y = ggtext::element_markdown(hjust = 0),
+        axis.ticks = element_blank(),
+        axis.text.x = ggtext::element_markdown(vjust = 0),
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
+        strip.background = element_rect(fill="white", color = "white"), #chocolate4
+        strip.text = element_text(color="black", size = 40)) #white
+ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianSD_allScales_fns.png"),
+       plot = last_plot())
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Boxplots values ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -497,7 +670,9 @@ ggsave(filename=paste0(here::here(), "/figures/Results_boxplot_estimates_", temp
 # transform parameters to long format and assign labels
 pars_long <- pars_sample %>% 
   dplyr::select(-sigma, -sigma_a, -mu_a) %>% 
-  pivot_longer(cols = c("1":"2"))%>%
+  # #pivot_longer(cols = c("1":"2"))%>% #global
+  # #pivot_longer(cols = c("3":"7"))%>% #continental
+  pivot_longer(cols = colnames(.)[!(colnames(.) %in% c("lc", "fns"))])%>%
   full_join(protect_type %>% 
               mutate(PA_rank = as.character(PA_rank)), 
             by=c("name" = "PA_rank"))  %>%
@@ -542,7 +717,8 @@ plot_all <- ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_typ
                                     Label_fns = Label,
                                     Group_function=NA,
                                     Organism=NA) %>%
-                             dplyr::select(colnames(pars_long))),
+                             dplyr::select(colnames(pars_long))) %>%
+                     filter(Label_fns != "Water regulation"),
        aes(y=Label_pa, x=value, color=lc))+
   
   annotate("rect", ymin = -Inf, ymax = 4+0.5, xmin=-Inf, xmax=Inf, fill = "grey90", alpha=0.5)+
@@ -552,7 +728,11 @@ plot_all <- ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_typ
                              position=position_dodgejust(width=0.5))+ 
   facet_wrap(vars(Label_fns), scales = "free_x")+
   
-  scale_color_manual(values=c("#E69F00", "#0072B2", "#009E73", "#000000"), name="Land-cover type")+
+  scale_color_manual(values=c("Cropland" = "#4A2040",
+                              "Grassland" = "#E69F00",
+                              "Shrubland" = "#0072B2", 
+                              "Woodland" = "#009E73", 
+                              "Other" = "#000000"), name="Land-cover type")+
   ylab("")+ xlab("")+
   theme_bw()+
   theme(panel.grid.minor = element_blank(),
