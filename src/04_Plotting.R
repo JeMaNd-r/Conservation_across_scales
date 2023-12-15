@@ -523,7 +523,7 @@ ggplot(data = d_sum_all %>%
         panel.grid.minor = element_blank(),
         strip.background = element_rect(fill="white"), #chocolate4
         strip.text = element_text(color="black")) #white
-ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianSD_allScales.png"),
+ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_minCI66_allScales.png"),
        plot = last_plot())
 
 
@@ -545,14 +545,22 @@ ggplot(data = d_sum_all %>%
                 lc = factor(lc, levels = c("Cropland", "Grassland", "Shrubland", "Woodland"))) %>%
          filter(lc != "Other" & !is.na(Label)),
        
-       aes(x = lc, y = scale, alpha=effect_ci_min66f, 
-           fill=as.factor(sign(effect_median))))+
+       aes(x = lc, y = scale))+
   
-  geom_tile()+ #geom_point(aes(color, size))+
+  # geom_tile(aes(alpha=effect_ci_min66f, 
+  #                fill=as.factor(sign(effect_median))))+ 
+  geom_point(aes(color = as.factor(sign(effect_median)), 
+                 size = effect_ci_min66f))+
   facet_wrap(vars(Label), ncol=6, drop=FALSE)+
   scale_fill_manual(values = c("-1" = "#fc8d59", "0" = "#ffffbf", "1" = "#91bfdb"),
                     name = "Direction of effect",
                     na.value = "grey80")+
+  scale_color_manual(values = c("-1" = "#fc8d59", "0" = "#ffffbf", "1" = "#91bfdb"),
+                    name = "Direction of effect",
+                    na.value = "black")+
+  scale_size_manual(values = c("ns" = 1, "small" = 5, "medium" = 10, "large" = 15),
+                     name = "Effect size",
+                    na.value = 0.001)+
   scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
                      name = "Effect size")+
   scale_x_discrete(labels = c(
@@ -569,7 +577,8 @@ ggplot(data = d_sum_all %>%
   ))+
   xlab("")+ylab("")+
   theme_bw() + # use a white background
-  theme(legend.position = c(0.96, -0.01),
+  theme(#legend.position = c(0.96, -0.01),
+        legend.position = c(0.96, -0.05),
         legend.justification = c(1, 0),
         legend.box = "horizontal",
         legend.direction = "vertical",
@@ -584,7 +593,7 @@ ggplot(data = d_sum_all %>%
         panel.border = element_blank(),
         strip.background = element_rect(fill="white", color = "white"), #chocolate4
         strip.text = element_text(color="black", size = 40)) #white
-ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianSD_allScales_fns.png"),
+ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_minCI66_allScales_fns.png"),
        plot = last_plot(), 
        width = 4400, height = 3000, units = "px")
 
