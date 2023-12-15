@@ -15,8 +15,8 @@ library(ggrepel) #to add text not overlapping (geom_text_repel)
 library(ggtext) #to add icons as axis labels
 
 #temp_scale <- "global"
-#temp_scale <- "continental"
-temp_scale <- "regional"
+temp_scale <- "continental"
+#temp_scale <- "regional"
 
 # load background map
 world.inp <- map_data("world")
@@ -38,8 +38,8 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 
 # set date of latest analysis
 if(temp_scale == "global") temp_date <- "2023-12-01"
-if(temp_scale == "continental") temp_date <- "2023-12-04"
-if(temp_scale == "regional") temp_date <- "2023-12-05"
+if(temp_scale == "continental") temp_date <- "2023-12-14"
+if(temp_scale == "regional") temp_date <- "2023-12-14"
 
 if(temp_scale == "global") lc_names <- lc_names[lc_names != "Other"]
 if(temp_scale == "continental") lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
@@ -484,7 +484,7 @@ d_sum_all %>% ungroup() %>% group_by(Group_function) %>%
 
 # heatmap
 # define each land cover type
-lc_names_all <- c("Grassland", "Shrubland", "Woodland", "Other")
+lc_names_all <- c( "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
 
 ggplot(data = d_sum_all %>%
          filter(lc %in% lc_names_all) %>%
@@ -500,7 +500,7 @@ ggplot(data = d_sum_all %>%
                                Label = fns_labels$Label)) %>%
          mutate(scale = factor(scale, levels = c("global", "continental", "regional")),
                 Label = factor(Label, levels = rev(fns_labels %>% arrange(Group_function, Label) %>% pull(Label))),
-                lc = factor(lc, levels = c("Grassland", "Woodland", "Shrubland"))) %>%
+                lc = factor(lc, levels = c("Cropland", "Grassland", "Woodland", "Shrubland"))) %>%
          filter(lc != "Other" & !is.na(Label)),
        
        aes(x = scale, y = Label, alpha=effect_ci_min66f, 
@@ -542,13 +542,13 @@ ggplot(data = d_sum_all %>%
                                Label = fns_labels$Label)) %>%
          mutate(scale = factor(scale, levels = rev(c("global", "continental", "regional"))),
                 Label = factor(Label, levels = rev(fns_labels %>% arrange(Group_function, Label) %>% pull(Label))),
-                lc = factor(lc, levels = c("Grassland", "Woodland", "Shrubland"))) %>%
+                lc = factor(lc, levels = c("Cropland", "Grassland", "Shrubland", "Woodland"))) %>%
          filter(lc != "Other" & !is.na(Label)),
        
        aes(x = lc, y = scale, alpha=effect_ci_min66f, 
            fill=as.factor(sign(effect_median))))+
   
-  geom_tile()+
+  geom_tile()+ #geom_point(aes(color, size))+
   facet_wrap(vars(Label), ncol=6, drop=FALSE)+
   scale_fill_manual(values = c("-1" = "#fc8d59", "0" = "#ffffbf", "1" = "#91bfdb"),
                     name = "Direction of effect",
@@ -556,19 +556,20 @@ ggplot(data = d_sum_all %>%
   scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
                      name = "Effect size")+
   scale_x_discrete(labels = c(
-    "Grassland" = "<img src='figures/icon_grass.png' width='12'>",
-    "Woodland" = "<img src='figures/icon_forest.png' width='20'>",
-    "Shrubland" = "<img src='figures/icon_shrub-crop.png' width='25'>"
+    "Cropland" = "<img src='figures/icon_harvest.png' width='20'>",
+    "Grassland" = "<img src='figures/icon_grass.png' width='17'>",
+    "Shrubland" = "<img src='figures/icon_shrub-crop.png' width='35'>",
+    "Woodland" = "<img src='figures/icon_forest.png' width='30'>"
   ))+
   
   scale_y_discrete(labels = c(
-    "global" = "<img src='figures/icon_earth-globe-with-continents-maps.png' width='20'>",
-    "continental" = "<img src='figures/icon_location-black.png' width='20'>",
-    "regional" = "<img src='figures/icon_flag-Portugal.png' width='20'>"
+    "global" = "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>",
+    "continental" = "<img src='figures/icon_location-black.png' width='30'>",
+    "regional" = "<img src='figures/icon_flag-Portugal.png' width='30'>"
   ))+
   xlab("")+ylab("")+
   theme_bw() + # use a white background
-  theme(legend.position = c(0.98, -0.01),
+  theme(legend.position = c(0.96, -0.01),
         legend.justification = c(1, 0),
         legend.box = "horizontal",
         legend.direction = "vertical",
@@ -584,7 +585,8 @@ ggplot(data = d_sum_all %>%
         strip.background = element_rect(fill="white", color = "white"), #chocolate4
         strip.text = element_text(color="black", size = 40)) #white
 ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianSD_allScales_fns.png"),
-       plot = last_plot())
+       plot = last_plot(), 
+       width = 4400, height = 3000, units = "px")
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Boxplots values ####

@@ -21,15 +21,15 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
 # temp_scale <- "global"
-# temp_scale <- "continental"
-temp_scale <- "regional"
+ temp_scale <- "continental"
+#temp_scale <- "regional"
 
 if(temp_scale == "global") lc_names <- lc_names[lc_names != "Other"]
 
 # set date of latest analysis
 if(temp_scale == "global") temp_date <- "2023-12-01"
-if(temp_scale == "continental") temp_date <- "2023-12-04"
-if(temp_scale == "regional") temp_date <- "2023-12-05"
+if(temp_scale == "continental") temp_date <- "2023-12-14"
+if(temp_scale == "regional") temp_date <- "2023-12-14"
 
 if(temp_scale == "global") lc_names <- lc_names[lc_names != "Other"]
 if(temp_scale == "continental") lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]

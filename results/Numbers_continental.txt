@@ -1,17 +1,21 @@
 [1] "continental"
-Number of non-protected sites have never been paired to any PA:[1] 606
-On average, each protected and unprotected site was used in 455 (SD=86, min=360, max=584) and 136 (SD=134, min=1, max=475) of the 1000 randomizations, respectively.
- 13  44  75  82 114 143 144 174 183 195 245 251 255 270 280 313 353 360 368 408 411 419 443 446 452 464 474 481 506 516 520 552 564 567 602 611 624 625 628 630 672 677 706 857 
-545 569 570 569 530 575 543 527 395 584 554 547 389 376 393 537 540 572 547 375 389 402 398 389 553 360 383 571 367 405 390 397 361 390 567 399 385 396 377 371 365 371 369 408 
-Number of sites (PA/ nonPA) per LC.# A tibble: 2 x 2
-# Groups:   LC [2]
+Number of non-protected sites have never been paired to any PA:[1] 569
+On average, each protected and unprotected site was used in 508 (SD=120, min=351, max=722) and 163 (SD=156, min=1, max=546) of the 1000 randomizations, respectively.
+ 13  44  75  82 114 143 144 172 174 183 195 245 251 255 270 280 313 324 338 350 353 360 368 404 408 411 419 428 443 446 452 
+592 569 536 542 555 558 546 671 563 381 540 545 579 384 351 396 553 673 663 678 556 553 542 665 356 389 396 708 373 388 586 
+455 462 464 474 481 488 506 516 517 520 552 564 567 573 602 611 624 625 628 630 640 643 672 677 706 741 813 857 
+642 659 408 376 534 662 393 403 646 409 399 384 391 722 551 370 391 393 364 359 659 647 376 400 411 661 644 359 
+Number of sites (PA/ nonPA) per LC.# A tibble: 3 x 2
+# Groups:   LC [3]
   LC            n
   <chr>     <int>
-1 Grassland    18
-2 Woodland     26
-# A tibble: 2 x 2
-# Groups:   LC [2]
+1 Cropland     15
+2 Grassland    18
+3 Woodland     26
+# A tibble: 3 x 2
+# Groups:   LC [3]
   LC            n
   <chr>     <int>
-1 Grassland    57
-2 Woodland     90
+1 Cropland     40
+2 Grassland    57
+3 Woodland     87

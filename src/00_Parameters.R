@@ -32,7 +32,7 @@ mahal_thres <- qchisq(.975, df=length(mahal_vars)) #21.92005
 mahal_vars_z <- paste0(mahal_vars, ".z")
 
 # define each land cover type
-lc_names <- c("Grassland", "Shrubland", "Woodland", "Other")
+lc_names <- c("Cropland", "Grassland", "Shrubland", "Woodland", "Other")
 
 # number of samples/ sites that should be paired per LC type
 min_size <- 10 #start with something small, then check how many possible
