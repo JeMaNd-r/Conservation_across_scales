@@ -21,8 +21,8 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
 # temp_scale <- "global"
- temp_scale <- "continental"
-#temp_scale <- "regional"
+# temp_scale <- "continental"
+temp_scale <- "regional"
 
 if(temp_scale == "global") lc_names <- lc_names[lc_names != "Other"]
 
@@ -139,7 +139,49 @@ save(pars_sample, file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_"
 # emmeans::emmeans()
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## Compare difference using brms ####
+## Compare difference using brms & linear regression model ####
 
-# library(brms)
+library(brms)
+library(modelr)
+
+# store results
+fixed_effects <- vector("list")
+pred_list <- vector("list")
+
+for(temp_fns in fns){
+  
+  data_temp <- data_clean %>% dplyr::select(LC, temp_fns, PA_rank)
+  model_output <- brm(brmsformula(paste(temp_fns, "~ LC * PA_rank")), data = data_temp,
+                      chains = 4, iter = 10000, warmup = 2000)
+  
+  # sink(paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_", temp_fns, ".txt"))
+  # model_output
+  # model_output$fit
+  # hypothesis(model_output, "PA_rank<0")
+  # hypothesis(model_output, "PA_rank>0")
+  # sink()
+  
+  fixed_effects[[temp_fns]] <- fixef(model_output)
+  
+  # Extract estimates and credible intervals for PA_rank
+  pred_list[[temp_fns]] <- data_temp %>%
+    group_by(LC) %>%
+    modelr::data_grid(PA_rank = modelr::seq_range(PA_rank, n = 51)) %>%
+    add_epred_draws(model_output) %>%
+    mutate(scale = temp_scale,
+           fns = temp_fns)
+
+}
+
+pred_list <- do.call(rbind, pred_list)
+
+save(pred_list, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, ".RData"))
+
+sink(paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, ".txt"))
+fixed_effects
+sink()
+
+
+  
+
 
