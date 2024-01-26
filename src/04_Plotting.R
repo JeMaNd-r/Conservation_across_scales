@@ -529,7 +529,7 @@ lc_names_all <- c( "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
 
 
 labels_order <- c(
-  "Decomposition (OM)", "Nutrients", "Pathogen control", "Soil carbon", "Soil stability", "Water regulation",
+  "Decomposition (OM)", "Nutrient cycling", "Pathogen control", "Soil carbon", "Soil stability", "Water regulation",
   "Bacterial Richness", "Fungal Richness", "Invertebrate Richness", "Protist Richness",
   "AM fungi Richness", "EM fungi Richness",
   "Bacterial Shannon", "Fungal Shannon", "Invertebrate Shannon", "Protist Shannon",
@@ -567,7 +567,7 @@ d_plot_all <- d_sum_all %>%
   #mutate(effect_direction_c = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "ns", effect_direction_c)) %>%
   mutate(Label = factor(Label, levels = labels_order)) %>%
   mutate(effect_significance = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "ns", effect_direction_c),
-         effect_na = ifelse(is.na(effect_mean), "missing", NA)) %>%
+         effect_na = ifelse(is.na(effect_mean), "not available", NA)) %>%
   mutate(effect_significance = factor(effect_significance, levels = c("negative", "positive", "ns")))
 
 ggplot(data = d_plot_all,
@@ -582,7 +582,7 @@ ggplot(data = d_plot_all,
   facet_wrap(vars(Label), ncol=6, drop=FALSE)+
   scale_fill_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb", "ns" = "white"),
                     name = "Direction of effect",
-                    na.value = "black")+
+                    na.value = "black", drop = FALSE)+
   scale_color_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb"),
                     name = "Direction of effect",
                     na.value = "black")+
@@ -594,7 +594,7 @@ ggplot(data = d_plot_all,
                     na.value = 5)+
   # scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
   #                    name = "Effect size")+
-  scale_shape_manual(values = c("missing" = 4),
+  scale_shape_manual(values = c("not available" = 4),
                      name = "Missing data",
                      na.value = 21)+
   scale_x_discrete(labels = c(
@@ -612,17 +612,18 @@ ggplot(data = d_plot_all,
   xlab("")+ylab("")+
   theme_bw() + # use a white background
   
-  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black"), shape = 21, size = 5)), #tell legend to use different point shape
+  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black"), 
+                                                 shape = 21, size = 5)), #tell legend to use different point shape
     color = "none", #don't show legend
-    shape = "none")+
+    shape = guide_legend(override.aes = list(size = 5)))+
   theme(#legend.position = c(0.96, -0.01),
-        legend.position = c(0.96, -0.05),
+        legend.position = "bottom", #c(0.96, -0.05),
         legend.justification = c(1, 0),
         legend.box = "horizontal",
         legend.direction = "vertical",
         #legend.key.size = unit(20, "pt"),
-        legend.title = element_text(size = 40),
-        legend.text = element_text(size = 40),
+        legend.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
         #axis.title.y =element_blank(),
         axis.text.y = ggtext::element_markdown(hjust = 0),
         axis.ticks = element_blank(),
@@ -630,10 +631,10 @@ ggplot(data = d_plot_all,
         panel.grid = element_blank(),
         panel.border = element_blank(),
         strip.background = element_rect(fill="white", color = "white"), #chocolate4
-        strip.text = element_text(color="black", size = 40, hjust = 0)) #white
+        strip.text = element_text(color="black", size = 15, hjust = 0)) #white
 ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_meanCI_allScales_fns.png"),
        plot = last_plot(), 
-       width = 4400, height = 3000, units = "px")
+       width = 4400, height = 3800, units = "px")
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Summarizing stats ####
@@ -673,7 +674,9 @@ ggplot(data = d_df_all %>% filter(!is.na(lc)) %>%
          mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='30'>",
                                     ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='30'>",
                                            ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>", NA)))) %>%
-        mutate(Group_function = factor(Group_function, levels = c("Service", "Richness", "Diversity", "Dissimilarity"))),
+         mutate(Group_function = ifelse(Group_function=="Service", "Function", 
+                                        ifelse(Group_function=="Diversity", "Shannon", Group_function))) %>%
+        mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))),
        aes(fill = lc, color = lc, 
            y = scale_icon, x = effect))+
   
@@ -681,7 +684,7 @@ ggplot(data = d_df_all %>% filter(!is.na(lc)) %>%
   ggdist::stat_pointinterval(fatten_point=1.2, shape=21,
                              position=position_dodgejust(width=0.5)) +
   coord_flip()+
-  facet_wrap(vars(Organism), drop=FALSE)+
+  facet_wrap(vars(Group_function), drop=FALSE)+
   #ylab("Effect size")+
   scale_fill_manual(values=c("Cropland" = "#4A2040",
                              "Grassland" = "#E69F00",
@@ -712,9 +715,10 @@ ggplot(data = d_df_all %>% filter(!is.na(lc)) %>%
         strip.background = element_rect(fill="white", color = "white"), #chocolate4
         strip.text = element_text(size = 40, hjust = 0))
 
-ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianCI_allScales_groupedOrganism.png"),
+ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianCI_allScales_grouped.png"),
        plot = last_plot(), 
-       width = 2000, height = 1500, units = "px")
+       #width = 2000, height = 1500,
+       units = "px")
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Boxplots values ####
@@ -874,3 +878,24 @@ plot_all
 ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_parsBayesian_", temp_scale, ".png"),
        plot = last_plot(),
        width=10, height=10)
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Bayesian results (PA ranks) ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+load(paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, ".RData")) #pred_list
+
+
+ggplot(data = pred_list, 
+       aes(x = PA_rank, y = .epred, color = ordered(LC))) +
+  stat_lineribbon(alpha = 0.2) +
+  geom_point(data = pred_list) +
+  facet_grid(vars(scale, fns))+
+  scale_fill_brewer(palette = "Greys") +
+  scale_color_manual(values=c("Cropland" = "#4A2040",
+                              "Grassland" = "#E69F00",
+                              "Shrubland" = "#0072B2", 
+                              "Woodland" = "#009E73", 
+                              "Other" = "#000000"), name="Habitat type")
+

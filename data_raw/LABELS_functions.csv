@@ -1,10 +1,10 @@
 Function,Label,Label_short,Group_function,Organism
-Soil_carbon_service,Soil carbon,Soil carbon,Service,Service
-OM_decomposition_service,Decomposition (OM),Decomposition (OM),Service,Service
-Water_regulation_service,Water regulation,Water regulation,Service,Service
-Soil_stability_service,Soil stability,Soil stability,Service,Service
-Nutrient_service,Nutrients,Nutrients,Service,Service
-Pathogen_control,Pathogen control,Pathogen control,Service,Service
+Soil_carbon_service,Soil carbon,Soil carbon,Function,Function
+OM_decomposition_service,Decomposition (OM),Decomposition (OM),Function,Function
+Water_regulation_service,Water regulation,Water regulation,Function,Function
+Soil_stability_service,Soil stability,Soil stability,Function,Function
+Nutrient_service,Nutrient cycling,Nutrient cycling,Function,Function
+Pathogen_control,Pathogen control,Pathogen control,Function,Function
 Bac_richness,Bacterial Richness,Bacterial R,Richness,Bacteria
 Fungi_richness,Fungal Richness,Fungal R,Richness,Fungi
 Invertebrate_richness,Invertebrate Richness,Invertebrate R,Richness,Invertebrates
@@ -13,10 +13,10 @@ Nematode_richness,Nematode Richness,Nematode R,Richness,Nematodes
 Ectomycorrhizal_richness,EM fungi Richness,EM fungi R,Richness,Fungi
 Arbuscularmycorrhizal_richness,AM fungi Richness,AM fungi R,Richness,Fungi
 Decomposer_richness,Decomposer Richness,Decomposer R,Richness,Decomposers
-Bac_shannonDiv,Bacterial Shannon,Bacterial S,Diversity,Bacteria
-Fungi_shannonDiv,Fungal Shannon,Fungal S,Diversity,Fungi
-Invertebrate_shannonDiv,Invertebrate Shannon,Invertebrate S,Diversity,Invertebrates
-Protist_shannonDiv,Protist Shannon,Protist S,Diversity,Protists
+Bac_shannonDiv,Bacterial Shannon,Bacterial S,Shannon,Bacteria
+Fungi_shannonDiv,Fungal Shannon,Fungal S,Shannon,Fungi
+Invertebrate_shannonDiv,Invertebrate Shannon,Invertebrate S,Shannon,Invertebrates
+Protist_shannonDiv,Protist Shannon,Protist S,Shannon,Protists
 Bac_JaccDist_av,Bacterial Dissimilarity,Bacterial D,Dissimilarity,Bacteria
 Fungi_JaccDist_av,Fungal Dissimilarity,Fungal D,Dissimilarity,Fungi
 Protist_JaccDist_av,Protist Dissimilarity,Protist D,Dissimilarity,Protists
