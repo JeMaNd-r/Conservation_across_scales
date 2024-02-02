@@ -48,6 +48,19 @@ if(temp_scale == "regional"){
   min_size <- 7
 }
 
+# define each land cover type
+lc_names_all <- c( "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
+
+# define order of functions
+labels_order <- c(
+  "Decomposition (OM)", "Nutrient cycling", "Pathogen control", "Soil carbon", "Soil stability", "Water regulation",
+  "Bacterial Richness", "Fungal Richness", "Invertebrate Richness", "Protist Richness",
+  "AM fungi Richness", "EM fungi Richness",
+  "Bacterial Shannon", "Fungal Shannon", "Invertebrate Shannon", "Protist Shannon",
+  "Nematode Richness", "Decomposer Richness",
+  "Bacterial Dissimilarity", "Fungal Dissimilarity", "Invertebrate Dissimilarity", "Protist Dissimilarity"
+)
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
 data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
@@ -69,6 +82,8 @@ load(file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_", temp_scale,
 ## Sampling locations ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### FIGURE 1 - Maps ####
 # extract list of sampling locations actually used in comparison
 data_locations <- data_clean %>% 
   filter(SampleID %in% unique(pa_pairs$ID) | 
@@ -458,6 +473,9 @@ ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_median
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Heatmap all 3 scales ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### FIGURE 2 - Heatmap ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # mean per lc type and all 3 scales
 d_sum_glob <- read.csv(file=paste0(here::here(), "/figures/Results_pointrange_d-value_summary_global.csv"))
 d_sum_cont <- read.csv(file=paste0(here::here(), "/figures/Results_pointrange_d-value_summary_continental.csv"))
@@ -484,9 +502,6 @@ d_sum_all %>% ungroup() %>% group_by(Group_function) %>%
                         sd=function(x) sd(abs(x)))))
 
 # heatmap
-# define each land cover type
-lc_names_all <- c( "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
-
 # ggplot(data = d_sum_all %>%
 #          filter(lc %in% lc_names_all) %>%
 #          mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
@@ -527,15 +542,6 @@ lc_names_all <- c( "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
 # ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_minCI66_allScales.png"),
 #        plot = last_plot())
 
-
-labels_order <- c(
-  "Decomposition (OM)", "Nutrient cycling", "Pathogen control", "Soil carbon", "Soil stability", "Water regulation",
-  "Bacterial Richness", "Fungal Richness", "Invertebrate Richness", "Protist Richness",
-  "AM fungi Richness", "EM fungi Richness",
-  "Bacterial Shannon", "Fungal Shannon", "Invertebrate Shannon", "Protist Shannon",
-  "Nematode Richness", "Decomposer Richness",
-  "Bacterial Dissimilarity", "Fungal Dissimilarity", "Invertebrate Dissimilarity", "Protist Dissimilarity"
-)
 
 ## switch lc and scales
 d_plot_all <- d_sum_all %>%
@@ -650,6 +656,7 @@ table(d_plot_all %>% filter(!is.na(effect_significance)) %>% dplyr::select(scale
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Pointrange plot grouped per estimate type ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 d_df_glob <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_global.csv"))
 d_df_cont <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_continental.csv"))
 d_df_regi <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_regional.csv"))
@@ -800,12 +807,11 @@ ggsave(filename=paste0(here::here(), "/figures/Results_boxplot_estimates_", temp
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Bayesian results (PA types) ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
+### APPENDIX S3 - Bayesian PA types ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # transform parameters to long format and assign labels
 pars_long <- pars_sample %>% 
   dplyr::select(-sigma, -sigma_a, -mu_a) %>% 
-  # #pivot_longer(cols = c("1":"2"))%>% #global
-  # #pivot_longer(cols = c("3":"7"))%>% #continental
   pivot_longer(cols = colnames(.)[!(colnames(.) %in% c("lc", "fns"))])%>%
   full_join(protect_type %>% 
               mutate(PA_rank = as.character(PA_rank)), 
@@ -838,7 +844,7 @@ n_table <- data_clean %>% filter(LC!="Other") %>%
 n_table
 write_csv(n_table, file=paste0(here::here(), "/figures/Results_pointrange_parsBayesian_nTable_", temp_scale, ".csv"))
 
-plot_all <- ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
+ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
                      # add number of sizes to plot
                      rbind(data_clean %>% filter(LC!="Other") %>%
                              group_by(LC, PA_type) %>% count() %>%
@@ -853,15 +859,16 @@ plot_all <- ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_typ
                                     Group_function=NA,
                                     Organism=NA) %>%
                              dplyr::select(colnames(pars_long))) %>%
-                     filter(Label_fns != "Water regulation"),
+                     #filter(Label_fns != "Water regulation") %>%
+                     mutate(Label_fns = factor(Label_fns, levels = labels_order)),
        aes(y=Label_pa, x=value, color=lc))+
   
-  annotate("rect", ymin = -Inf, ymax = 4+0.5, xmin=-Inf, xmax=Inf, fill = "grey90", alpha=0.5)+
+  annotate("rect", ymin = -Inf, ymax = 2+0.5, xmin=-Inf, xmax=Inf, fill = "grey90", alpha=0.5)+ #global: 4, C: 3, R: 2
   annotate("rect", ymin = -Inf, ymax = 1+0.5, xmin=-Inf, xmax=Inf, fill = "grey85", alpha=0.5)+
   
   ggdist::stat_pointinterval(fatten_point=1, shape=3, 
                              position=position_dodgejust(width=0.5))+ 
-  facet_wrap(vars(Label_fns), scales = "free_x")+
+  facet_wrap(vars(Label_fns), scales = "free_x", ncol=6, drop=FALSE)+
   
   scale_color_manual(values=c("Cropland" = "#4A2040",
                               "Grassland" = "#E69F00",
@@ -872,30 +879,112 @@ plot_all <- ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_typ
   theme_bw()+
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.y = element_blank(),
-        legend.position = c(0.8, 0.1),
-        text = element_text(size = 30))
-plot_all
+        legend.position = "bottom",
+        text = element_text(size = 13))
 ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_parsBayesian_", temp_scale, ".png"),
        plot = last_plot(),
-       width=10, height=10)
+       width=12, height=10)
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Bayesian results (PA ranks) ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-load(paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, ".RData")) #pred_list
+pred_list <- rbind(get(load(paste0(here::here(), "/results/PAranks_Bayesian_global_sample10k.RData"))), 
+                   get(load(paste0(here::here(), "/results/PAranks_Bayesian_continental_sample10k.RData")))) %>% 
+  rbind(get(load(paste0(here::here(), "/results/PAranks_Bayesian_regional_sample10k.RData"))))
 
-
-ggplot(data = pred_list, 
+ggplot(data = pred_list %>% filter(scale == temp_scale), 
        aes(x = PA_rank, y = .epred, color = ordered(LC))) +
-  stat_lineribbon(alpha = 0.2) +
-  geom_point(data = pred_list) +
-  facet_grid(vars(scale, fns))+
+  stat_lineribbon() +
+  #geom_point(data = pred_list) +
+  facet_wrap(vars(fns), scales = "free_y")+
   scale_fill_brewer(palette = "Greys") +
   scale_color_manual(values=c("Cropland" = "#4A2040",
                               "Grassland" = "#E69F00",
                               "Shrubland" = "#0072B2", 
                               "Woodland" = "#009E73", 
-                              "Other" = "#000000"), name="Habitat type")
+                              "Other" = "#000000"), name="Habitat type")+
+  scale_x_continuous(limits = c(1, 10), breaks = c(2, 10), minor_breaks = c(2,4,6,8, 10))+
+  theme_void()+
+  theme(axis.text = element_text(),
+        panel.grid.major.y = element_line(color = "grey"),
+        panel.grid.minor.x =  element_line(color = "grey"),
+        strip.text = element_text(hjust=0),
+        legend.position = c(0.2, 0.7),
+        legend.box = "horizontal")
+ggsave(filename=paste0(here::here(), "/figures/Results_regressions_parsBayesian_", temp_scale,".png"),
+       plot = last_plot(),
+       width=10, height=10)
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Bayesian pointrange grouped per estimate type ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### FIGURE 3 - Bayesian summary ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# combined diversity and function estimates (x axis)
+# scale on y axis
+# habitat types as colors
+# pointrange plot
+
+pars_glob <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_global.csv"))
+pars_cont <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_continental.csv"))
+pars_regi <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_regional.csv"))
+
+pars_all <- rbind(pars_glob %>% mutate("scale" = "global"), 
+                  pars_cont %>% mutate("scale" = "continental")) %>%
+  rbind(pars_regi %>% mutate("scale" = "regional"))  %>%
+  as_tibble()
+rm(pars_glob, pars_cont, pars_regi)
+
+ggplot(data = pars_all %>% filter(!is.na(lc)) %>%
+         mutate(scale = factor(scale, levels = c("regional", "continental", "global"))) %>%
+         mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='30'>",
+                                    ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='30'>",
+                                           ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>", NA)))) %>%
+         mutate(Group_function = ifelse(Group_function=="Service", "Function", 
+                                        ifelse(Group_function=="Diversity", "Shannon", Group_function))) %>%
+         mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))),
+       aes(fill = lc, color = lc, 
+           y = scale_icon, x = effect))+
+  
+  geom_vline(aes(xintercept=0), color="black")+
+  ggdist::stat_pointinterval(fatten_point=1.2, shape=21,
+                             position=position_dodgejust(width=0.5)) +
+  coord_flip()+
+  facet_wrap(vars(Group_function), drop=FALSE)+
+  #ylab("Effect size")+
+  scale_fill_manual(values=c("Cropland" = "#4A2040",
+                             "Grassland" = "#E69F00",
+                             "Shrubland" = "#0072B2", 
+                             "Woodland" = "#009E73", 
+                             "Other" = "#000000"))+
+  scale_color_manual(values=c("Cropland" = "#4A2040",
+                              "Grassland" = "#E69F00",
+                              "Shrubland" = "#0072B2", 
+                              "Woodland" = "#009E73", 
+                              "Other" = "#000000"))+
+  # scale_x_discrete(labels = c(
+  #   "global" = "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>",
+  #   "continental" = "<img src='figures/icon_location-black.png' width='30'>",
+  #   "regional" = "<img src='figures/icon_flag-Portugal.png' width='30'>"
+  # ))+
+  scale_x_continuous(breaks = c(-2, -0.8, -0.5, -0.2, 0, 0.2, 0.5, 0.8, 2))+
+  theme_void()+
+  theme(legend.position = "right", axis.title.y =element_blank(),
+        legend.text = element_text(size = 40),
+        legend.title = element_blank(),
+        plot.margin = unit(c(0, 0, 2, 0.5), "cm"),
+        axis.text.y = element_text(size = 20, hjust = 1),  
+        axis.text.x = ggtext::element_markdown(vjust = 1),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_line(color = "grey90"),
+        strip.background = element_rect(fill="white", color = "white"), #chocolate4
+        strip.text = element_text(size = 40, hjust = 0))
+
+ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianCI_allScales_grouped.png"),
+       plot = last_plot(), 
+       #width = 2000, height = 1500,
+       units = "px")
 
