@@ -143,45 +143,60 @@ save(pars_sample, file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_"
 
 library(brms)
 library(modelr)
+library(tidybayes)
 
-# store results
-fixed_effects <- vector("list")
-pred_list <- vector("list")
-
-for(temp_fns in fns){
+for(temp_scale in c("global", "continental", "regional")){
   
-  data_temp <- data_clean %>% dplyr::select(LC, temp_fns, PA_rank)
-  model_output <- brm(brmsformula(paste(temp_fns, "~ LC * PA_rank")), data = data_temp,
-                      chains = 4, iter = 10000, warmup = 2000)
+  # store results
+  fixed_effects <- vector("list")
+  pred_list <- vector("list")
   
-  # sink(paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_", temp_fns, ".txt"))
-  # model_output
-  # model_output$fit
-  # hypothesis(model_output, "PA_rank<0")
-  # hypothesis(model_output, "PA_rank>0")
-  # sink()
+  for(temp_fns in fns){
+    
+    data_temp <- data_clean %>% dplyr::select(all_of(c("LC", temp_fns, "PA_rank")))
+    model_output <- brm(brmsformula(paste(temp_fns, "~ LC * PA_rank")), data = data_temp,
+                        chains = 4, iter = 10000, warmup = 2000)
+    
+    # sink(paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_", temp_fns, ".txt"))
+    # model_output
+    # model_output$fit
+    # hypothesis(model_output, "PA_rank<0")
+    # hypothesis(model_output, "PA_rank>0")
+    # sink()
+    
+    fixed_effects[[temp_fns]] <- vector("list")
+    fixed_effects[[temp_fns]][["fixef"]] <- brms::fixef(model_output)
+    fixed_effects[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(model_output, specs = "LC", var = "PA_rank"))
+    fixed_effects[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(model_output, specs = c("PA_rank", "LC")))
+    
+    # Extract estimates and credible intervals for PA_rank
+    pred_list[[temp_fns]] <- data_temp %>%
+      group_by(LC) %>%
+      modelr::data_grid(PA_rank = modelr::seq_range(PA_rank, n = 51)) %>%
+      tidybayes::add_epred_draws(model_output) %>%
+      mutate(scale = temp_scale,
+             fns = temp_fns)
   
-  fixed_effects[[temp_fns]] <- fixef(model_output)
+  }
   
-  # Extract estimates and credible intervals for PA_rank
-  pred_list[[temp_fns]] <- data_temp %>%
-    group_by(LC) %>%
-    modelr::data_grid(PA_rank = modelr::seq_range(PA_rank, n = 51)) %>%
-    add_epred_draws(model_output) %>%
-    mutate(scale = temp_scale,
-           fns = temp_fns)
-
+  pred_list <- do.call(rbind, pred_list)
+  
+  save(pred_list, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, ".RData"))
+  pred_sample <- pred_list %>% group_by(LC) %>% slice_sample(n = 10000)
+  
+  save(pred_sample, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_sample10k.RData"))
+  
+  save(fixed_effects, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_summary.RData"))
+  sink(paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, ".txt"))
+  fixed_effects
+  sink()
 }
 
-pred_list <- do.call(rbind, pred_list)
-
-save(pred_list, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, ".RData"))
-
-sink(paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, ".txt"))
-fixed_effects
-sink()
-
-
+# extract emtrends
+for(temp_scale in c("global", "continental", "regional")){
+  load(file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_summary.RData")) #fixed_effects
+  emtrends <- sapply(fixed_effects,function(x) x[2])
+  save(emtrends, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_emtrends.RData"))
   
-
+}
 
