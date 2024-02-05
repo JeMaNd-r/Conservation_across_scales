@@ -147,6 +147,14 @@ library(tidybayes)
 
 for(temp_scale in c("global", "continental", "regional")){
   
+  data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+  data_clean
+  
+  data_clean <- data_clean %>% 
+    mutate("PA_rank" = ifelse(is.na(PA_rank), 11, PA_rank)) %>%
+    filter(LC %in% lc_names) %>%
+    arrange(LC, PA_rank)
+  
   # store results
   fixed_effects <- vector("list")
   pred_list <- vector("list")
@@ -196,7 +204,12 @@ for(temp_scale in c("global", "continental", "regional")){
 for(temp_scale in c("global", "continental", "regional")){
   load(file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_summary.RData")) #fixed_effects
   emtrends <- sapply(fixed_effects,function(x) x[2])
-  save(emtrends, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_emtrends.RData"))
-  
+  for(i in 1:length(emtrends)){
+    emtrends[[i]] <- emtrends[[i]] %>% 
+      mutate("fns" = gsub(".emtrends", "", names(emtrends)[i]),
+             "scale" = temp_scale)
+  }
+  emtrends <- do.call(rbind, emtrends)
+  write_csv(emtrends, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_emtrends.csv"))
 }
 
