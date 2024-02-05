@@ -13,6 +13,7 @@ library(ggdist) #to plot distributions (Bayesian)
 library(gridExtra) #to add table in plot
 library(ggrepel) #to add text not overlapping (geom_text_repel)
 library(ggtext) #to add icons as axis labels
+library(ggh4x) # for free axes in facet_grid
 
 #temp_scale <- "global"
 #temp_scale <- "continental"
@@ -89,9 +90,9 @@ data_locations <- data_clean %>%
   filter(SampleID %in% unique(pa_pairs$ID) | 
          SampleID %in% unique(pa_pairs$nonPA)) %>%
   dplyr::select(Longitude,Latitude,SampleID, PA, LC)
-data_locations #G: nrow=262, C: 191, R: 120
-nrow(data_locations %>% filter(PA==1)) #G: 62 PAs, C: 44, R: 29
-nrow(data_locations %>% filter(PA==0)) #G: 200 PAs, C: 147, R: 91
+data_locations #G: nrow=235, C: 243, R: 152
+nrow(data_locations %>% filter(PA==1)) #G: 56 PAs, C: 59, R: 38
+nrow(data_locations %>% filter(PA==0)) #G: 179 PAs, C: 184, R: 124
 
 # set limits for point maps
 if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
@@ -859,11 +860,13 @@ ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
                                     Group_function=NA,
                                     Organism=NA) %>%
                              dplyr::select(colnames(pars_long))) %>%
-                     #filter(Label_fns != "Water regulation") %>%
-                     mutate(Label_fns = factor(Label_fns, levels = labels_order)),
+                     #filter(Label_fns != "Water regulation") %>%%>%
+                     filter(!is.na(Label_pa)) %>%
+                     mutate(Label_fns = factor(Label_fns, levels = c(labels_order, "Number of sites"))),
        aes(y=Label_pa, x=value, color=lc))+
   
-  annotate("rect", ymin = -Inf, ymax = 2+0.5, xmin=-Inf, xmax=Inf, fill = "grey90", alpha=0.5)+ #global: 4, C: 3, R: 2
+  ## adapt for scale
+  annotate("rect", ymin = -Inf, ymax = 3+0.5, xmin=-Inf, xmax=Inf, fill = "grey90", alpha=0.5)+ #global: 4, C: 3, R: 2
   annotate("rect", ymin = -Inf, ymax = 1+0.5, xmin=-Inf, xmax=Inf, fill = "grey85", alpha=0.5)+
   
   ggdist::stat_pointinterval(fatten_point=1, shape=3, 
@@ -894,31 +897,146 @@ pred_list <- rbind(get(load(paste0(here::here(), "/results/PAranks_Bayesian_glob
                    get(load(paste0(here::here(), "/results/PAranks_Bayesian_continental_sample10k.RData")))) %>% 
   rbind(get(load(paste0(here::here(), "/results/PAranks_Bayesian_regional_sample10k.RData"))))
 
-ggplot(data = pred_list %>% filter(scale == temp_scale), 
-       aes(x = PA_rank, y = .epred, color = ordered(LC))) +
-  stat_lineribbon() +
-  #geom_point(data = pred_list) +
-  facet_wrap(vars(fns), scales = "free_y")+
-  scale_fill_brewer(palette = "Greys") +
-  scale_color_manual(values=c("Cropland" = "#4A2040",
-                              "Grassland" = "#E69F00",
-                              "Shrubland" = "#0072B2", 
-                              "Woodland" = "#009E73", 
-                              "Other" = "#000000"), name="Habitat type")+
-  scale_x_continuous(limits = c(1, 10), breaks = c(2, 10), minor_breaks = c(2,4,6,8, 10))+
-  theme_void()+
-  theme(axis.text = element_text(),
-        panel.grid.major.y = element_line(color = "grey"),
-        panel.grid.minor.x =  element_line(color = "grey"),
-        strip.text = element_text(hjust=0),
-        legend.position = c(0.2, 0.7),
-        legend.box = "horizontal")
-ggsave(filename=paste0(here::here(), "/figures/Results_regressions_parsBayesian_", temp_scale,".png"),
-       plot = last_plot(),
-       width=10, height=10)
+for(temp_scale in c("global", "continental", "regional")){
+  ggplot(data = pred_list %>% filter(scale == temp_scale) %>%
+           right_join(fns_labels %>% dplyr::select(Label, Label_short, Function), 
+                      by = c("fns" = "Function")) %>%
+           mutate(Label = factor(Label, levels = labels_order)), 
+         
+         aes(x = PA_rank, y = .epred, color = ordered(LC))) +
+    stat_lineribbon() +
+    #geom_point(data = pred_list) +
+    facet_wrap(vars(Label), scales = "free_y", ncol=6)+
+    scale_fill_brewer(palette = "Greys") +
+    scale_color_manual(values=c("Cropland" = "#4A2040",
+                                "Grassland" = "#E69F00",
+                                "Shrubland" = "#0072B2", 
+                                "Woodland" = "#009E73", 
+                                "Other" = "#000000"), name="Habitat type")+
+    scale_x_continuous(limits = c(1, 10), breaks = c(2, 10), minor_breaks = c(2,4,6,8, 10))+
+    theme_void()+
+    theme(axis.text = element_text(),
+          panel.grid.major.y = element_line(color = "grey"),
+          panel.grid.minor.x =  element_line(color = "grey"),
+          strip.text = element_text(size = 15, hjust=0),
+          legend.position = c(0.8, 0.1),
+          legend.box = "horizontal")
+  ggsave(filename=paste0(here::here(), "/figures/Results_regressions_parsBayesian_", temp_scale,".png"),
+         plot = last_plot(),
+         width=15, height=10)
+}
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Bayesian pointrange grouped per estimate type ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+pars_glob <- read_csv(file=paste0(here::here(), "/results/PAranks_Bayesian_global_emtrends.csv"))
+pars_cont <- read_csv(paste0(here::here(), "/results/PAranks_Bayesian_continental_emtrends.csv"))
+pars_regi <- read_csv(paste0(here::here(), "/results/PAranks_Bayesian_regional_emtrends.csv"))
+
+pars_all <- rbind(pars_glob, pars_cont) %>%
+  rbind(pars_regi)  %>%
+  as_tibble()
+rm(pars_glob, pars_cont, pars_regi)
+# 
+# d_plot_all <- d_sum_all %>%
+#   filter(lc %in% lc_names_all) %>%
+#   dplyr::select(-Label) %>%
+#   right_join(fns_labels %>% dplyr::select(Label, Label_short, Function), 
+#              by = c("fns" = "Function")) %>%
+#   # mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
+#   #                                 abs(effect_ci_17), 
+#   #                                 abs(effect_ci_83))) %>%
+#   # mutate(effect_ci_min66 = ifelse(sign(effect_ci_17)!= sign(effect_ci_83), 0.01, effect_ci_min66)) %>%
+#   # mutate(effect_ci_min66f = cut(effect_ci_min66,
+#   #                               breaks=c(0, 0.2, 0.5, 0.8, Inf),
+#   #                               labels=c("marginal", "small", "medium", "large"))) %>%
+#   mutate(effect_mean_f = cut(abs(effect_mean),
+#                              breaks=c(0, 0.2, 0.5, 0.8, Inf),
+#                              labels=c("marginal", "small", "medium", "large"))) %>%
+#   filter(!is.na(effect_mean)) %>% #!is.na(effect_ci_min66) & 
+#   full_join(expand.grid(scale = c("global", "continental", "regional"), 
+#                         lc = lc_names_all, 
+#                         Label = fns_labels$Label)) %>%
+#   mutate(scale = factor(scale, levels = rev(c("global", "continental", "regional"))),
+#          Label = factor(Label, levels = rev(fns_labels %>% arrange(Group_function, Label) %>% pull(Label))),
+#          lc = factor(lc, levels = c("Cropland", "Grassland", "Shrubland", "Woodland"))) %>%
+#   filter(lc != "Other" & !is.na(Label)) %>% 
+#   mutate(effect_direction = as.factor(sign(effect_mean)))%>%
+#   mutate(effect_direction_c = ifelse(effect_direction=="-1", "negative",
+#                                      ifelse(effect_direction=="1", "positive", "0"))) %>%
+#   #mutate(effect_direction_c = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "ns", effect_direction_c)) %>%
+#   mutate(Label = factor(Label, levels = labels_order)) %>%
+#   mutate(effect_significance = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "ns", effect_direction_c),
+#          effect_na = ifelse(is.na(effect_mean), "not available", NA)) %>%
+#   mutate(effect_significance = factor(effect_significance, levels = c("negative", "positive", "ns")))
+# 
+# # plot
+# ggplot(data = pars_sum,
+#        aes(x = LC, y = scale))+
+#   
+#   # geom_tile(aes(alpha=effect_ci_min66f, 
+#   #                fill=as.factor(sign(effect_median))))+ 
+#   geom_point(aes(size = PA_rank.trend,
+#                  color = effect_direction_c, 
+#                  fill= effect_significance,
+#                  shape = effect_na))+
+#   facet_wrap(vars(Label), ncol=6, drop=FALSE)+
+#   scale_fill_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb", "ns" = "white"),
+#                     name = "Direction of effect",
+#                     na.value = "black", drop = FALSE)+
+#   scale_color_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb"),
+#                      name = "Direction of effect",
+#                      na.value = "black")+
+#   # scale_color_manual(values = c("negative" = "#fc8d59", "ns" = "black", "positive" = "#91bfdb"),
+#   #                   name = "Direction of effect",
+#   #                   na.value = "grey60")+
+#   scale_size_manual(values = c("marginal" = 2, "ns" = 5, "small" = 5, "medium" = 10, "large" = 15),
+#                     name = "Effect size",
+#                     na.value = 5)+
+#   # scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
+#   #                    name = "Effect size")+
+#   scale_shape_manual(values = c("not available" = 4),
+#                      name = "Missing data",
+#                      na.value = 21)+
+#   scale_x_discrete(labels = c(
+#     "Cropland" = "<img src='figures/icon_harvest.png' width='20'>",
+#     "Grassland" = "<img src='figures/icon_grass.png' width='17'>",
+#     "Shrubland" = "<img src='figures/icon_shrub-crop.png' width='35'>",
+#     "Woodland" = "<img src='figures/icon_forest.png' width='30'>"
+#   ))+
+#   
+#   scale_y_discrete(labels = c(
+#     "global" = "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>",
+#     "continental" = "<img src='figures/icon_location-black.png' width='30'>",
+#     "regional" = "<img src='figures/icon_flag-Portugal.png' width='30'>"
+#   ))+
+#   xlab("")+ylab("")+
+#   theme_bw() + # use a white background
+#   
+#   guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black"), 
+#                                                  shape = 21, size = 5)), #tell legend to use different point shape
+#          color = "none", #don't show legend
+#          shape = guide_legend(override.aes = list(size = 5)))+
+#   theme(#legend.position = c(0.96, -0.01),
+#     legend.position = "bottom", #c(0.96, -0.05),
+#     legend.justification = c(1, 0),
+#     legend.box = "horizontal",
+#     legend.direction = "vertical",
+#     #legend.key.size = unit(20, "pt"),
+#     legend.title = element_text(size = 15),
+#     legend.text = element_text(size = 15),
+#     #axis.title.y =element_blank(),
+#     axis.text.y = ggtext::element_markdown(hjust = 0),
+#     axis.ticks = element_blank(),
+#     axis.text.x = ggtext::element_markdown(vjust = 0),
+#     panel.grid = element_blank(),
+#     panel.border = element_blank(),
+#     strip.background = element_rect(fill="white", color = "white"), #chocolate4
+#     strip.text = element_text(color="black", size = 15, hjust = 0)) #white
+# ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_BayesianTrends_allScales_fns.png"),
+#        plot = last_plot(), 
+#        width = 4400, height = 3800, units = "px")
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### FIGURE 3 - Bayesian summary ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -927,64 +1045,81 @@ ggsave(filename=paste0(here::here(), "/figures/Results_regressions_parsBayesian_
 # habitat types as colors
 # pointrange plot
 
-pars_glob <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_global.csv"))
-pars_cont <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_continental.csv"))
-pars_regi <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_regional.csv"))
+# summarize into groups
+pars_sum <- pars_all %>%
+  full_join(fns_labels %>% dplyr::select(Function, Group_function), by = c("fns" = "Function")) %>%
+  dplyr::select(-fns) %>%
+  group_by(Group_function, LC, scale) %>%
+  summarize(across(everything(), function(x) mean(x, na.rm=T)))
 
-pars_all <- rbind(pars_glob %>% mutate("scale" = "global"), 
-                  pars_cont %>% mutate("scale" = "continental")) %>%
-  rbind(pars_regi %>% mutate("scale" = "regional"))  %>%
-  as_tibble()
-rm(pars_glob, pars_cont, pars_regi)
-
-ggplot(data = pars_all %>% filter(!is.na(lc)) %>%
+# plot
+ggplot(data = pars_sum %>% filter(!is.na(LC)) %>%
          mutate(scale = factor(scale, levels = c("regional", "continental", "global"))) %>%
-         mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='30'>",
-                                    ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='30'>",
-                                           ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>", NA)))) %>%
+         mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='70'>",
+                                    ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='70'>",
+                                           ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>", NA)))) %>%
          mutate(Group_function = ifelse(Group_function=="Service", "Function", 
-                                        ifelse(Group_function=="Diversity", "Shannon", Group_function))) %>%
-         mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))),
-       aes(fill = lc, color = lc, 
-           y = scale_icon, x = effect))+
+                                        ifelse(Group_function=="Diversity", "Shannon", Group_function)),
+                scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>",
+                                                           "<img src='figures/icon_location-black.png' width='70'>",
+                                                           "<img src='figures/icon_flag-Portugal.png' width='70'>" ))) %>%
+         mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))) %>%
+         mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","ns")),
+               significance =  ifelse(sign(lower.HPD)!= sign(upper.HPD), "ns", as.character(as.factor(LC)))) %>%
+         mutate(significance = factor(significance, levels = c("Cropland", "Grassland", "Shrubland", "Woodland", "ns"))),
+       aes(fill = significance, color = LC, 
+           y = LC, x = PA_rank.trend))+
   
   geom_vline(aes(xintercept=0), color="black")+
-  ggdist::stat_pointinterval(fatten_point=1.2, shape=21,
-                             position=position_dodgejust(width=0.5)) +
-  coord_flip()+
-  facet_wrap(vars(Group_function), drop=FALSE)+
+  geom_pointrange(aes(xmin = lower.HPD, xmax = upper.HPD),
+                  position = position_dodge(width = 0.3),
+                  size = 3, shape = 21) +
+  #coord_flip()+
+  ggh4x::facet_grid2(scale_icon ~ Group_function, drop=FALSE, 
+             scales = "free", independent = "all", switch = "y",
+             shrink = FALSE)+
   #ylab("Effect size")+
   scale_fill_manual(values=c("Cropland" = "#4A2040",
                              "Grassland" = "#E69F00",
                              "Shrubland" = "#0072B2", 
                              "Woodland" = "#009E73", 
-                             "Other" = "#000000"))+
+                             "Other" = "#000000",
+                             "ns" = "white"),
+                    drop = FALSE)+
   scale_color_manual(values=c("Cropland" = "#4A2040",
                               "Grassland" = "#E69F00",
                               "Shrubland" = "#0072B2", 
                               "Woodland" = "#009E73", 
-                              "Other" = "#000000"))+
-  # scale_x_discrete(labels = c(
-  #   "global" = "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>",
-  #   "continental" = "<img src='figures/icon_location-black.png' width='30'>",
-  #   "regional" = "<img src='figures/icon_flag-Portugal.png' width='30'>"
-  # ))+
-  scale_x_continuous(breaks = c(-2, -0.8, -0.5, -0.2, 0, 0.2, 0.5, 0.8, 2))+
+                              "Other" = "#000000",
+                              "ns" = "#000000"),
+                     drop = FALSE)+
   theme_void()+
-  theme(legend.position = "right", axis.title.y =element_blank(),
-        legend.text = element_text(size = 40),
+  
+  guides(fill = guide_legend(reverse = F, override.aes = list(shape = 21, 
+                                                              color = c("Cropland" = "#4A2040",
+                                                                        "Grassland" = "#E69F00",
+                                                                        "Shrubland" = "#0072B2", 
+                                                                        "Woodland" = "#009E73", 
+                                                                        "ns" = "#000000"))), 
+         color = "none")+
+  theme(legend.position = "bottom", 
+        axis.title.y =element_blank(),
+        legend.text = element_text(size = 15),
+        legend.spacing.x = unit(0.5, "cm"),
+        legend.box.spacing = unit(c(1,0,0,0), "cm"),
         legend.title = element_blank(),
-        plot.margin = unit(c(0, 0, 2, 0.5), "cm"),
-        axis.text.y = element_text(size = 20, hjust = 1),  
-        axis.text.x = ggtext::element_markdown(vjust = 1),
-        axis.ticks.y = element_blank(),
+        plot.margin = unit(c(1, 0.5, 0.5, 0.5), "cm"),
+        axis.text.x = element_text(size = 15),
+        axis.ticks.x = element_blank(),
         panel.grid.minor = element_blank(),
-        panel.grid.major.y = element_line(color = "grey90"),
+        panel.grid.major.x = element_line(color = "grey90"),
+        panel.spacing = unit(0.8, "cm"),
         strip.background = element_rect(fill="white", color = "white"), #chocolate4
-        strip.text = element_text(size = 40, hjust = 0))
+        #strip.text.x.bottom = ggtext::element_markdown(vjust = 1),
+        strip.text.x = element_text(size = 30, hjust = 0, vjust = 1),
+        strip.text.y = ggtext::element_markdown(vjust = 0.5))
 
-ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianCI_allScales_grouped.png"),
+ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_BayesianTrends_allScales_grouped.png"),
        plot = last_plot(), 
        #width = 2000, height = 1500,
        units = "px")
-
