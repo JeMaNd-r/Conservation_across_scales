@@ -14,6 +14,7 @@ library(gridExtra) #to add table in plot
 library(ggrepel) #to add text not overlapping (geom_text_repel)
 library(ggtext) #to add icons as axis labels
 library(ggh4x) # for free axes in facet_grid
+library(corrplot)
 
 #temp_scale <- "global"
 #temp_scale <- "continental"
@@ -808,7 +809,7 @@ ggsave(filename=paste0(here::here(), "/figures/Results_boxplot_estimates_", temp
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Bayesian results (PA types) ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### APPENDIX S3 - Bayesian PA types ####
+### FIGURE (OLD) - Bayesian PA types ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # transform parameters to long format and assign labels
 pars_long <- pars_sample %>% 
@@ -890,7 +891,7 @@ ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_parsBayesian_"
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## Bayesian results (PA ranks) ####
+## Bayesian results (PA ranks/ levels) ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 pred_list <- rbind(get(load(paste0(here::here(), "/results/PAranks_Bayesian_global_sample10k.RData"))), 
@@ -903,8 +904,9 @@ for(temp_scale in c("global", "continental", "regional")){
                       by = c("fns" = "Function")) %>%
            mutate(Label = factor(Label, levels = labels_order)), 
          
-         aes(x = PA_rank, y = .epred, color = ordered(LC))) +
+         aes(x = PA_rank_rev, y = .epred, color = ordered(LC))) +
     stat_lineribbon() +
+    #geom_line(aes(y = .epred, group = paste(LC, .draw)), alpha = 0.2)+
     #geom_point(data = pred_list) +
     facet_wrap(vars(Label), scales = "free_y", ncol=6)+
     scale_fill_brewer(palette = "Greys") +
@@ -1038,7 +1040,7 @@ rm(pars_glob, pars_cont, pars_regi)
 #        width = 4400, height = 3800, units = "px")
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### FIGURE 3 - Bayesian summary ####
+### Bayesian summary ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # combined diversity and function estimates (x axis)
 # scale on y axis
@@ -1048,13 +1050,18 @@ rm(pars_glob, pars_cont, pars_regi)
 # summarize into groups
 pars_sum <- pars_all %>%
   full_join(fns_labels %>% dplyr::select(Function, Group_function), by = c("fns" = "Function")) %>%
-  dplyr::select(-fns) %>%
+  dplyr::select(-fns, -lower.HPD, -upper.HPD) %>%
   group_by(Group_function, LC, scale) %>%
-  summarize(across(everything(), function(x) mean(x, na.rm=T)))
+  summarize(across(everything(), list("mean" = function(x) mean(x, na.rm=T),
+                                      "SE" = function(x) sd(x, na.rm=T) / sqrt(length(x))))) %>%
+  mutate(# Calculate confidence intervals
+    "PA_rank_rev.trend_CI_lower" = PA_rank_rev.trend_mean - (1.96 * PA_rank_rev.trend_SE),  # 1.96 is the Z-value for a 95% confidence interval
+    "PA_rank_rev.trend_CI_upper" = PA_rank_rev.trend_mean + (1.96 * PA_rank_rev.trend_SE)
+  )
 
 # plot
-ggplot(data = pars_sum %>% filter(!is.na(LC)) %>%
-         mutate(scale = factor(scale, levels = c("regional", "continental", "global"))) %>%
+ggplot(pars_all %>%
+         full_join(fns_labels %>% dplyr::select(Function, Group_function), by = c("fns" = "Function")) %>%
          mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='70'>",
                                     ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='70'>",
                                            ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>", NA)))) %>%
@@ -1065,19 +1072,45 @@ ggplot(data = pars_sum %>% filter(!is.na(LC)) %>%
                                                            "<img src='figures/icon_flag-Portugal.png' width='70'>" ))) %>%
          mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))) %>%
          mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","ns")),
-               significance =  ifelse(sign(lower.HPD)!= sign(upper.HPD), "ns", as.character(as.factor(LC)))) %>%
-         mutate(significance = factor(significance, levels = c("Cropland", "Grassland", "Shrubland", "Woodland", "ns"))),
-       aes(fill = significance, color = LC, 
-           y = LC, x = PA_rank.trend))+
+                significance =  ifelse(sign(lower.HPD)!= sign(upper.HPD), "ns", as.character(as.factor(LC)))) %>%
+         mutate(significance = factor(significance, levels = c("Cropland", "Grassland", "Shrubland", "Woodland", "ns")))  %>% 
+         filter(!is.na(LC) & !is.na(scale)),
+       aes(x = PA_rank_rev.trend, y = LC,
+           xmin = lower.HPD, xmax = upper.HPD,
+           fill = significance, color = LC))+
   
   geom_vline(aes(xintercept=0), color="black")+
-  geom_pointrange(aes(xmin = lower.HPD, xmax = upper.HPD),
-                  position = position_dodge(width = 0.3),
-                  size = 3, shape = 21) +
+  geom_pointrange(position = position_jitter(height = 0.3),
+                  size = 0.5, shape = 21) +
+
+  geom_pointrange(data = pars_sum %>% filter(!is.na(LC) & !is.na(scale)) %>%
+                    mutate(scale = factor(scale, levels = c("regional", "continental", "global"))) %>%
+                    mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='70'>",
+                                               ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='70'>",
+                                                      ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>", NA)))) %>%
+                    mutate(Group_function = ifelse(Group_function=="Service", "Function",
+                                                   ifelse(Group_function=="Diversity", "Shannon", Group_function)),
+                           scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>",
+                                                                      "<img src='figures/icon_location-black.png' width='70'>",
+                                                                      "<img src='figures/icon_flag-Portugal.png' width='70'>" ))) %>%
+                    mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))) %>%
+                    mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","ns")),
+                           significance =  ifelse(sign(PA_rank_rev.trend_CI_lower)!= sign(PA_rank_rev.trend_CI_upper), "ns", as.character(as.factor(LC)))) %>%
+                    mutate(significance = factor(significance, levels = c("Cropland", "Grassland", "Shrubland", "Woodland", "ns"))),
+
+                  aes(fill = significance, color = LC,
+                      y = LC, x = PA_rank_rev.trend_mean, 
+                      xmin = PA_rank_rev.trend_CI_lower, xmax = PA_rank_rev.trend_CI_upper),
+
+                  position = position_dodge(width = 0.1),
+                  size = 1.5, shape = 21, linewidth = 1.5) +
+
   #coord_flip()+
+  coord_cartesian(clip = "off")+
   ggh4x::facet_grid2(scale_icon ~ Group_function, drop=FALSE, 
              scales = "free", independent = "all", switch = "y",
              shrink = FALSE)+
+
   #ylab("Effect size")+
   scale_fill_manual(values=c("Cropland" = "#4A2040",
                              "Grassland" = "#E69F00",
@@ -1123,3 +1156,228 @@ ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_BayesianTrends
        plot = last_plot(), 
        #width = 2000, height = 1500,
        units = "px")
+
+# table all
+pars_all %>%
+  full_join(fns_labels %>% dplyr::select(Function, Group_function), by = c("fns" = "Function")) %>%
+  mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='70'>",
+                             ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='70'>",
+                                    ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>", NA)))) %>%
+  mutate(Group_function = ifelse(Group_function=="Service", "Function", 
+                                 ifelse(Group_function=="Diversity", "Shannon", Group_function)),
+         scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>",
+                                                    "<img src='figures/icon_location-black.png' width='70'>",
+                                                    "<img src='figures/icon_flag-Portugal.png' width='70'>" ))) %>%
+  mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))) %>%
+  mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","ns")),
+         significance =  ifelse(sign(lower.HPD)!= sign(upper.HPD), "ns", as.character(as.factor(LC)))) %>%
+  mutate(significance = factor(significance, levels = c("Cropland", "Grassland", "Shrubland", "Woodland", "ns")))  %>% 
+  filter(!is.na(LC) & !is.na(scale)) %>%
+  filter(significance != "ns") %>%
+  arrange(abs(PA_rank_rev.trend)) %>%
+  print(n=100)
+
+### APPENDIX S3 - Table with stats ####
+options("scipen"=100, "digits"=4)
+write_csv(pars_sum %>% 
+    mutate("trend" = round(PA_rank_rev.trend_mean, 4),
+           "SE" = round(PA_rank_rev.trend_SE, 4),
+           "95% CI" = paste0("[", round(PA_rank_rev.trend_CI_lower, 4),"; ", 
+                             round(PA_rank_rev.trend_CI_upper, 4), "]"),
+           "Scale" = factor(scale, levels = c("global", "continental", "regional"))) %>%
+    dplyr::select(Group_function, Scale, LC, trend, SE, "95% CI") %>%
+    arrange(Group_function, scale, LC),
+  paste0(here::here(), "/figures/Results_pointrange_BayesianTrends_allScales_grouped.csv"))
+
+write_csv(pars_all %>%
+      full_join(fns_labels %>% dplyr::select(Function, Group_function, Label_short), by = c("fns" = "Function")) %>%
+      mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='70'>",
+                                 ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='70'>",
+                                        ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>", NA)))) %>%
+      mutate(Group_function = ifelse(Group_function=="Service", "Function", 
+                                     ifelse(Group_function=="Diversity", "Shannon", Group_function)),
+             scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>",
+                                                        "<img src='figures/icon_location-black.png' width='70'>",
+                                                        "<img src='figures/icon_flag-Portugal.png' width='70'>" ))) %>%
+      mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))) %>%
+      mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","ns")),
+             significance =  ifelse(sign(lower.HPD)!= sign(upper.HPD), "ns", as.character(as.factor(LC)))) %>%
+      mutate(significance = factor(significance, levels = c("Cropland", "Grassland", "Shrubland", "Woodland", "ns")))  %>% 
+      filter(!is.na(LC) & !is.na(scale)) %>%
+      arrange(abs(PA_rank_rev.trend)) %>%
+      mutate("Habitat" = LC,
+             "Group" = Group_function,
+             "Slope [HPD]" = paste0(round(PA_rank_rev.trend, 3), 
+                                    " [", round(lower.HPD, 3), "; ", round(upper.HPD, 3), "] ", 
+                                    ifelse(significance == "ns", "ns", "*")),
+             "Variable" = Label_short,
+             "Scale_long" = factor(scale, levels = c("global", "continental", "regional")))  %>%
+      mutate("Scale" = factor(substr(scale, 1, 4), levels = c("glob", "cont", "regi"))) %>%
+      dplyr::select(Group, Variable, Scale, Habitat, "Slope [HPD]") %>%
+      pivot_wider(names_from = "Habitat", values_from = "Slope [HPD]") %>%
+      arrange(Group, Variable, Scale),
+  paste0(here::here(), "/figures/Results_pointrange_BayesianTrends_allScales.csv"))
+
+
+# # table average
+# pars_sum %>% filter(!is.na(LC) & !is.na(scale)) %>%
+#   mutate(scale = factor(scale, levels = c("regional", "continental", "global"))) %>%
+#   mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='70'>",
+#                              ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='70'>",
+#                                     ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>", NA)))) %>%
+#   mutate(Group_function = ifelse(Group_function=="Service", "Function",
+#                                  ifelse(Group_function=="Diversity", "Shannon", Group_function)),
+#          scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>",
+#                                                     "<img src='figures/icon_location-black.png' width='70'>",
+#                                                     "<img src='figures/icon_flag-Portugal.png' width='70'>" ))) %>%
+#   mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))) %>%
+#   mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","ns")),
+#          significance =  ifelse(sign(lower.HPD)!= sign(upper.HPD), "ns", as.character(as.factor(LC)))) %>%
+#   mutate(significance = factor(significance, levels = c("Cropland", "Grassland", "Shrubland", "Woodland", "ns"))) %>%
+#   filter(significance != "ns") %>%
+#   arrange(abs(PA_rank_rev.trend)) %>%
+#   print(n=100)
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### FIGURE 3 - Heatmap env. conditions ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+#corrplot::corrplot(cor(data_clean %>% dplyr::select(all_of(c(fns, mahal_vars)))))
+
+# load data
+temp_scale <- "global"
+temp_date <- "2023-12-01"
+lc_names <- lc_names[lc_names != "Other"]
+data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv")) %>%
+  mutate(scale = temp_scale)
+
+# load pairs of PA and nonPA
+pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+
+# add data
+pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
+  rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
+  filter(!is.na(nonPA)) %>%
+  arrange(ID, nonPA, times, scale)
+pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% 
+  #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
+  full_join(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
+    # pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), mean)) %>% mutate(measure = "mean") %>% 
+    #   pivot_longer(cols = all_of(mahal_vars), names_to = "env") %>%
+    # rbind(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA") %>% 
+    #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")) %>%
+    # rbind(pa_env %>% filter(data == "nonPA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "nonPA") %>% 
+    #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")))
+
+pa_env <- pa_env %>% dplyr::select(ID, all_of(c(fns, mahal_vars))) 
+
+# Calculate correlations between env and fns for each site
+correlation_matrix <- sapply(mahal_vars, function(mahal_var) {
+  sapply(fns, function(fn) {
+    cor(pa_env[[mahal_var]], pa_env[[fn]])
+  })
+})
+
+# Convert the correlation matrix to a data frame for easier interpretation
+correlation_df <- as.data.frame(correlation_matrix)
+rownames(correlation_df) <- fns  
+colnames(correlation_df) <- mahal_vars  
+
+# Print or view the correlation matrix
+print(correlation_df)
+
+correlation_df <- correlation_df %>% 
+  rownames_to_column(var = "env") %>%  # Convert row names to a column
+  pivot_longer(cols = -env,  # Pivot to long format, excluding the env_variable column
+               names_to = "fns",
+               values_to = "correlation") %>%
+  mutate(fns = factor(fns, levels = unique(fns[order(correlation)])),
+         env = factor(env, levels = unique(env[order(correlation)])))
+
+pdf(paste0(here::here(), "/figures/Correlation_diff_PA_global.pdf"))
+ggplot(data = correlation_df)+
+  geom_tile(aes(y = env, x = fns, fill = correlation))+
+  scale_fill_distiller(type = "div")
+dev.off()
+
+
+# load pairs of PA and nonPA
+pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+
+# add data
+pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
+  rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
+  filter(!is.na(nonPA)) %>%
+  arrange(ID, nonPA, times, scale)
+pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% 
+  #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
+  #full_join(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
+ full_join(pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), diff)) %>% mutate(measure = "diff")) 
+# rbind(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA") %>% 
+#     pivot_longer(cols = all_of(mahal_vars), names_to = "env")) %>%
+# rbind(pa_env %>% filter(data == "nonPA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "nonPA") %>% 
+#     pivot_longer(cols = all_of(mahal_vars), names_to = "env")))
+
+pa_env <- pa_env %>% dplyr::select(ID, all_of(c(fns, mahal_vars))) 
+
+# Calculate correlations between env and fns for each site
+correlation_matrix <- sapply(mahal_vars, function(mahal_var) {
+  sapply(fns, function(fn) {
+    cor(pa_env[[mahal_var]], pa_env[[fn]])
+  })
+})
+
+# Convert the correlation matrix to a data frame for easier interpretation
+correlation_df <- as.data.frame(correlation_matrix)
+rownames(correlation_df) <- fns  
+colnames(correlation_df) <- mahal_vars  
+
+# Print or view the correlation matrix
+print(correlation_df)
+
+correlation_df <- correlation_df %>% 
+  rownames_to_column(var = "env") %>%  # Convert row names to a column
+  pivot_longer(cols = -env,  # Pivot to long format, excluding the env_variable column
+               names_to = "fns",
+               values_to = "correlation") %>%
+  mutate(fns = factor(fns, levels = unique(fns[order(correlation)])),
+         env = factor(env, levels = unique(env[order(correlation)])))
+
+pdf(paste0(here::here(), "/figures/Correlation_diff_diff_global.pdf"))
+ggplot(data = correlation_df)+
+  geom_tile(aes(y = env, x = fns, fill = correlation))+
+  scale_fill_distiller(type = "div")
+dev.off()
+
+# # same for other 2 scales
+# for(temp_scale in c("continental", "regional")){
+#   lc_names <- c("Cropland", "Grassland", "Shrubland", "Woodland", "Other")
+#   
+#   # set date of latest analysis
+#   if(temp_scale == "continental") temp_date <- "2023-12-14"
+#   if(temp_scale == "regional") temp_date <- "2023-12-14"
+#   
+#   if(temp_scale == "continental") lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
+#   if(temp_scale == "regional"){
+#     lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
+#     min_size <- 7
+#   }
+#   
+#   #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#   ## Load soil biodiversity data 
+#   data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+#   data_clean_all <- full_join(data_clean_all, data_clean %>% mutate(scale = temp_scale))
+#   
+#   # load pairs of PA and nonPA
+#   pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+#   head(pa_pairs)
+# }
+# data_clean_all
+# 
+# 
+
+
+#  geom_tile(aes(fill=corr))
+
+

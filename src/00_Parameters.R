@@ -10,7 +10,7 @@ set.seed(1759) #& sample PA ID in pairing [last option used]
 #set.seed(5738375)
 
 ## define functions to be compared
-fns <- c("Soil_carbon_service", "OM_decomposition_service", #"Water_regulation_service", #water only for global
+fns <- c("Soil_carbon_service", "OM_decomposition_service", "Water_regulation_service", #water only for global
         "Soil_stability_service", "Nutrient_service", "Pathogen_control", 
         "Bac_richness", "Fungi_richness", "Invertebrate_richness", 
         "Protist_richness", "Nematode_richness", 
