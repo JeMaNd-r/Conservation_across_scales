@@ -656,7 +656,7 @@ table(d_plot_all %>% filter(effect_significance!="ns" & !is.na(effect_significan
 table(d_plot_all %>% filter(!is.na(effect_significance)) %>% dplyr::select(scale, lc))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## Pointrange plot grouped per estimate type ####
+## APPENDIX S2 Pointrange plot grouped per estimate type ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 d_df_glob <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_global.csv"))
@@ -678,14 +678,25 @@ rm(d_df_glob, d_df_cont, d_df_regi)
 #                                      "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
 #                                      "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE))))
 
-ggplot(data = d_df_all %>% filter(!is.na(lc)) %>%
-         mutate(scale = factor(scale, levels = c("regional", "continental", "global"))) %>%
-         mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='30'>",
-                                    ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='30'>",
-                                           ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>", NA)))) %>%
-         mutate(Group_function = ifelse(Group_function=="Service", "Function", 
-                                        ifelse(Group_function=="Diversity", "Shannon", Group_function))) %>%
-        mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))),
+d_df_grouped <- d_df_all %>% filter(!is.na(lc)) %>%
+  mutate(scale = factor(scale, levels = c("regional", "continental", "global"))) %>%
+  mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='30'>",
+                             ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='30'>",
+                                    ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>", NA)))) %>%
+  mutate(Group_function = ifelse(Group_function=="Service", "Function", 
+                                 ifelse(Group_function=="Diversity", "Shannon", Group_function))) %>%
+  mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity")))
+write_csv(d_df_grouped %>%
+            group_by(Group_function, scale, lc) %>%
+            summarize(across(effect, list(median = median, 
+                                          ci2.5 = function(x) quantile(x, 0.025), 
+                                          ci92.5 = function(x) quantile(x, 0.925)))) %>%
+            mutate(across(c(effect_median, effect_ci2.5, effect_ci92.5), function(x) round(x, 3))) %>%
+            mutate(ci_95 = paste0("[", effect_ci2.5, "; ", effect_ci92.5, "]")) %>%
+            dplyr::select(-effect_ci2.5, -effect_ci92.5), 
+          paste0(here::here(), "/figures/Results_pointrange_d-value_medianCI_allScales_grouped.csv"))
+
+ggplot(data = d_df_grouped,
        aes(fill = lc, color = lc, 
            y = scale_icon, x = effect))+
   
@@ -712,21 +723,24 @@ ggplot(data = d_df_all %>% filter(!is.na(lc)) %>%
   # ))+
   scale_x_continuous(breaks = c(-2, -0.8, -0.5, -0.2, 0, 0.2, 0.5, 0.8, 2))+
   theme_void()+
-  theme(legend.position = "right", axis.title.y =element_blank(),
-        legend.text = element_text(size = 40),
+  theme(legend.position = "bottom", 
+        legend.direction = "horizontal",
+        axis.title.y =element_blank(),
+        legend.text = element_text(size = 13),
         legend.title = element_blank(),
-        plot.margin = unit(c(0, 0, 2, 0.5), "cm"),
-        axis.text.y = element_text(size = 20, hjust = 1),  
-        axis.text.x = ggtext::element_markdown(vjust = 1),
+        plot.margin = unit(c(1, 1, 1, 1), "cm"),
+        axis.text.y = element_text(size = 13, hjust = 1),  
+        axis.text.x = ggtext::element_markdown(vjust = 1, margin = unit(c(1, 1, 20, 1), "pt")),
         axis.ticks.y = element_blank(),
         panel.grid.minor = element_blank(),
         panel.grid.major.y = element_line(color = "grey90"),
         strip.background = element_rect(fill="white", color = "white"), #chocolate4
-        strip.text = element_text(size = 40, hjust = 0))
+        strip.text = element_text(size = 20, hjust = 0),
+        plot.background = element_rect(fill = "white", color = "white"))
 
 ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianCI_allScales_grouped.png"),
        plot = last_plot(), 
-       #width = 2000, height = 1500,
+       width = 2700, height = 2200,
        units = "px")
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1262,8 +1276,9 @@ pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC"))
   arrange(ID, nonPA, times, scale)
 pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% 
   #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
-  full_join(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
-    # pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), mean)) %>% mutate(measure = "mean") %>% 
+  full_join(
+    # pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
+    pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), mean)) %>% mutate(measure = "mean")) #%>% 
     #   pivot_longer(cols = all_of(mahal_vars), names_to = "env") %>%
     # rbind(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA") %>% 
     #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")) %>%
