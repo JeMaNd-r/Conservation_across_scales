@@ -1,17 +1,43 @@
+
+> print(temp_scale)
 [1] "regional"
-Number of non-protected sites have never been paired to any PA:[1] 178
+
+> # look what non-protected sites have (not) been paired to any PA
+> cat("Number of non-protected sites have never been paired to any PA:")
+Number of non-protected sites have never been paired to any PA:
+> hist(table(pa_pairs$nonPA))  # frequency distribution of the use of sites from all runs
+
+> length(setdiff(data_clean[data_clean$PA==0,]$SampleID, pa_pairs$nonPA))  
+[1] 178
+
+> # nonPA sites never used: G 131
+> 
+> cat(paste0("On average, each protected and unprotected site was used in ",
++            round(mean(table(pa_pai .... [TRUNCATED] 
 On average, each protected and unprotected site was used in 553 (SD=288, min=296, max=1000) and 169 (SD=143, min=1, max=529) of the 1000 randomizations, respectively.
-   8   22   59   60   61   62   63   65   89   90  129  152  154  157  202  204  205  206  209  227  259  275  289 
- 309  769 1000  334  316  791  327 1000  332  305 1000 1000  314  784  326  296  774  777  315  798  335 1000  336 
- 329  348  349  351  352  353  354  355  357  358  359  360  361  430  433 
- 311  326  303  320  323  778  305 1000 1000  751  308  312  322  325  778 
-Number of sites (PA/ nonPA) per LC.# A tibble: 3 x 2
+> # cat("Mean number of nonPA sites per PA.")
+> # mean(table(pa_pairs$nonPA))
+> # 
+> # cat("SD number of nonPA sites per PA.")
+> # sd(table(pa_pairs$n .... [TRUNCATED] 
+
+   8   22   59   60   61   62   63   65   89   90  129  152  154  157  202  204  205  206  209  227  259  275  289  329  348  349  351  352  353  354  355  357  358  359  360  361 
+ 309  769 1000  334  316  791  327 1000  332  305 1000 1000  314  784  326  296  774  777  315  798  335 1000  336  311  326  303  320  323  778  305 1000 1000  751  308  312  322 
+ 430  433 
+ 325  778 
+
+> cat("Number of sites (PA/ nonPA) per LC.")
+Number of sites (PA/ nonPA) per LC.
+> pa_pairs %>% group_by(LC) %>% dplyr::select(ID) %>% unique() %>% count()
+# A tibble: 3 x 2
 # Groups:   LC [3]
   LC            n
   <chr>     <int>
 1 Cropland      9
 2 Grassland     7
 3 Woodland     22
+
+> pa_pairs %>% group_by(LC) %>% dplyr::select(nonPA) %>% unique() %>% count()
 # A tibble: 3 x 2
 # Groups:   LC [3]
   LC            n
@@ -19,3 +45,5 @@ Number of sites (PA/ nonPA) per LC.# A tibble: 3 x 2
 1 Cropland     33
 2 Grassland    27
 3 Woodland     64
+
+> sink()
