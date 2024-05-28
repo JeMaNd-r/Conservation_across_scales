@@ -15,10 +15,11 @@ library(ggrepel) #to add text not overlapping (geom_text_repel)
 library(ggtext) #to add icons as axis labels
 library(ggh4x) # for free axes in facet_grid
 library(corrplot)
+library(ggcorrplot)
 
-#temp_scale <- "global"
+temp_scale <- "global"
 #temp_scale <- "continental"
-temp_scale <- "regional"
+#temp_scale <- "regional"
 
 # load background map
 world.inp <- map_data("world")
@@ -40,7 +41,7 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 
 # set date of latest analysis
 if(temp_scale == "global") temp_date <- "2023-12-01"
-if(temp_scale == "continental") temp_date <- "2023-12-14"
+if(temp_scale == "continental") temp_date <- "2024-05-27"
 if(temp_scale == "regional") temp_date <- "2023-12-14"
 
 if(temp_scale == "global") lc_names <- lc_names[lc_names != "Other"]
@@ -92,8 +93,9 @@ data_locations <- data_clean %>%
          SampleID %in% unique(pa_pairs$nonPA)) %>%
   dplyr::select(Longitude,Latitude,SampleID, PA, LC)
 data_locations #G: nrow=235, C: 243, R: 152
-nrow(data_locations %>% filter(PA==1)) #G: 56 PAs, C: 59, R: 38
-nrow(data_locations %>% filter(PA==0)) #G: 179 PAs, C: 184, R: 124
+write_csv(data_locations, file = paste0(here::here(), "/results/Locations_", temp_scale, ".csv"))
+nrow(data_locations %>% filter(PA==1)) #G: 56 PAs, C: 49, R: 38
+nrow(data_locations %>% filter(PA==0)) #G: 179 PAs, C: 271, R: 124
 
 # set limits for point maps
 if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
@@ -184,6 +186,35 @@ pa_pairs %>% group_by(LC) %>% dplyr::select(nonPA) %>% unique() %>% count()
 sink()
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Plot pairs on map
+data_pairs <- pa_pairs %>%
+  full_join(data_clean %>%
+    filter(SampleID %in% unique(pa_pairs$ID) | 
+             SampleID %in% unique(pa_pairs$nonPA)) %>%
+    dplyr::select(Longitude,Latitude,SampleID, PA, LC),
+    by = c("ID" = "SampleID", "LC")) 
+
+#library(leaflet)
+
+# Merge data to get coordinates for each ID
+data_merged <- pa_pairs %>%
+  inner_join(data_clean, by = c("ID" = "SampleID")) %>%
+  inner_join(data_clean, by = c("nonPA" = "SampleID"), suffix = c("_1", "_2"))
+
+# Calculate frequency of appearance of pairs
+pair_freq <- data_merged %>%
+  group_by(ID, nonPA) %>%
+  summarise(freq = n())
+
+# Create plot with ggplot2
+ggplot() +
+  geom_segment(data = data_merged, aes(x = Longitude_1, y = Latitude_1, xend = Longitude_2, yend = Latitude_2), alpha = 0.5, color = "blue") +
+  geom_point(data = data_clean, aes(x = Longitude, y = Latitude)) +
+  #scale_size_continuous(name = "Frequency", guide = "legend") +
+  labs(x = "Longitude", y = "Latitude") +
+  theme_minimal()
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Boxplot mahalanobis distance ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -199,7 +230,7 @@ ggplot(pa_pairs, aes(x = LC, y = mahal.min, fill = LC))+
                              "Shrubland" = "#0072B2", 
                              "Woodland" = "#009E73", 
                              "Other" = "#000000")) #"gold3", "limegreen", "forestgreen"
-ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_mahal.distance_global.png"),
+ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_mahal.distance_", temp_scale, ".png"),
        plot = last_plot())
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -388,90 +419,90 @@ ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_", tem
 #         strip.text = element_text(color="black")) #white
 # ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianSD_", temp_scale, ".png"),
 #        plot = last_plot())
-
-## one-sided
-ggplot(data = d_summary %>%
-         filter(lc %in% lc_names) %>%
-         mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
-                                         abs(effect_ci_17), 
-                                         abs(effect_ci_83))),
-       aes(y = abs(effect_ci_min66), x = abs(effect_median),
-           color=as.factor(sign(effect_median))
-           ))+
-
-  # geom_vline(aes(xintercept=0.8, linetype = "0.8"), color="grey60")+
-  # geom_vline(aes(xintercept=0.5, linetype = "0.5"), color="grey60")+
-  # geom_vline(aes(xintercept=0.2, linetype = "0.2"), color="grey60")+
-  # scale_linetype_manual(values = c("0.8" = "dotted",
-  #                                  "0.5" = "dashed",
-  #                                  "0.2" = "solid"),
-  #                       name="Strength of effect")+
-  #annotate("rect", ymin = 0, ymax = 0.2, xmin=0, xmax=0.2, fill = "grey", alpha=0.1)+ #chocolate4
-  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.2, fill = "grey", alpha=0.3)+
-  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.5, fill = "grey", alpha=0.3)+
-  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.8, fill = "grey", alpha=0.3)+
-
-  # geom_pointrange(aes(xmin = abs(effect_ci_2.5), xmax = abs(effect_ci_97.5),
-  #                     shape = Group_function))+
-  # geom_linerange(aes(xmin = ifelse(sign(effect_ci_17) != sign(effect_ci_83),
-  #                                  abs(effect_ci_17)), xmax = abs(effect_ci_83),
-  #                     #shape = Group_function
-  #                    ), linewidth=1, alpha = 0.2)+
-  geom_point(aes(shape = Group_function), size = 5)+
-  ggrepel::geom_text_repel(aes(label = Label, shape = Group_function), size = 3)+
-  #geom_text(aes(label = Label), size = 1.5, nudge_y = 0.005)+
-
-  xlab("Median effect")+ ylab("Lower CI (17%)")+
-  scale_y_continuous(breaks = c(0.2, 0.5, 0.8))+
-  scale_x_continuous(breaks = c(0.2, 0.5, 0.8))+
-  # scale_y_continuous(limits = c(0, 0.7),
-  #                    expand = c(0,0), breaks = c(0, 0.25, 0.5))+
-  #scale_color_manual(c(""))+
-
-  facet_wrap(vars(lc), scales = "free")+
-  theme_bw() + # use a white background
-  theme(legend.position = "bottom",
-        legend.direction = "vertical",
-        #axis.title.y =element_blank(),
-        axis.text.y = element_text(size=10),
-        axis.text.x = element_text(size=10),
-        #panel.grid.major.y = element_blank(),
-        panel.grid.minor = element_blank(),
-        strip.background = element_rect(fill="white"), #chocolate4
-        strip.text = element_text(color="black")) #white
-ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianSD_", temp_scale, ".png"),
-       plot = last_plot())
-
-## heatmap
-ggplot(data = d_summary %>%
-         filter(lc %in% lc_names) %>%
-         mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
-                                         abs(effect_ci_17), 
-                                         abs(effect_ci_83))) %>%
-         mutate(effect_ci_min66f = cut(effect_ci_min66,
-                                       breaks=c(0, 0.2, 0.5, 0.8, Inf),
-                                       labels=c("ns", "small", "medium", "large"))) %>%
-         filter(!is.na(effect_ci_min66)),
-       aes(x = lc, y = Label, alpha=effect_ci_min66f, 
-           fill=as.factor(sign(effect_median))))+
-
-  geom_tile()+
-  scale_fill_manual(values = c("-1" = "#fc8d59", "0" = "#ffffbf", "1" = "#91bfdb"),
-                    name = "Direction of effect")+
-  scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
-                     name = "Minimum effect size (66% CI)")+
-  theme_bw() + # use a white background
-  theme(legend.position = "bottom",
-        legend.direction = "vertical",
-        #axis.title.y =element_blank(),
-        axis.text.y = element_text(size=10),
-        axis.text.x = element_text(size=10),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        strip.background = element_rect(fill="white"), #chocolate4
-        strip.text = element_text(color="black")) #white
-ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianSD_", temp_scale, ".png"),
-       plot = last_plot())
+# 
+# ## one-sided
+# ggplot(data = d_summary %>%
+#          filter(lc %in% lc_names) %>%
+#          mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
+#                                          abs(effect_ci_17), 
+#                                          abs(effect_ci_83))),
+#        aes(y = abs(effect_ci_min66), x = abs(effect_median),
+#            color=as.factor(sign(effect_median))
+#            ))+
+# 
+#   # geom_vline(aes(xintercept=0.8, linetype = "0.8"), color="grey60")+
+#   # geom_vline(aes(xintercept=0.5, linetype = "0.5"), color="grey60")+
+#   # geom_vline(aes(xintercept=0.2, linetype = "0.2"), color="grey60")+
+#   # scale_linetype_manual(values = c("0.8" = "dotted",
+#   #                                  "0.5" = "dashed",
+#   #                                  "0.2" = "solid"),
+#   #                       name="Strength of effect")+
+#   #annotate("rect", ymin = 0, ymax = 0.2, xmin=0, xmax=0.2, fill = "grey", alpha=0.1)+ #chocolate4
+#   annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.2, fill = "grey", alpha=0.3)+
+#   annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.5, fill = "grey", alpha=0.3)+
+#   annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.8, fill = "grey", alpha=0.3)+
+# 
+#   # geom_pointrange(aes(xmin = abs(effect_ci_2.5), xmax = abs(effect_ci_97.5),
+#   #                     shape = Group_function))+
+#   # geom_linerange(aes(xmin = ifelse(sign(effect_ci_17) != sign(effect_ci_83),
+#   #                                  abs(effect_ci_17)), xmax = abs(effect_ci_83),
+#   #                     #shape = Group_function
+#   #                    ), linewidth=1, alpha = 0.2)+
+#   geom_point(aes(shape = Group_function), size = 5)+
+#   ggrepel::geom_text_repel(aes(label = Label, shape = Group_function), size = 3)+
+#   #geom_text(aes(label = Label), size = 1.5, nudge_y = 0.005)+
+# 
+#   xlab("Median effect")+ ylab("Lower CI (17%)")+
+#   scale_y_continuous(breaks = c(0.2, 0.5, 0.8))+
+#   scale_x_continuous(breaks = c(0.2, 0.5, 0.8))+
+#   # scale_y_continuous(limits = c(0, 0.7),
+#   #                    expand = c(0,0), breaks = c(0, 0.25, 0.5))+
+#   #scale_color_manual(c(""))+
+# 
+#   facet_wrap(vars(lc), scales = "free")+
+#   theme_bw() + # use a white background
+#   theme(legend.position = "bottom",
+#         legend.direction = "vertical",
+#         #axis.title.y =element_blank(),
+#         axis.text.y = element_text(size=10),
+#         axis.text.x = element_text(size=10),
+#         #panel.grid.major.y = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         strip.background = element_rect(fill="white"), #chocolate4
+#         strip.text = element_text(color="black")) #white
+# ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianSD_", temp_scale, ".png"),
+#        plot = last_plot())
+# 
+# ## heatmap
+# ggplot(data = d_summary %>%
+#          filter(lc %in% lc_names) %>%
+#          mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
+#                                          abs(effect_ci_17), 
+#                                          abs(effect_ci_83))) %>%
+#          mutate(effect_ci_min66f = cut(effect_ci_min66,
+#                                        breaks=c(0, 0.2, 0.5, 0.8, Inf),
+#                                        labels=c("ns", "small", "medium", "large"))) %>%
+#          filter(!is.na(effect_ci_min66)),
+#        aes(x = lc, y = Label, alpha=effect_ci_min66f, 
+#            fill=as.factor(sign(effect_median))))+
+# 
+#   geom_tile()+
+#   scale_fill_manual(values = c("-1" = "#fc8d59", "0" = "#ffffbf", "1" = "#91bfdb"),
+#                     name = "Direction of effect")+
+#   scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
+#                      name = "Minimum effect size (66% CI)")+
+#   theme_bw() + # use a white background
+#   theme(legend.position = "bottom",
+#         legend.direction = "vertical",
+#         #axis.title.y =element_blank(),
+#         axis.text.y = element_text(size=10),
+#         axis.text.x = element_text(size=10),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         strip.background = element_rect(fill="white"), #chocolate4
+#         strip.text = element_text(color="black")) #white
+# ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_medianSD_", temp_scale, ".png"),
+#        plot = last_plot())
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Heatmap all 3 scales ####
@@ -647,9 +678,9 @@ ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_meanCI
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Summarizing stats ####
 # number significant effects
-d_plot_all %>% filter(effect_significance!="ns" & !is.na(effect_significance)) %>% nrow()
+d_plot_all %>% filter(effect_significance!="ns" & !is.na(effect_significance)) %>% nrow() #31
 # number ns
-d_plot_all %>% filter(effect_significance=="ns" & !is.na(effect_significance)) %>% nrow()
+d_plot_all %>% filter(effect_significance=="ns" & !is.na(effect_significance)) %>% nrow() #161
 
 # number significant per lc
 table(d_plot_all %>% filter(effect_significance!="ns" & !is.na(effect_significance)) %>% dplyr::select(scale, lc))
@@ -664,8 +695,8 @@ d_df_cont <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-valu
 d_df_regi <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_regional.csv"))
 
 d_df_all <- rbind(d_df_glob %>% mutate("scale" = "global"), 
-                   d_df_cont %>% mutate("scale" = "continental")) %>%
-  rbind(d_df_regi %>% mutate("scale" = "regional"))  %>%
+                   d_df_cont %>% mutate("scale" = "continental") %>% dplyr::select(-Label_short)) %>%
+  rbind(d_df_regi %>% mutate("scale" = "regional") %>% dplyr::select(-Label_short))  %>%
   as_tibble()
 rm(d_df_glob, d_df_cont, d_df_regi)
 
@@ -683,6 +714,9 @@ d_df_grouped <- d_df_all %>% filter(!is.na(lc)) %>%
   mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='30'>",
                              ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='30'>",
                                     ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>", NA)))) %>%
+  mutate(scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>",
+                                                    "<img src='figures/icon_location-black.png' width='30'>",
+                                                    "<img src='figures/icon_flag-Portugal.png' width='30'>"))) %>%
   mutate(Group_function = ifelse(Group_function=="Service", "Function", 
                                  ifelse(Group_function=="Diversity", "Shannon", Group_function))) %>%
   mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity")))
@@ -1091,7 +1125,7 @@ ggplot(pars_all %>%
          filter(!is.na(LC) & !is.na(scale)),
        aes(x = PA_rank_rev.trend, y = LC,
            xmin = lower.HPD, xmax = upper.HPD,
-           fill = significance, color = LC))+
+           fill = significance, linetype = significance, color = LC))+
   
   geom_vline(aes(xintercept=0), color="black")+
   geom_pointrange(position = position_jitter(height = 0.3),
@@ -1139,6 +1173,13 @@ ggplot(pars_all %>%
                               "Woodland" = "#009E73", 
                               "Other" = "#000000",
                               "ns" = "#000000"),
+                     drop = FALSE)+
+  scale_linetype_manual(values=c("Cropland" = "solid",
+                              "Grassland" = "solid",
+                              "Shrubland" = "solid", 
+                              "Woodland" = "solid", 
+                              "Other" = "solid",
+                              "ns" = "longdash"),
                      drop = FALSE)+
   theme_void()+
   
@@ -1200,7 +1241,7 @@ write_csv(pars_sum %>%
                              round(PA_rank_rev.trend_CI_upper, 4), "]"),
            "Scale" = factor(scale, levels = c("global", "continental", "regional"))) %>%
     dplyr::select(Group_function, Scale, LC, trend, SE, "95% CI") %>%
-    arrange(Group_function, scale, LC),
+    arrange(Group_function, Scale, LC),
   paste0(here::here(), "/figures/Results_pointrange_BayesianTrends_allScales_grouped.csv"))
 
 write_csv(pars_all %>%
@@ -1254,7 +1295,7 @@ write_csv(pars_all %>%
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### FIGURE 3 - Heatmap env. conditions ####
+## FIGURE 3 - Heatmap env. conditions ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 #corrplot::corrplot(cor(data_clean %>% dplyr::select(all_of(c(fns, mahal_vars)))))
@@ -1274,7 +1315,7 @@ pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC"))
   rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
   filter(!is.na(nonPA)) %>%
   arrange(ID, nonPA, times, scale)
-pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% 
+pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% #diff = nonPA-PA, -diff = PA-nonPA
   #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
   full_join(
     # pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
@@ -1285,50 +1326,191 @@ pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_
     # rbind(pa_env %>% filter(data == "nonPA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "nonPA") %>% 
     #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")))
 
-pa_env <- pa_env %>% dplyr::select(ID, all_of(c(fns, mahal_vars))) 
+pa_env <- pa_env %>% ungroup() %>% dplyr::select(ID, LC, all_of(c(fns, mahal_vars))) 
 
-# Calculate correlations between env and fns for each site
+### For each function group ####
+# Reshape data into long format
+pa_env <- pa_env %>%
+  mutate(Richness = rowMeans(select(., all_of(fns_labels %>% filter(Group_function=="Richness") %>% pull(Function))), na.rm = TRUE),
+         Shannon = rowMeans(select(., all_of(fns_labels %>% filter(Group_function=="Shannon") %>% pull(Function))), na.rm = TRUE),
+         Dissimilarity = rowMeans(select(., all_of(fns_labels %>% filter(Group_function=="Dissimilarity") %>% pull(Function))), na.rm = TRUE),
+         Function = rowMeans(select(., all_of(colnames(pa_env)[colnames(pa_env) %in% (fns_labels %>% filter(Group_function=="Function") %>% pull(Function))])), na.rm = TRUE)) %>%
+  dplyr::select(ID, LC, Richness, Shannon, Dissimilarity, Function, all_of(mahal_vars))
+
+# Calculate correlations between env and fns for each site [pair?]
 correlation_matrix <- sapply(mahal_vars, function(mahal_var) {
-  sapply(fns, function(fn) {
-    cor(pa_env[[mahal_var]], pa_env[[fn]])
+  sapply(c("Richness", "Shannon", "Dissimilarity", "Function"), function(fn) {
+    cor.test(pa_env[[mahal_var]], pa_env[[fn]], use = "na.or.complete", method = "pearson")[["estimate"]]
   })
 })
 
 # Convert the correlation matrix to a data frame for easier interpretation
 correlation_df <- as.data.frame(correlation_matrix)
-rownames(correlation_df) <- fns  
-colnames(correlation_df) <- mahal_vars  
+rownames(correlation_df) <- c("Richness", "Shannon", "Dissimilarity", "Function")
+colnames(correlation_df) <- mahal_vars
 
 # Print or view the correlation matrix
 print(correlation_df)
 
-correlation_df <- correlation_df %>% 
-  rownames_to_column(var = "env") %>%  # Convert row names to a column
-  pivot_longer(cols = -env,  # Pivot to long format, excluding the env_variable column
-               names_to = "fns",
+correlation_df <- correlation_df %>%
+  rownames_to_column(var = "fns") %>%  # Convert row names to a column
+  pivot_longer(cols = -fns,  # Pivot to long format, excluding the env_variable column
+               names_to = "env",
                values_to = "correlation") %>%
-  mutate(fns = factor(fns, levels = unique(fns[order(correlation)])),
-         env = factor(env, levels = unique(env[order(correlation)])))
+  mutate(fns = factor(fns, levels = c("Function", "Richness", "Shannon", "Dissimilarity")))
 
 pdf(paste0(here::here(), "/figures/Correlation_diff_PA_global.pdf"))
 ggplot(data = correlation_df)+
-  geom_tile(aes(y = env, x = fns, fill = correlation))+
+  geom_tile(aes(x = fns, y = env, fill = correlation))+
   scale_fill_distiller(type = "div")
 dev.off()
 
+#- - - - - - - - - - - - - - - - - - - - - - - - - -
+### For each fns separately [but one scale only] ####
+# # Calculate correlations between env and fns for each site [pair?]
+# correlation_matrix <- sapply(mahal_vars, function(mahal_var) {
+#   sapply(fns, function(fn) {
+#     cor.test(pa_env[[mahal_var]], pa_env[[fn]], use = "na.or.complete", method = "pearson")[["estimate"]]
+#   })
+# })
+#
+# # Convert the correlation matrix to a data frame for easier interpretation
+# correlation_df <- as.data.frame(correlation_matrix)
+# rownames(correlation_df) <- fns  
+# colnames(correlation_df) <- mahal_vars  
+# 
+# # Print or view the correlation matrix
+# print(correlation_df)
+# 
+# correlation_df <- correlation_df %>% 
+#   rownames_to_column(var = "env") %>%  # Convert row names to a column
+#   pivot_longer(cols = -env,  # Pivot to long format, excluding the env_variable column
+#                names_to = "fns",
+#                values_to = "correlation") %>%
+#   mutate(fns = factor(fns, levels = unique(fns[order(correlation)])),
+#          env = factor(env, levels = unique(env[order(correlation)])))
+# 
+# # p value (same procedure)
+# corr_pvalue_matrix <- sapply(mahal_vars, function(mahal_var) {
+#   sapply(fns, function(fn) {
+#     cor.test(pa_env[[mahal_var]], pa_env[[fn]], use = "na.or.complete", method = "pearson")[["p.value"]]
+#   })
+# })
+# corr_pvalue_df <- as.data.frame(corr_pvalue_matrix)
+# corr_pvalue_df <- corr_pvalue_df %>% 
+#   rownames_to_column(var = "env") %>%  # Convert row names to a column
+#   pivot_longer(cols = -env,  # Pivot to long format, excluding the env_variable column
+#                names_to = "fns",
+#                values_to = "p_value") %>%
+#   mutate(fns = factor(fns, levels = unique(fns[order(p_value)])),
+#          env = factor(env, levels = unique(env[order(p_value)])))
+# corr_pvalue_df
+# 
+# correlation_df <- correlation_df %>% full_join(corr_pvalue_df, by = c("env", "fns"))
+# 
+# # pdf(paste0(here::here(), "/figures/Correlation_diff_PA_global.pdf"))
+# # ggplot(data = correlation_df)+
+# #   geom_tile(aes(y = env, x = fns, fill = correlation))+
+# #   scale_fill_distiller(type = "div")
+# # dev.off()
+# # 
+# # 
+# # ggcorrplot(correlation_matrix, hc.order = TRUE,
+# #            type = "lower", p.mat = corr_pvalue_matrix)
+# 
+# # Add significance based on p-value
+# correlation_df$significance <- ifelse(correlation_df$p_value >= 0.05, "X", "o")
+# 
+# # Create bins for correlation values
+# correlation_df$corr_bin <- cut(correlation_df$correlation, breaks = c(-1, -0.5, 0, 0.5, 1))
+# 
+# # Create the ggplot
+# ggplot(correlation_df, aes(x = env, y = fns)) +
+#   geom_point(aes(shape = significance, fill = corr_bin, size = corr_bin), color = "black") +
+#   scale_shape_manual(values = c("X" = 4, "o" = 21), guide = FALSE) +  # Map significance to shape
+#   scale_size_manual(values = c("(NA,-0.5]" = 2, "(-0.5,0]" = 4, "(0,0.5]" = 6, "(0.5,1]" = 8),
+#                     name = "Correlation") +
+#   # scale_fill_gradient2(low = "#91bfdb", high = "#fc8d59", mid = "white", 
+#   #                      midpoint = 0, limit = c(-1, 1), space = "Lab", 
+#   #                      name = "Correlation") +
+#   #geom_text(aes(label = significance), color = "black", vjust = -1) +
+#   theme_minimal() + 
+#   theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+#                                    size = 12, hjust = 1)) +
+#   labs(title = "Correlation Plot with Circles",
+#        x = "Environmental Variables",
+#        y = "Functions") +
+#   guides(size = "none")  # Hide size legend if preferred
 
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - -
+### diff diff plot #### 
+# # load pairs of PA and nonPA
+# pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+# 
+# # add data
+# pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
+#   rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
+#   filter(!is.na(nonPA)) %>%
+#   arrange(ID, nonPA, times, scale)
+# pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% 
+#   #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
+#   #full_join(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
+#  full_join(pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), diff)) %>% mutate(measure = "diff")) 
+# # rbind(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA") %>% 
+# #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")) %>%
+# # rbind(pa_env %>% filter(data == "nonPA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "nonPA") %>% 
+# #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")))
+# 
+# pa_env <- pa_env %>% dplyr::select(ID, all_of(c(fns, mahal_vars))) 
+# 
+# # Calculate correlations between env and fns for each site
+# correlation_matrix <- sapply(mahal_vars, function(mahal_var) {
+#   sapply(fns, function(fn) {
+#     cor(pa_env[[mahal_var]], pa_env[[fn]], use = "na.or.complete")
+#   })
+# })
+# 
+# # Convert the correlation matrix to a data frame for easier interpretation
+# correlation_df <- as.data.frame(correlation_matrix)
+# rownames(correlation_df) <- fns  
+# colnames(correlation_df) <- mahal_vars  
+# 
+# # Print or view the correlation matrix
+# print(correlation_df)
+# 
+# correlation_df <- correlation_df %>% 
+#   rownames_to_column(var = "env") %>%  # Convert row names to a column
+#   pivot_longer(cols = -env,  # Pivot to long format, excluding the env_variable column
+#                names_to = "fns",
+#                values_to = "correlation") %>%
+#   mutate(fns = factor(fns, levels = unique(fns[order(correlation)])),
+#          env = factor(env, levels = unique(env[order(correlation)])))
+# 
+# pdf(paste0(here::here(), "/figures/Correlation_diff_diff_global.pdf"))
+# ggplot(data = correlation_df)+
+#   geom_tile(aes(y = env, x = fns, fill = correlation))+
+#   scale_fill_distiller(type = "div")
+# dev.off()
+
+
+#### Diff. in environmental variables scaled ####
 # load pairs of PA and nonPA
-pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale, "/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+data_clean <- f_scale_vars(data = data_clean, vars = c(mahal_vars, fns)) %>% 
+  dplyr::select(-all_of(c(mahal_vars, fns)))
+colnames(data_clean) <- gsub(x=colnames(data_clean), ".z", "")
 
 # add data
 pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
   rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
   filter(!is.na(nonPA)) %>%
-  arrange(ID, nonPA, times, scale)
+  arrange(ID, nonPA, times) #, scale
 pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% 
   #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
   #full_join(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
- full_join(pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), diff)) %>% mutate(measure = "diff")) 
+  full_join(pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), diff)) %>% mutate(measure = "diff")) 
 # rbind(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA") %>% 
 #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")) %>%
 # rbind(pa_env %>% filter(data == "nonPA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "nonPA") %>% 
@@ -1336,34 +1518,24 @@ pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_
 
 pa_env <- pa_env %>% dplyr::select(ID, all_of(c(fns, mahal_vars))) 
 
-# Calculate correlations between env and fns for each site
-correlation_matrix <- sapply(mahal_vars, function(mahal_var) {
-  sapply(fns, function(fn) {
-    cor(pa_env[[mahal_var]], pa_env[[fn]])
-  })
-})
-
-# Convert the correlation matrix to a data frame for easier interpretation
-correlation_df <- as.data.frame(correlation_matrix)
-rownames(correlation_df) <- fns  
-colnames(correlation_df) <- mahal_vars  
-
-# Print or view the correlation matrix
-print(correlation_df)
-
-correlation_df <- correlation_df %>% 
-  rownames_to_column(var = "env") %>%  # Convert row names to a column
-  pivot_longer(cols = -env,  # Pivot to long format, excluding the env_variable column
-               names_to = "fns",
-               values_to = "correlation") %>%
-  mutate(fns = factor(fns, levels = unique(fns[order(correlation)])),
-         env = factor(env, levels = unique(env[order(correlation)])))
-
-pdf(paste0(here::here(), "/figures/Correlation_diff_diff_global.pdf"))
-ggplot(data = correlation_df)+
-  geom_tile(aes(y = env, x = fns, fill = correlation))+
-  scale_fill_distiller(type = "div")
-dev.off()
+pa_env_long <- pa_env %>% 
+  pivot_longer(cols = all_of(mahal_vars), names_to = "mahal", 
+               values_to = "value_mahal") %>%
+  pivot_longer(cols = all_of(fns), names_to = "function", 
+               values_to = "value_fns") %>%
+  full_join(fns_labels %>% dplyr::select(Function, Group_function, Label_short), by = c("function" = "Function")) %>%
+  dplyr::select(-nonPA, -times, -n, -ID) %>%
+  group_by(LC, Group_function, mahal) %>%
+  summarize(across(c(value_fns, value_mahal), list("mean" = function(x) mean(x, na.rm = TRUE),
+                                                   "sd" = function(x) mean(x, na.rm = TRUE)))) 
+pa_env_long
+  
+# plot
+ggplot(data = pa_env_long,
+       aes(x = value_mahal_mean, 
+           y = mahal, color = value_fns_mean, 
+           shape = Group_function), alpha = 0.5)+
+  geom_jitter(height = 0.4, width = 0)
 
 # # same for other 2 scales
 # for(temp_scale in c("continental", "regional")){
