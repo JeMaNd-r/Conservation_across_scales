@@ -22,7 +22,7 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 
 # set date of latest analysis
 if(temp_scale == "global") temp_date <- "2023-12-01"
-if(temp_scale == "continental") temp_date <- "2023-12-14"
+if(temp_scale == "continental") temp_date <- "2024-05-27"
 if(temp_scale == "regional") temp_date <- "2023-12-14"
 
 if(temp_scale == "global") lc_names <- lc_names[lc_names != "Other"]
