@@ -11,6 +11,7 @@
 
 library(here)
 library(tidyverse)
+library(terra) # to get distance of points
 
 library(igraph)  # to map network (pairing)
 
@@ -18,8 +19,8 @@ source("src/00_Parameters.R")
 source("src/00_Functions.R")
 
 
-# temp_scale <- "global"
-temp_scale <- "continental"
+ temp_scale <- "global"
+#temp_scale <- "continental"
 #temp_scale <- "regional"
 
 # create directory for intermediate results
@@ -29,7 +30,7 @@ if(!dir.exists(paste0(here::here(), "/intermediates/", temp_scale))){
 
 # set date of latest analysis
 if(temp_scale == "global") temp_date <- "2023-12-01"
-if(temp_scale == "continental") temp_date <- "2023-12-14"
+if(temp_scale == "continental") temp_date <- "2024-05-27"
 if(temp_scale == "regional") temp_date <- "2023-12-14"
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -51,26 +52,62 @@ data_clean <- f_scale_vars(data = data_clean, vars = mahal_vars)
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Check for pairing ####
 
+## if continental data, remove nonPA with geographical distance >500km
+if(temp_scale == "continental"){
+  # calculate geographical distance
+  nonpa <- data_clean[data_clean$PA==0,c("SampleID", "LC", "PA", mahal_vars)]
+  pa <- data_clean[data_clean$PA==1,c("SampleID", "LC", "PA", mahal_vars)]
+  
+  temp_dist <- terra::distance(terra::vect(pa %>% dplyr::select(Longitude, Latitude), 
+                              geom=c("Longitude", "Latitude"), 
+                              crs = "+proj=longlat +datum=WGS84"),
+                  terra::vect(nonpa %>% dplyr::select(Longitude, Latitude), 
+                              geom=c("Longitude", "Latitude"), 
+                              crs = "+proj=longlat +datum=WGS84"),
+                  unit = "m") %>%
+    as_tibble()
+  colnames(temp_dist) <- nonpa$SampleID
+  temp_dist <- temp_dist %>% mutate(ID = pa$SampleID) %>% dplyr::select(ID, everything())
+  temp_dist
+  
+  # extract nonPA with distance <= radius_thres
+  list_dist <- lapply(1:nrow(temp_dist), function(i){
+    colnames(temp_dist[,-1])[temp_dist[i, -1] <= radius_thres]
+  })
+  names(list_dist) <- temp_dist$ID
+  
+  # save for later
+  save(list_dist, file = paste0(here::here(), "/intermediates/", temp_scale, "/Geographically_close_sites.csv"))
+}
+
+if(temp_scale == "continental"){
+  load(paste0(here::here(), "/intermediates/", temp_scale, "/Geographically_close_sites.csv")) #list_dist
+
+  # check number of sites remaining (e.g. min_size)
+  do.call(rbind, lapply(list_dist, length)) %>% sort() #2 lower than min_size=10 (840 and 368), may be more when considering LC types
+  
+}
+
 count_nonPA <- f_check_pairs(data = data_clean, 
                              col_id = "SampleID", col_lc = "LC", 
                              vars_z = mahal_vars_z)
 all_nonPA <- count_nonPA[[2]]
-count_nonPA <- count_nonPA[[1]]
+count_nonPA <- count_nonPA[[1]] #C: 16 without enough (10) nonPAs for pairing
 #head(count_nonPA)
 
 #View(all_nonPA %>% dplyr::select(SampleID, count_nonPA[count_nonPA$n<10 & !is.na(count_nonPA$SampleID), "SampleID"]))
 
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Network of possible combinations ####
-l <- lapply(colnames(all_nonPA)[!is.na(as.numeric(colnames(all_nonPA)))],
-       function(x) tibble("PA_ID"=rep(x, nrow(all_nonPA[which(all_nonPA[,x]<=mahal_thres),])),
-                         all_nonPA[which(all_nonPA[,x]<=mahal_thres),"SampleID"]))
-l <- do.call(rbind, l)
-l
-network <- igraph::graph_from_data_frame(d=l, directed=T)
-plot(network,
-     vertex.size=0.5, vertex.label.cex=0.2,
-     edge.arrow.size = 0.2, edge.arrow.width = 0.2)
+# #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# ### Network of possible combinations ####
+# l <- lapply(colnames(all_nonPA)[!is.na(as.numeric(colnames(all_nonPA)))],
+#        function(x) tibble("PA_ID"=rep(x, nrow(all_nonPA[which(all_nonPA[,x]<=mahal_thres),])),
+#                          all_nonPA[which(all_nonPA[,x]<=mahal_thres),"SampleID"]))
+# l <- do.call(rbind, l)
+# l
+# network <- igraph::graph_from_data_frame(d=l, directed=T)
+# plot(network,
+#      vertex.size=0.5, vertex.label.cex=0.2,
+#      edge.arrow.size = 0.2, edge.arrow.width = 0.2)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Remove sites ####
@@ -85,7 +122,7 @@ nrow(data_clean); nrow(data_clean[data_clean$PA,]) #G: nrow=383 with 74 PAs, C: 
 
 # Remove sites that can only be paired less than 10 times
 data_clean <- data_clean[!(data_clean$SampleID %in% count_nonPA[count_nonPA$No_nonPA<10, "SampleID"]),]
-nrow(data_clean); nrow(data_clean[data_clean$PA,]) #nrow=365 with 56 PAs; C: 814 vs. 61
+nrow(data_clean); nrow(data_clean[data_clean$PA,]) #nrow=365 with 56 PAs; C: 809 vs. 49
 data_clean %>% group_by(LC, PA) %>% count()
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -96,7 +133,7 @@ table(data_clean$LC, data_clean$PA)
 
 # based on number of sites per LC, exclude LC
 # e.g. global: only 3 unprotected on 0 protected for Other
-# continental: only 1 Shrubland protected, 28 unprotected; and 0 PA in Other
+# continental: no Shrubland protected, 28 unprotected; and 0 PA in Other
 # regional: PA only min. 7 -> decrease minimum size number to 7, 
 #           exclude Shrublands & Others to get it running (otherwise no complete pairing achieved) 
 if(temp_scale == "global") lc_names <- lc_names[lc_names != "Other"]

@@ -10,7 +10,7 @@ set.seed(1759) #& sample PA ID in pairing [last option used]
 #set.seed(5738375)
 
 ## define functions to be compared
-fns <- c("Soil_carbon_service", "OM_decomposition_service", "Water_regulation_service", #water only for global
+fns <- c("Soil_carbon_service", "OM_decomposition_service", #"Water_regulation_service", #water only for global
         "Soil_stability_service", "Nutrient_service", "Pathogen_control", 
         "Bac_richness", "Fungi_richness", "Invertebrate_richness", 
         "Protist_richness", "Nematode_richness", 
@@ -33,6 +33,9 @@ mahal_vars_z <- paste0(mahal_vars, ".z")
 
 # define each land cover type
 lc_names <- c("Cropland", "Grassland", "Shrubland", "Woodland", "Other")
+
+# radius for continental site pairing
+radius_thres <- 500000 #in m; 500000 for continental
 
 # number of samples/ sites that should be paired per LC type
 min_size <- 10 #start with something small, then check how many possible

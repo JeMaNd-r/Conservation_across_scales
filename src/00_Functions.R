@@ -198,6 +198,7 @@ f_check_pairs <- function(data, col_id, col_lc, vars_z){
   for(i in 1:length(lc_names)){
     temp_nonPA  <- nonpa[nonpa[,col_lc]==lc_names[i],]
     temp_PA <- pa[pa[,col_lc]==lc_names[i],]
+    
     sigma <- cov(temp_nonPA[,vars_z]) 
     for(j in 1:nrow(temp_PA)){
       mu <- as.numeric(temp_PA[j,vars_z])
@@ -205,7 +206,14 @@ f_check_pairs <- function(data, col_id, col_lc, vars_z){
         mahalanobis(temp_nonPA[,vars_z], mu, sigma, tol=1e-30)
       #print(j)
     }
-    min_mahal <- apply(X = temp_nonPA[,as.character(temp_PA %>% pull(col_id))], MARGIN = 2, FUN = min, na.rm = TRUE)
+    # if continental data, remove nonPA with geographical distance >500km
+    if(temp_scale == "continental"){
+      for(k in as.character(pull(temp_PA[,col_id]))){
+        temp_nonPA[!(as.character(pull(temp_nonPA[,col_id])) %in% list_dist[[k]]), k] <- NA
+      }
+    }
+    
+    min_mahal <- apply(X = temp_nonPA[, as.character(temp_PA %>% pull(col_id))], MARGIN = 2, FUN = min, na.rm = TRUE)
     pa_noPair <- rbind(pa_noPair, cbind(names(min_mahal[min_mahal>mahal_thres]), min_mahal[min_mahal>mahal_thres]))
     
     all_nonPA <- full_join(all_nonPA, temp_nonPA, by=c(col_id, col_lc, "PA", vars_z))
@@ -213,7 +221,7 @@ f_check_pairs <- function(data, col_id, col_lc, vars_z){
   pa_noPair
   nrow(pa_noPair) #nrow=12
   
-  unpaired_pa <- data[data[,col_id] %in% pa_noPair,] #12 PA sites can't be paired
+  unpaired_pa <- data[data[,col_id] %in% pa_noPair,] 
   write.csv(unpaired_pa, file=paste0(here::here(), "/intermediates/", temp_scale,  "/Unpaired_protected_sites_", Sys.Date(), ".csv"), row.names = F)
   
   cat("#---------------------------------------------------", sep="\n")
@@ -301,6 +309,13 @@ f_pairing <- function(data, col_id, col_lc, vars_z){
         #print(j)
       }
       
+      # if continental data, remove nonPA with geographical distance >radius_thres
+      if(temp_scale == "continental"){
+        for(k in as.character(pull(temp_PA[,col_id]))){
+          temp_nonPA[!(as.character(pull(temp_nonPA[,col_id])) %in% list_dist[[k]]), k] <- NA
+        }
+      }
+      
       # add column to PA data with respective nonPA sites 
       # based on minimal mahalanobis distance
       temp_PA[, c("nonPA", "mahal.min")]  <- NA
@@ -309,7 +324,7 @@ f_pairing <- function(data, col_id, col_lc, vars_z){
       for(k in f_resample(temp_PA %>% pull(all_of(col_id)), size = nrow(temp_PA))){
         
         # if Mahal. distances compared to all relevant nonPA are above threshold...
-        if(min(temp_nonPA[,as.character(k)])>=mahal_thres){
+        if(min(temp_nonPA[,as.character(k)], na.rm = TRUE)>=mahal_thres){
           #... stop and re-do run
           missing_pa <- rbind(missing_pa,c(times, k))  # to know why we've stopped
           print(paste0("Not all PA sites paired. Check PA ", k, "."))
@@ -320,7 +335,7 @@ f_pairing <- function(data, col_id, col_lc, vars_z){
           
         }else{
           # select (max. 10) nonPA sites with mahalanobis distance below threshold
-          nonPA.pair <- temp_nonPA[temp_nonPA[,as.character(k)]<=mahal_thres,c(col_id, as.character(k))]
+          nonPA.pair <- temp_nonPA[temp_nonPA[,as.character(k)]<=mahal_thres & !is.na(temp_nonPA[,as.character(k)]),c(col_id, as.character(k))]
           nonPA.pair[nrow(nonPA.pair)+1:10,] <- NA #add empty rows for when there are less than 10 sites
           nonPA.pair <- nonPA.pair %>% arrange(2)
           nonPA.pair <- nonPA.pair[c(1:10),1]
