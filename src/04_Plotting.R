@@ -1300,69 +1300,150 @@ write_csv(pars_all %>%
 
 #corrplot::corrplot(cor(data_clean %>% dplyr::select(all_of(c(fns, mahal_vars)))))
 
-# load data
-temp_scale <- "global"
-temp_date <- "2023-12-01"
-lc_names <- lc_names[lc_names != "Other"]
-data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv")) %>%
-  mutate(scale = temp_scale)
+correlation_df <- data.frame()
 
-# load pairs of PA and nonPA
-pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+for(temp_scale in c("global", "continental", "regional")){try({
+  # load data
+  if(temp_scale == "global") temp_date <- "2023-12-01"
+  if(temp_scale == "continental") temp_date <- "2024-05-27"
+  if(temp_scale == "regional") temp_date <- "2023-12-14"
 
-# add data
-pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
-  rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
-  filter(!is.na(nonPA)) %>%
-  arrange(ID, nonPA, times, scale)
-pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% #diff = nonPA-PA, -diff = PA-nonPA
-  #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
-  full_join(
-    # pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
-    pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), mean)) %>% mutate(measure = "mean")) #%>% 
-    #   pivot_longer(cols = all_of(mahal_vars), names_to = "env") %>%
-    # rbind(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA") %>% 
-    #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")) %>%
-    # rbind(pa_env %>% filter(data == "nonPA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "nonPA") %>% 
-    #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")))
+  data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv")) %>%
+    mutate(scale = temp_scale)
+  
+  # load pairs of PA and nonPA
+  pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+  
+  # add data
+  pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
+    rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
+    filter(!is.na(nonPA)) %>%
+    arrange(ID, nonPA, times, scale)
+  pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% #diff = nonPA-PA, -diff = PA-nonPA
+    #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
+    full_join(
+      # pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
+      pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), mean)) %>% mutate(measure = "mean")) #%>% 
+      #   pivot_longer(cols = all_of(mahal_vars), names_to = "env") %>%
+      # rbind(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA") %>% 
+      #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")) %>%
+      # rbind(pa_env %>% filter(data == "nonPA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "nonPA") %>% 
+      #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")))
+  
+  pa_env <- pa_env %>% ungroup() %>% dplyr::select(ID, LC, all_of(c(fns, mahal_vars))) 
+  
+  ### For each function group ####
+  # Reshape data into long format
+  pa_env <- pa_env %>%
+    mutate(Richness = rowMeans(select(., all_of(fns_labels %>% filter(Group_function=="Richness") %>% pull(Function))), na.rm = TRUE),
+           Shannon = rowMeans(select(., all_of(fns_labels %>% filter(Group_function=="Shannon") %>% pull(Function))), na.rm = TRUE),
+           Dissimilarity = rowMeans(select(., all_of(fns_labels %>% filter(Group_function=="Dissimilarity") %>% pull(Function))), na.rm = TRUE),
+           Function = rowMeans(select(., all_of(colnames(pa_env)[colnames(pa_env) %in% (fns_labels %>% filter(Group_function=="Function") %>% pull(Function))])), na.rm = TRUE)) %>%
+    dplyr::select(ID, LC, Richness, Shannon, Dissimilarity, Function, all_of(mahal_vars))
+  
+  corr_scale <- data.frame()
+  
+  for(temp_lc in unique(pa_env$LC)){try({
+    print(temp_lc)
+    temp_df <- pa_env %>% filter(LC == temp_lc)
+    # Calculate correlations between env and fns for each site [pair?]
+    correlation_matrix <- sapply(mahal_vars, function(mahal_var) {
+      sapply(c("Richness", "Shannon", "Dissimilarity", "Function"), function(fn) {
+        cor.test(temp_df[[mahal_var]], temp_df[[fn]], use = "na.or.complete", method = "pearson")[["estimate"]]
+      })
+    })
+    
+    # Convert the correlation matrix to a data frame for easier interpretation
+    temp_corr_df <- as.data.frame(correlation_matrix)
+    rownames(temp_corr_df) <- c("Richness", "Shannon", "Dissimilarity", "Function")
+    colnames(temp_corr_df) <- mahal_vars
+    
+    # Print or view the correlation matrix
+    #print(temp_corr_df)
+    
+    temp_corr_df <- temp_corr_df %>%
+      rownames_to_column(var = "fns") %>%  # Convert row names to a column
+      pivot_longer(cols = -fns,  # Pivot to long format, excluding the env_variable column
+                   names_to = "env",
+                   values_to = "correlation") %>%
+      mutate(fns = factor(fns, levels = c("Function", "Richness", "Shannon", "Dissimilarity")))
+    
+    # p value (same procedure)
+    correlation_pvalue_matrix <- sapply(mahal_vars, function(mahal_var) {
+      sapply(c("Richness", "Shannon", "Dissimilarity", "Function"), function(fn) {
+        cor.test(temp_df[[mahal_var]], temp_df[[fn]], use = "na.or.complete", method = "pearson")[["p.value"]]
+      })
+    })
+    
+    # Convert the correlation matrix to a data frame for easier interpretation
+    correlation_pvalue_df <- as.data.frame(correlation_pvalue_matrix)
+    rownames(correlation_pvalue_df) <- c("Richness", "Shannon", "Dissimilarity", "Function")
+    colnames(correlation_pvalue_df) <- mahal_vars
+    
+    # Print or view the correlation matrix
+    #print(correlation_pvalue_df)
+    
+    correlation_pvalue_df <- correlation_pvalue_df %>%
+      rownames_to_column(var = "fns") %>%  # Convert row names to a column
+      pivot_longer(cols = -fns,  # Pivot to long format, excluding the env_variable column
+                   names_to = "env",
+                   values_to = "p_value") %>%
+      mutate(fns = factor(fns, levels = c("Function", "Richness", "Shannon", "Dissimilarity")))
+    
+    temp_corr_df <- temp_corr_df %>% full_join(correlation_pvalue_df, by = c("env", "fns"))
+  
+    # add lc type to it
+    temp_corr_df$LC <- temp_lc
+  
+    corr_scale <- rbind(corr_scale, temp_corr_df)
+  })}
+  
+  # add scale to it
+  corr_scale$scale <- temp_scale
+  
+  correlation_df <- rbind(correlation_df, corr_scale)
+})}
+correlation_df
 
-pa_env <- pa_env %>% ungroup() %>% dplyr::select(ID, LC, all_of(c(fns, mahal_vars))) 
+# Add significance based on p-value
+correlation_df$significance <- ifelse(correlation_df$p_value >= 0.05, "x", " ")
 
-### For each function group ####
-# Reshape data into long format
-pa_env <- pa_env %>%
-  mutate(Richness = rowMeans(select(., all_of(fns_labels %>% filter(Group_function=="Richness") %>% pull(Function))), na.rm = TRUE),
-         Shannon = rowMeans(select(., all_of(fns_labels %>% filter(Group_function=="Shannon") %>% pull(Function))), na.rm = TRUE),
-         Dissimilarity = rowMeans(select(., all_of(fns_labels %>% filter(Group_function=="Dissimilarity") %>% pull(Function))), na.rm = TRUE),
-         Function = rowMeans(select(., all_of(colnames(pa_env)[colnames(pa_env) %in% (fns_labels %>% filter(Group_function=="Function") %>% pull(Function))])), na.rm = TRUE)) %>%
-  dplyr::select(ID, LC, Richness, Shannon, Dissimilarity, Function, all_of(mahal_vars))
+# Create bins for correlation values
+correlation_df$corr_bin <- cut(correlation_df$correlation, breaks = c(-1, -0.5, 0, 0.5, 1))
 
-# Calculate correlations between env and fns for each site [pair?]
-correlation_matrix <- sapply(mahal_vars, function(mahal_var) {
-  sapply(c("Richness", "Shannon", "Dissimilarity", "Function"), function(fn) {
-    cor.test(pa_env[[mahal_var]], pa_env[[fn]], use = "na.or.complete", method = "pearson")[["estimate"]]
-  })
-})
-
-# Convert the correlation matrix to a data frame for easier interpretation
-correlation_df <- as.data.frame(correlation_matrix)
-rownames(correlation_df) <- c("Richness", "Shannon", "Dissimilarity", "Function")
-colnames(correlation_df) <- mahal_vars
-
-# Print or view the correlation matrix
-print(correlation_df)
-
-correlation_df <- correlation_df %>%
-  rownames_to_column(var = "fns") %>%  # Convert row names to a column
-  pivot_longer(cols = -fns,  # Pivot to long format, excluding the env_variable column
-               names_to = "env",
-               values_to = "correlation") %>%
-  mutate(fns = factor(fns, levels = c("Function", "Richness", "Shannon", "Dissimilarity")))
-
-pdf(paste0(here::here(), "/figures/Correlation_diff_PA_global.pdf"))
-ggplot(data = correlation_df)+
-  geom_tile(aes(x = fns, y = env, fill = correlation))+
-  scale_fill_distiller(type = "div")
+#pdf(paste0(here::here(), "/figures/Correlation_diff_PA_global.pdf"))
+ggplot(data = correlation_df %>%
+         mutate(scale = factor(scale, levels = c("regional", "continental", "global")),
+                LC = factor(LC)) %>%
+         mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='70'>",
+                                    ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='70'>",
+                                           ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>", NA))),
+                LC_icon = ...) %>%
+         mutate(scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>",
+                                                           "<img src='figures/icon_location-black.png' width='70'>",
+                                                           "<img src='figures/icon_flag-Portugal.png' width='70'>")),
+                LC_icon = ...), 
+       aes(x = LC, y = env))+
+  geom_tile(aes(fill = correlation))+
+  geom_text(aes(label = significance), color = "grey20", vjust = 0.3, size = 5) +
+  facet_grid(scale_icon ~ fns)+
+  scale_fill_distiller(type = "div")+
+  theme_bw()+
+  theme(#legend.position = c(0.96, -0.01),
+    legend.position = "right", #c(0.96, -0.05),
+    #legend.justification = c(1, 0),
+    #legend.box = "horizontal",
+    #legend.direction = "vertical",
+    #legend.key.size = unit(20, "pt"),
+    legend.title = element_text(size = 15),
+    legend.text = element_text(size = 15),
+    #axis.title.y =element_blank(),
+    strip.text.y = ggtext::element_markdown(hjust = 0, angle = 360),
+    axis.ticks = element_blank(),
+    strip.text.x.bottom = ggtext::element_markdown(vjust = 0),
+    panel.grid = element_blank(),
+    panel.border = element_blank(),
+    strip.background = element_rect(fill="white", color = "white")) #white
 dev.off()
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - -
