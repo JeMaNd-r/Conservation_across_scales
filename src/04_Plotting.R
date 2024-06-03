@@ -1411,19 +1411,29 @@ correlation_df$significance <- ifelse(correlation_df$p_value >= 0.05, "x", " ")
 # Create bins for correlation values
 correlation_df$corr_bin <- cut(correlation_df$correlation, breaks = c(-1, -0.5, 0, 0.5, 1))
 
-#pdf(paste0(here::here(), "/figures/Correlation_diff_PA_global.pdf"))
+#png(paste0(here::here(), "/figures/Correlation_diff_PA_allScales.png"), width = 1000, height = 1000)
+#pdf(paste0(here::here(), "/figures/Correlation_diff_PA_allScales.pdf"), width = 12, height = 12)
 ggplot(data = correlation_df %>%
          mutate(scale = factor(scale, levels = c("regional", "continental", "global")),
                 LC = factor(LC)) %>%
          mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='70'>",
                                     ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='70'>",
                                            ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>", NA))),
-                LC_icon = ...) %>%
+                
+                LC_icon = ifelse(LC == "Cropland", "<img src='figures/icon_harvest.png' width='20'>",
+                                 ifelse(LC == "Grassland", "<img src='figures/icon_grass.png' width='17'>",
+                                        ifelse(LC == "Shrubland", "<img src='figures/icon_shrub-crop.png' width='35'>", 
+                                               ifelse(LC == "Woodland", "<img src='figures/icon_forest.png' width='30'>", NA))))) %>%
+         
          mutate(scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>",
                                                            "<img src='figures/icon_location-black.png' width='70'>",
                                                            "<img src='figures/icon_flag-Portugal.png' width='70'>")),
-                LC_icon = ...), 
-       aes(x = LC, y = env))+
+                
+                LC_icon = factor(LC_icon, levels = c("<img src='figures/icon_harvest.png' width='20'>",
+                                                        "<img src='figures/icon_grass.png' width='17'>",
+                                                        "<img src='figures/icon_shrub-crop.png' width='35'>",
+                                                        "<img src='figures/icon_forest.png' width='30'>"))), 
+       aes(x = LC_icon, y = env))+
   geom_tile(aes(fill = correlation))+
   geom_text(aes(label = significance), color = "grey20", vjust = 0.3, size = 5) +
   facet_grid(scale_icon ~ fns)+
@@ -1438,8 +1448,12 @@ ggplot(data = correlation_df %>%
     legend.title = element_text(size = 15),
     legend.text = element_text(size = 15),
     #axis.title.y =element_blank(),
-    strip.text.y = ggtext::element_markdown(hjust = 0, angle = 360),
+    strip.text.y = ggtext::element_markdown(hjust = 1, vjust = 1, angle = 360),
     axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    axis.text.y = element_text(size = 15),
+    strip.text.x = element_text(size = 15, hjust = 1),
+    axis.text.x = ggtext::element_markdown(hjust = 0.5, vjust = 0),
     strip.text.x.bottom = ggtext::element_markdown(vjust = 0),
     panel.grid = element_blank(),
     panel.border = element_blank(),
