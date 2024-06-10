@@ -1323,7 +1323,7 @@ for(temp_scale in c("global", "continental", "regional")){try({
     #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
     full_join(
       # pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
-      pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), mean)) %>% mutate(measure = "mean")) #%>% 
+      pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), mean)) %>% mutate(measure = "mean")) #%>% #for diff vs. PA, change summarize(across(all_of(mahal_vars), mean) to summarize(across(all_of(mahal_vars), diff)
       #   pivot_longer(cols = all_of(mahal_vars), names_to = "env") %>%
       # rbind(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA") %>% 
       #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")) %>%
@@ -1412,7 +1412,7 @@ correlation_df$significance <- ifelse(correlation_df$p_value >= 0.05, "x", " ")
 correlation_df$corr_bin <- cut(correlation_df$correlation, breaks = c(-1, -0.5, 0, 0.5, 1))
 
 #png(paste0(here::here(), "/figures/Correlation_diff_PA_allScales.png"), width = 1000, height = 1000)
-#pdf(paste0(here::here(), "/figures/Correlation_diff_PA_allScales.pdf"), width = 12, height = 12)
+pdf(paste0(here::here(), "/figures/Correlation_diff_PA_allScales.pdf"), width = 12, height = 12)
 ggplot(data = correlation_df %>%
          mutate(scale = factor(scale, levels = c("regional", "continental", "global")),
                 LC = factor(LC)) %>%
