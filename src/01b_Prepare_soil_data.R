@@ -17,30 +17,33 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 ## 1. GLOBAL ----------------------------------------- ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Load soil biodiversity data ####
-coord_glob <- readxl::read_xlsx(paste0(here::here(), "/data_raw/GlobalAtlasv2_conservation_heterogeneity_papers_v2.xlsx"),
-                               sheet = "Data")
-coord_glob #383 
+coord_glob <- readxl::read_xlsx(paste0(here::here(), "/data_raw/Global_Atlas_drylands_V1.xlsx"),
+                               sheet = "Database")
+coord_glob #551 
+coord_glob %>% filter(!is.na(ID_sequencing_16S)) #338
 
-data_glob <- read_csv(here::here("data_raw/Diversity_global.csv")) #490 
+data_glob <- read_csv(here::here("data_raw/Diversity_global.csv")) #342 
+
+sort(unique(data_glob$SampleID)) #342
+sort(unique(coord_glob$ID_sequencing_16S)) #338
 
 data_glob <- coord_glob %>%
-  dplyr::select("Order_ID", "ID_microbes", "Latitude_c", "Longitude_c", 
-                "Eco_c", "Soil_pH", "Soil_salinity", "Clay_silt_c",
-                "Soil_carbon_service", "OM_decomposition_service",
-                "Water_regulation_service", "Soil_stability_service",             
-                "Nutrient_service", "Pathogen_control") %>%
-  mutate(ID_microbes = str_replace(ID_microbes,"T", "T-"),
-         ID_microbes = str_replace(ID_microbes,"FM", "FM-")) %>%
-  separate(ID_microbes, c("ID_char", "ID_numb")) %>%
+  dplyr::select("Plot_ID", "ID_sequencing_16S", "Latitude_c", "Longitude_c", 
+                "Vegetation", "Soil_pH", "Soil_salinity", "Soil_fine_texture",
+                "ORC", "BGL veg", "FOS veg", "MIN veg",
+                "WHC veg", "Plant_cover",             
+                "TON", "Soil_total_P", "AVP", "AMO", "NIT", "DON") %>%
+  mutate(ID_numb = str_replace(ID_sequencing_16S,"FM", "1")) %>% #ID_sequencing_16s goes to 249, FMxxx
+  mutate(ID_numb = str_replace(ID_numb, "X", "")) %>%
   mutate(ID_numb = as.numeric(ID_numb)) %>%
+  filter(!is.na(ID_numb)) %>%
   full_join(data_glob %>%
-              mutate(SampleID = str_replace(SampleID,"T", "T-"),
-                     SampleID = str_replace(SampleID,"FM", "FM-")) %>%
-              separate(SampleID, c("ID_char", "ID_numb")) %>%
+              mutate(ID_numb = str_replace(SampleID, "FM", "1")) %>%
+              mutate(ID_numb = str_replace(ID_numb, "X", "")) %>%
               mutate(ID_numb = as.numeric(ID_numb)), 
-            by = c("ID_char", "ID_numb")) %>%
+            by = "ID_numb") %>%
   filter(!is.na(Latitude_c)) #missing coordinates are samples for other projects
-data_glob #383
+data_glob #338
 rm(coord_glob)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -51,7 +54,7 @@ data_glob <- data_glob %>%
 data_glob <- data_glob %>%
   rename(Latitude = Latitude_c,
          Longitude = Longitude_c,
-         Soil_texture = Clay_silt_c)
+         Soil_texture = Soil_fine_texture)
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -68,27 +71,49 @@ head(data_glob)
 # based on World Database on Protected Areas (WDPA) (protectedplanet.net)
 protect_glob <- read_csv(paste0(here::here(), "/intermediates/PA_assignment_global.csv"))
 
-data_glob <- f_add_protect(data = data_glob, data_pa = protect_glob, col_id="Order_ID")
+data_glob <- f_add_protect(data = data_glob, 
+                           data_pa = protect_glob %>%
+                             mutate(ID_numb = str_replace(ID_sequencing_16S, "FM", "1")) %>%
+                             mutate(ID_numb = str_replace(ID_numb, "X", "")) %>%
+                             mutate(ID_numb = as.numeric(ID_numb)), 
+                           col_id="ID_numb")
 rm(protect_glob)
 
-nrow(data_glob %>% filter(PA==1)) #74
-nrow(data_glob %>% filter(!is.na(PA_type))) #123
-nrow(data_glob %>% filter(PA==0)) #309
+nrow(data_glob %>% filter(PA==1)) #54
+nrow(data_glob %>% filter(!is.na(PA_type))) #106
+nrow(data_glob %>% filter(PA==0)) #285
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Rename land cover types in data ####
-data_glob$LC <- data_glob$Eco_c
+data_glob$LC <- data_glob$Vegetation
 unique(data_glob$LC)
-data_glob[data_glob$LC=="Forest", "LC"] <- "Woodland"
-data_glob[data_glob$LC=="Moss_heath", "LC"] <- "Other"
+data_glob[data_glob$LC=="Forest" & !is.na(data_glob$LC), "LC"] <- "Woodland"
 unique(data_glob$LC)
 
+table(data_glob$LC)
+
 # rename ID
-data_glob <- data_glob %>% rename(SampleID = Order_ID)
+data_glob <- data_glob %>% mutate(SampleID = ID_numb)
+
+# functions
+data_glob <- data_glob %>%
+  rename(Soil_carbon_service = ORC,
+         Soil_stability_service = Plant_cover,
+         Water_regulation_service = `WHC veg`) %>%
+  mutate(OM_decomposition_service = sum(c(scale(`BGL veg`)[,1], 
+                                          scale(`FOS veg`)[,1],
+                                          scale(`MIN veg`)[,1]),
+                                        na.rm=TRUE)/3,
+         Nutrient_service = (scale(TON)[,1]+
+                               scale(Soil_total_P)[,1]+ 
+                               scale(AVP)[,1]+
+                               scale(AMO)[,1]+
+                               scale(NIT)[,1]+
+                               scale(DON)[,1])/6)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Keep complete cases only ####
-data_glob <- data_glob[complete.cases(data_glob[,c(mahal_vars, fns, "LC")]),] #383 (all)
+data_glob <- data_glob[complete.cases(data_glob[,c(mahal_vars, fns, "LC")]),] #248 (73%)
 data_glob
 
 # subset relevant columns
@@ -224,6 +249,9 @@ list_colinear <- f_colinearity(data = data_cont,
                                vars_env = c("Soil_pH", "Soil_salinity",
                                             "Soil_texture", "Elevation",
                                             "AnnualTemp", "AnnualPrec"))
+list_colinear
+list_colinear$env_vif %>% filter(is.na(VIF))
+#-> Latitude VIF_raw 36.6
 
 # Save
 write.csv(list_colinear$env_vif, file=paste0(here::here(), "/results/VIF_envVars_continental.csv"), row.names=F)
@@ -292,10 +320,6 @@ data_regi$Nutrient_service <- rowMeans(data_regi[,c("P_z", "K_z", "Ca_z", "Mg_z"
 data_regi <- f_extract_env(data = data_regi,
                            col_lon = "Longitude", col_lat = "Latitude")
 data_regi
-# View(data_regi %>% dplyr::select(GD_Elevation, GD_MAP, GD_MAT,
-#                                  Elevation, AnnualPrec, AnnualTemp))
-# use extracted data
-
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Add location in or outside of protected area ####
@@ -349,6 +373,9 @@ list_colinear <- f_colinearity(data = data_regi,
                                vars_env = c("Soil_pH", "Soil_salinity",
                                             "Soil_texture", "Elevation",
                                             "AnnualTemp", "AnnualPrec"))
+list_colinear
+list_colinear$env_vif %>% filter(is.na(VIF))
+#-> Elevation VIF_raw 253.9
 
 # Save
 write.csv(list_colinear$env_vif, file=paste0(here::here(), "/results/VIF_envVars_regional.csv"), row.names=F)

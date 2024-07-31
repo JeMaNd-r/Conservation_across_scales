@@ -46,13 +46,13 @@ load("D:/EIE_Macroecology/_students/Romy/_Shapefiles/WDPA_WDOECM_Nov2022_Public_
 
 ### global ####
 # load points
-data_glob <- readxl::read_xlsx(paste0(here::here(), "/data_raw/GlobalAtlasv2_conservation_heterogeneity_papers_v2.xlsx"),
-                               sheet = "Data")
-data_glob
+data_glob <- readxl::read_xlsx(paste0(here::here(), "/data_raw/Global_Atlas_drylands_V1.xlsx"),
+                               sheet = "Database")
+data_glob <- data_glob %>% filter(!is.na("ID_sequencing_16s"))
 
 data_pa <- f_extract_pa(data = data_glob, 
              col_lon = "Longitude_c", col_lat = "Latitude_c",
-             col_id = "Order_ID",
+             col_id = "ID_sequencing_16S",
              shp = shp_all, col_pa = "WDPAID")
 
 table(data_pa$PA)
