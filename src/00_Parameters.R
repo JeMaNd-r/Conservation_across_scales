@@ -10,7 +10,7 @@ set.seed(1759) #& sample PA ID in pairing [last option used]
 #set.seed(5738375)
 
 ## define functions to be compared
-fns <- c("Soil_carbon_service", "OM_decomposition_service", #"Water_regulation_service", #water only for global
+fns <- c("Soil_carbon_service", "OM_decomposition_service", "Water_regulation_service", #water only for global
         "Soil_stability_service", "Nutrient_service", "Pathogen_control", 
         "Bac_richness", "Fungi_richness", "Invertebrate_richness", 
         "Protist_richness", "Nematode_richness", 
@@ -37,8 +37,8 @@ lc_names <- c("Cropland", "Grassland", "Shrubland", "Woodland", "Other")
 # radius for continental site pairing
 radius_thres <- 500000 #in m; 500000 for continental
 
-# number of samples/ sites that should be paired per LC type
-min_size <- 10 #start with something small, then check how many possible
+# minimum number of nonPA sites per PA that can be paired
+min_nonPA <- 10 # G:5, C+R: 10
 
 # number of randomization = number of pairings 
 number_times <- 1000
@@ -49,3 +49,4 @@ protect_type <- data.frame("PA_type" = c("Ia", "Ib", "II", "III", "IV", "V", "VI
                            "PA_rank" = 1:10,
                            "PA_protected" = c(rep(1,7), rep(0,3)))
 protect_type
+

@@ -29,7 +29,7 @@ if(!dir.exists(paste0(here::here(), "/intermediates/", temp_scale))){
 }
 
 # set date of latest analysis
-if(temp_scale == "global") temp_date <- "2023-12-01"
+if(temp_scale == "global") temp_date <- "2024-07-31"
 if(temp_scale == "continental") temp_date <- "2024-05-27"
 if(temp_scale == "regional") temp_date <- "2023-12-14"
 
@@ -40,9 +40,9 @@ data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_s
 data_clean
 
 ## Explore data
-summary(as.factor(data_clean$PA)) #G: 309 nonPA and 74 PAs, C: 753 vs. 65, R: 302 vs. 52
+summary(as.factor(data_clean$PA)) #G: 209 nonPA and 42 PAs, C: 753 vs. 65, R: 302 vs. 52
 # number of observations (raw)
-nrow(data_clean); nrow(data_clean[data_clean$PA,])  #G: 383 with 74 PAs, C: 818 vs. 65, R: 354 vs. 52
+nrow(data_clean); nrow(data_clean[data_clean$PA,])  #G: 248 with 42 PAs, C: 818 vs. 65, R: 354 vs. 52
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Scale variables for mahalanobis distance ####
@@ -118,11 +118,13 @@ head(unpaired_pa)
 # Note: There were nonPA sites with mahalanobis distance below threshold
 # for three protected sites with SampleID. They have to been removed.
 data_clean <- data_clean[!(data_clean$SampleID %in% unpaired_pa$SampleID),] 
-nrow(data_clean); nrow(data_clean[data_clean$PA,]) #G: nrow=383 with 74 PAs, C: 818 vs. 65
+nrow(data_clean); nrow(data_clean[data_clean$PA,]) #G: nrow=248 with 42 PAs, C: 818 vs. 65
 
-# Remove sites that can only be paired less than 10 times
-data_clean <- data_clean[!(data_clean$SampleID %in% count_nonPA[count_nonPA$No_nonPA<10, "SampleID"]),]
-nrow(data_clean); nrow(data_clean[data_clean$PA,]) #nrow=365 with 56 PAs; C: 809 vs. 49
+# Remove sites that can only be paired less than min_nonPA times
+# start with something small, then check how many possible;
+if(temp_scale == "global") min_nonPA <- 5
+data_clean <- data_clean[!(data_clean$SampleID %in% count_nonPA[count_nonPA$No_nonPA < min_nonPA, "SampleID"]),]
+nrow(data_clean); nrow(data_clean[data_clean$PA,]) #nrow=234 with 28 PAs; C: 809 vs. 49
 data_clean %>% group_by(LC, PA) %>% count()
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -132,15 +134,21 @@ data_clean %>% group_by(LC, PA) %>% count()
 table(data_clean$LC, data_clean$PA)
 
 # based on number of sites per LC, exclude LC
-# e.g. global: only 3 unprotected on 0 protected for Other
+# e.g. global: only 3 unprotected on 0 protected for Other & onyl 1 PA for Woodland & 0 for Cropland
 # continental: no Shrubland protected, 28 unprotected; and 0 PA in Other
 # regional: PA only min. 7 -> decrease minimum size number to 7, 
 #           exclude Shrublands & Others to get it running (otherwise no complete pairing achieved) 
-if(temp_scale == "global") lc_names <- lc_names[lc_names != "Other"]
-if(temp_scale == "continental") lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
+if(temp_scale == "global"){
+  lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
+  min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+} 
+if(temp_scale == "continental"){
+  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
+  min_size <- 10 # number of samples/ sites that should be paired per LC type
+}
 if(temp_scale == "regional"){
   lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
-  min_size <- 7
+  min_size <- 7 # number of samples/ sites that should be paired per LC type
 }
 # The following function will print the number of times it successfully 
 # paired sites. It will show the same number multiple times if it didn't 

@@ -97,10 +97,11 @@ data_glob <- data_glob %>% mutate(SampleID = ID_numb)
 
 # functions
 data_glob <- data_glob %>%
+  filter(!is.na(SampleID)) %>%
   rename(Soil_carbon_service = ORC,
          Soil_stability_service = Plant_cover,
          Water_regulation_service = `WHC veg`) %>%
-  mutate(OM_decomposition_service = sum(c(scale(`BGL veg`)[,1], 
+  mutate(OM_decomposition_service = rowSums(cbind(scale(`BGL veg`)[,1], 
                                           scale(`FOS veg`)[,1],
                                           scale(`MIN veg`)[,1]),
                                         na.rm=TRUE)/3,
