@@ -1,21 +1,19 @@
 [1] "global"
-Number of non-protected sites have never been paired to any PA:[1] 130
-On average, each protected and unprotected site was used in 536 (SD=163, min=330, max=743) and 168 (SD=147, min=1, max=521) of the 1000 randomizations, respectively.
- 101  109  146  236  266  290  302  350  374  512  525  532  595  648  652  655  663  669  679  686  690 1371 1372 1373 1374 1375 1376 1380 1381 1382 1428 1429 1430 1431 1432 1436 
- 399  354  338  713  365  372  374  374  379  360  357  366  371  657  381  385  376  382  330  347  363  386  359  370  406  363  370  677  683  683  707  718  688  743  732  662 
-1439 1440 1441 1442 1443 1478 1479 1505 1506 1507 1508 1509 1570 1585 1586 1588 1593 1594 1595 1605 
- 661  648  686  377  396  654  702  721  683  680  713  728  664  646  669  731  671  719  659  702 
+Number of non-protected sites have never been paired to any PA:[1] 108
+On average, each protected and unprotected site was used in 536 (SD=279, min=269, max=1000) and 153 (SD=113, min=1, max=414) of the 1000 randomizations, respectively.
+1046 1047 1048 1052 1053 1054 1089 1092 1093 1094 1095 1096 1122 1123 1149 1150 1151 1152 1153 1208 1223 1224 1231 1232 1233 1243 1245 1246 
+1000 1000 1000  314  318  323  335  314  316  295 1000 1000  269  691  684  722  291  726  729  335  287  320  321  718  318  730  322  322 
 Number of sites (PA/ nonPA) per LC.# A tibble: 3 x 2
 # Groups:   LC [3]
   LC            n
   <chr>     <int>
-1 Grassland    14
-2 Shrubland    15
-3 Woodland     27
+1 Grassland     7
+2 Shrubland    16
+3 Woodland      5
 # A tibble: 3 x 2
 # Groups:   LC [3]
   LC            n
   <chr>     <int>
-1 Grassland    49
-2 Shrubland    50
-3 Woodland     80
+1 Grassland    26
+2 Shrubland    53
+3 Woodland     19
