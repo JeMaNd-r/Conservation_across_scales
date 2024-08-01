@@ -16,9 +16,9 @@ library(ggtext) #to add icons as axis labels
 library(ggh4x) # for free axes in facet_grid
 library(corrplot)
 
-temp_scale <- "global"
+#temp_scale <- "global"
 #temp_scale <- "continental"
-#temp_scale <- "regional"
+temp_scale <- "regional"
 
 # load background map
 world.inp <- map_data("world")
@@ -40,8 +40,8 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 
 # set date of latest analysis
 if(temp_scale == "global") temp_date <- "2024-07-31"
-if(temp_scale == "continental") temp_date <- "2023-12-14"
-if(temp_scale == "regional") temp_date <- "2023-12-14"
+if(temp_scale == "continental") temp_date <- "2024-08-01"
+if(temp_scale == "regional") temp_date <- "2024-08-01"
 
 if(temp_scale == "global"){
   lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
@@ -96,10 +96,10 @@ data_locations <- data_clean %>%
   filter(SampleID %in% unique(pa_pairs$ID) | 
          SampleID %in% unique(pa_pairs$nonPA)) %>%
   dplyr::select(Longitude,Latitude,SampleID, PA, LC)
-data_locations #G: nrow=235, C: 243, R: 152
+data_locations #G: nrow=235, C: 316, R: 161
 write_csv(data_locations, file = paste0(here::here(), "/results/Locations_", temp_scale, ".csv"))
-nrow(data_locations %>% filter(PA==1)) #G: 56 PAs, C: 59, R: 38
-nrow(data_locations %>% filter(PA==0)) #G: 179 PAs, C: 184, R: 124
+nrow(data_locations %>% filter(PA==1)) #G: 56 PAs, C: 48, R: 36
+nrow(data_locations %>% filter(PA==0)) #G: 179 PAs, C: 268, R: 125
 
 # set limits for point maps
 if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
@@ -119,9 +119,9 @@ ggplot()+
   geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
                                       shape = as.character(PA), color=LC, 
                                       size = as.character(PA)),
-             stroke = 0.9)+ #increase circle line width; G: 0.9, C:3
+             stroke = 3)+ #increase circle line width; G: 0.9, C+R:3
   scale_shape_manual(values = c(19,1))+ #label = c("Protected", "Unprotected")
-  scale_size_manual(values = c(0.4,1.2))+ #G: 0.4,1.2, C:3,8
+  scale_size_manual(values = c(3,8))+ #G: 0.4,1.2, C+R:3,8
   scale_color_manual(values = c("Cropland" = "#4A2040",
                                 "Grassland" = "#E69F00",
                                 "Shrubland" = "#0072B2", 
@@ -152,7 +152,7 @@ print(temp_scale)
 cat("Number of non-protected sites have never been paired to any PA:")
 hist(table(pa_pairs$nonPA))  # frequency distribution of the use of sites from all runs
 length(setdiff(data_clean[data_clean$PA==0,]$SampleID, pa_pairs$nonPA))  
-# nonPA sites never used: G 131
+# nonPA sites never used: G ..., C: 475
 
 cat(paste0("On average, each protected and unprotected site was used in ",
            round(mean(table(pa_pairs$ID)),0), 
@@ -197,8 +197,6 @@ data_pairs <- pa_pairs %>%
     dplyr::select(Longitude,Latitude,SampleID, PA, LC),
     by = c("ID" = "SampleID", "LC")) 
 
-library(leaflet)
-
 # Merge data to get coordinates for each ID
 data_merged <- pa_pairs %>%
   inner_join(data_clean, by = c("ID" = "SampleID")) %>%
@@ -206,7 +204,7 @@ data_merged <- pa_pairs %>%
 
 # Calculate frequency of appearance of pairs
 pair_freq <- data_merged %>%
-  group_by(SampleID, nonPA) %>%
+  group_by(ID, nonPA) %>%
   summarise(freq = n())
 
 # Create plot with ggplot2
@@ -216,6 +214,8 @@ ggplot() +
   #scale_size_continuous(name = "Frequency", guide = "legend") +
   labs(x = "Longitude", y = "Latitude", title = "Paths Between Points with Width Based on Frequency") +
   theme_minimal()
+ggsave(filename=paste0(here::here(), "/figures/Locations_connection_", temp_scale, ".pdf"),
+       plot = last_plot())
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Boxplot mahalanobis distance ####
@@ -233,7 +233,7 @@ ggplot(pa_pairs, aes(x = LC, y = mahal.min, fill = LC))+
                              "Shrubland" = "#0072B2", 
                              "Woodland" = "#009E73", 
                              "Other" = "#000000")) #"gold3", "limegreen", "forestgreen"
-ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_mahal.distance_global.png"),
+ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_mahal.distance_", temp_scale, ".png"),
        plot = last_plot())
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -681,9 +681,9 @@ ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_d-value_meanCI
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Summarizing stats ####
 # number significant effects
-d_plot_all %>% filter(effect_significance!="ns" & !is.na(effect_significance)) %>% nrow()
+d_plot_all %>% filter(effect_significance!="ns" & !is.na(effect_significance)) %>% nrow() #35
 # number ns
-d_plot_all %>% filter(effect_significance=="ns" & !is.na(effect_significance)) %>% nrow()
+d_plot_all %>% filter(effect_significance=="ns" & !is.na(effect_significance)) %>% nrow() #157
 
 # number significant per lc
 table(d_plot_all %>% filter(effect_significance!="ns" & !is.na(effect_significance)) %>% dplyr::select(scale, lc))
@@ -717,6 +717,9 @@ d_df_grouped <- d_df_all %>% filter(!is.na(lc)) %>%
   mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='30'>",
                              ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='30'>",
                                     ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>", NA)))) %>%
+  mutate(scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>", 
+                                          "<img src='figures/icon_location-black.png' width='30'>", 
+                                          "<img src='figures/icon_flag-Portugal.png' width='30'>"))) %>%
   mutate(Group_function = ifelse(Group_function=="Service", "Function", 
                                  ifelse(Group_function=="Diversity", "Shannon", Group_function))) %>%
   mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity")))
@@ -1125,7 +1128,8 @@ ggplot(pars_all %>%
          filter(!is.na(LC) & !is.na(scale)),
        aes(x = PA_rank_rev.trend, y = LC,
            xmin = lower.HPD, xmax = upper.HPD,
-           fill = significance, color = LC))+
+           fill = significance, color = LC,
+           linetype = significance))+
   
   geom_vline(aes(xintercept=0), color="black")+
   geom_pointrange(position = position_jitter(height = 0.3),
@@ -1167,6 +1171,13 @@ ggplot(pars_all %>%
                              "Other" = "#000000",
                              "ns" = "white"),
                     drop = FALSE)+
+  scale_linetype_manual(values=c("Cropland" = "solid",
+                             "Grassland" = "solid",
+                             "Shrubland" = "solid", 
+                             "Woodland" = "solid", 
+                             "Other" = "solid",
+                             "ns" = "longdash"),
+                    drop = FALSE)+
   scale_color_manual(values=c("Cropland" = "#4A2040",
                               "Grassland" = "#E69F00",
                               "Shrubland" = "#0072B2", 
@@ -1202,7 +1213,7 @@ ggplot(pars_all %>%
 
 ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_BayesianTrends_allScales_grouped.png"),
        plot = last_plot(), 
-       #width = 2000, height = 1500,
+       width = 5000, height = 4000,
        units = "px")
 
 # table all
@@ -1234,7 +1245,7 @@ write_csv(pars_sum %>%
                              round(PA_rank_rev.trend_CI_upper, 4), "]"),
            "Scale" = factor(scale, levels = c("global", "continental", "regional"))) %>%
     dplyr::select(Group_function, Scale, LC, trend, SE, "95% CI") %>%
-    arrange(Group_function, scale, LC),
+    arrange(Group_function, Scale, LC),
   paste0(here::here(), "/figures/Results_pointrange_BayesianTrends_allScales_grouped.csv"))
 
 write_csv(pars_all %>%
@@ -1288,7 +1299,7 @@ write_csv(pars_all %>%
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### FIGURE 3 - Heatmap env. conditions ####
+### FIGURE 4 - Heatmap env. conditions ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 #corrplot::corrplot(cor(data_clean %>% dplyr::select(all_of(c(fns, mahal_vars)))))
@@ -1471,6 +1482,5 @@ ggplot(data = pa_env_long,
 # 
 
 
-#  geom_tile(aes(fill=corr))
 
 

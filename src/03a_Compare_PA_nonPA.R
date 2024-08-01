@@ -16,14 +16,14 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
- temp_scale <- "global"
+# temp_scale <- "global"
 # temp_scale <- "continental"
-#temp_scale <- "regional"
+temp_scale <- "regional"
 
 # set date of latest analysis
 if(temp_scale == "global") temp_date <- "2024-07-31"
-if(temp_scale == "continental") temp_date <- "2024-05-27"
-if(temp_scale == "regional") temp_date <- "2023-12-14"
+if(temp_scale == "continental") temp_date <- "2024-08-01"
+if(temp_scale == "regional") temp_date <- "2024-08-01"
 
 if(temp_scale == "global"){
   lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
@@ -32,10 +32,12 @@ if(temp_scale == "global"){
 if(temp_scale == "continental"){
   lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
   min_size <- 10 # number of samples/ sites that should be paired per LC type
+  fns <- fns[fns != "Water_regulation_service"]
 }
 if(temp_scale == "regional"){
   lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
   min_size <- 7 # number of samples/ sites that should be paired per LC type
+  fns <- fns[fns != "Water_regulation_service"]
 }
 data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
 data_clean
