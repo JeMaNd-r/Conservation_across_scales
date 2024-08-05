@@ -16,9 +16,9 @@ library(ggtext) #to add icons as axis labels
 library(ggh4x) # for free axes in facet_grid
 library(corrplot)
 
-#temp_scale <- "global"
+temp_scale <- "global"
 #temp_scale <- "continental"
-temp_scale <- "regional"
+#temp_scale <- "regional"
 
 # load background map
 world.inp <- map_data("world")
@@ -39,7 +39,7 @@ source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
 
 # set date of latest analysis
-if(temp_scale == "global") temp_date <- "2024-07-31"
+if(temp_scale == "global") temp_date <- "2024-08-05"
 if(temp_scale == "continental") temp_date <- "2024-08-01"
 if(temp_scale == "regional") temp_date <- "2024-08-01"
 
@@ -119,9 +119,9 @@ ggplot()+
   geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
                                       shape = as.character(PA), color=LC, 
                                       size = as.character(PA)),
-             stroke = 3)+ #increase circle line width; G: 0.9, C+R:3
-  scale_shape_manual(values = c(19,1))+ #label = c("Protected", "Unprotected")
-  scale_size_manual(values = c(3,8))+ #G: 0.4,1.2, C+R:3,8
+             stroke = 1)+ #increase circle line width; G: 0.9, C+R:3
+  scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
+  scale_size_manual(values = c("0" =1, "1" = 1.8))+ #G: 0.4,1.2, C+R:3,8
   scale_color_manual(values = c("Cropland" = "#4A2040",
                                 "Grassland" = "#E69F00",
                                 "Shrubland" = "#0072B2", 
@@ -726,8 +726,8 @@ d_df_grouped <- d_df_all %>% filter(!is.na(lc)) %>%
 write_csv(d_df_grouped %>%
             group_by(Group_function, scale, lc) %>%
             summarize(across(effect, list(median = median, 
-                                          ci2.5 = function(x) quantile(x, 0.025), 
-                                          ci92.5 = function(x) quantile(x, 0.925)))) %>%
+                                          ci2.5 = function(x) quantile(x, 0.025, na.rm = TRUE), 
+                                          ci92.5 = function(x) quantile(x, 0.925, na.rm = TRUE)))) %>%
             mutate(across(c(effect_median, effect_ci2.5, effect_ci92.5), function(x) round(x, 3))) %>%
             mutate(ci_95 = paste0("[", effect_ci2.5, "; ", effect_ci92.5, "]")) %>%
             dplyr::select(-effect_ci2.5, -effect_ci92.5), 
@@ -918,7 +918,7 @@ ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
        aes(y=Label_pa, x=value, color=lc))+
   
   ## adapt for scale
-  annotate("rect", ymin = -Inf, ymax = 3+0.5, xmin=-Inf, xmax=Inf, fill = "grey90", alpha=0.5)+ #global: 4, C: 3, R: 2
+  annotate("rect", ymin = -Inf, ymax = 4+0.5, xmin=-Inf, xmax=Inf, fill = "grey90", alpha=0.5)+ #global: 4, C: 3, R: 2
   annotate("rect", ymin = -Inf, ymax = 1+0.5, xmin=-Inf, xmax=Inf, fill = "grey85", alpha=0.5)+
   
   ggdist::stat_pointinterval(fatten_point=1, shape=3, 

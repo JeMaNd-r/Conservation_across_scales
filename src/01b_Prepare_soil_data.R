@@ -31,7 +31,8 @@ data_glob <- coord_glob %>%
   dplyr::select("Plot_ID", "ID_sequencing_16S", "Latitude_c", "Longitude_c", 
                 "Vegetation", "Soil_pH", "Soil_salinity", "Soil_fine_texture",
                 "ORC", "BGL veg", "FOS veg", "MIN veg",
-                "WHC veg", "Plant_cover",             
+                #"WHC veg", 
+                "Plant_cover",             
                 "TON", "Soil_total_P", "AVP", "AMO", "NIT", "DON") %>%
   mutate(ID_numb = str_replace(ID_sequencing_16S,"FM", "1")) %>% #ID_sequencing_16s goes to 249, FMxxx
   mutate(ID_numb = str_replace(ID_numb, "X", "")) %>%
@@ -99,8 +100,8 @@ data_glob <- data_glob %>% mutate(SampleID = ID_numb)
 data_glob <- data_glob %>%
   filter(!is.na(SampleID)) %>%
   rename(Soil_carbon_service = ORC,
-         Soil_stability_service = Plant_cover,
-         Water_regulation_service = `WHC veg`) %>%
+         Soil_stability_service = Plant_cover) %>% #,
+         #Water_regulation_service = `WHC veg`) %>%
   mutate(OM_decomposition_service = rowSums(cbind(scale(`BGL veg`)[,1], 
                                           scale(`FOS veg`)[,1],
                                           scale(`MIN veg`)[,1]),
@@ -114,7 +115,7 @@ data_glob <- data_glob %>%
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Keep complete cases only ####
-data_glob <- data_glob[complete.cases(data_glob[,c(mahal_vars, fns, "LC")]),] #248 (73%)
+data_glob <- data_glob[complete.cases(data_glob[,c(mahal_vars, fns, "LC")]),] #248 (73%)   
 data_glob
 
 # subset relevant columns

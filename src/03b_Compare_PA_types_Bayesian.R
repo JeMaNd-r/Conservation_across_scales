@@ -20,12 +20,12 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
-# temp_scale <- "global"
+ temp_scale <- "global"
 # temp_scale <- "continental"
- temp_scale <- "regional"
+# temp_scale <- "regional"
 
 # set date of latest analysis
-if(temp_scale == "global") temp_date <- "2024-07-31"
+if(temp_scale == "global") temp_date <- "2024-08-05"
 if(temp_scale == "continental") temp_date <- "2024-08-01"
 if(temp_scale == "regional") temp_date <- "2024-08-01"
 
@@ -158,7 +158,7 @@ for(temp_scale in c("global", "continental", "regional")){
   source(paste0(here::here(), "/src/00_Parameters.R")) 
 
   # set date of latest analysis
-  if(temp_scale == "global") temp_date <- "2024-07-31"
+  if(temp_scale == "global") temp_date <- "2024-08-05"
   if(temp_scale == "continental") temp_date <- "2024-08-01"
   if(temp_scale == "regional") temp_date <- "2024-08-01"
   

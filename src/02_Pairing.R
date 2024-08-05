@@ -19,9 +19,9 @@ source("src/00_Parameters.R")
 source("src/00_Functions.R")
 
 
-# temp_scale <- "global"
+temp_scale <- "global"
 #temp_scale <- "continental"
-temp_scale <- "regional"
+#temp_scale <- "regional"
 
 # create directory for intermediate results
 if(!dir.exists(paste0(here::here(), "/intermediates/", temp_scale))){
@@ -29,7 +29,7 @@ if(!dir.exists(paste0(here::here(), "/intermediates/", temp_scale))){
 }
 
 # set date of latest analysis
-if(temp_scale == "global") temp_date <- "2024-07-31"
+if(temp_scale == "global") temp_date <- "2024-08-05"
 if(temp_scale == "continental") temp_date <- "2024-08-01"
 if(temp_scale == "regional") temp_date <- "2024-08-01"
 
@@ -40,9 +40,9 @@ data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_s
 data_clean
 
 ## Explore data
-summary(as.factor(data_clean$PA)) #G: 209 nonPA and 42 PAs, C: 743 vs. 61, R: 275 vs. 49
+summary(as.factor(data_clean$PA)) #G: 285 nonPA and 53 PAs, C: 743 vs. 61, R: 275 vs. 49
 # number of observations (raw)
-nrow(data_clean); nrow(data_clean[data_clean$PA,])  #G: 248 with 42 PAs, C: 807 vs. 64, R: 324 vs. 49
+nrow(data_clean); nrow(data_clean[data_clean$PA,])  #G: 338 with 53 PAs, C: 807 vs. 64, R: 324 vs. 49
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Scale variables for mahalanobis distance ####
@@ -92,7 +92,7 @@ count_nonPA <- f_check_pairs(data = data_clean,
                              col_id = "SampleID", col_lc = "LC", 
                              vars_z = mahal_vars_z)
 all_nonPA <- count_nonPA[[2]]
-count_nonPA <- count_nonPA[[1]] #G...; C: 16 without enough (10) nonPAs for pairing
+count_nonPA <- count_nonPA[[1]] #G: 7 <7, 13 <10; C: 16 without enough (10) nonPAs for pairing
 #head(count_nonPA)
 
 #View(all_nonPA %>% dplyr::select(SampleID, count_nonPA[count_nonPA$n<10 & !is.na(count_nonPA$SampleID), "SampleID"]))
@@ -118,13 +118,13 @@ head(unpaired_pa)
 # Note: There were nonPA sites with mahalanobis distance below threshold
 # for three protected sites with SampleID. They have to been removed.
 data_clean <- data_clean[!(data_clean$SampleID %in% unpaired_pa$SampleID),] 
-nrow(data_clean); nrow(data_clean[data_clean$PA,]) #G: nrow=248 with 42 PAs, C: 807 vs. 64; R. 324 with 49
+nrow(data_clean); nrow(data_clean[data_clean$PA,]) #G: nrow=338 with 53 PAs, C: 807 vs. 64; R. 324 with 49
 
 # Remove sites that can only be paired less than min_nonPA times
 # start with something small, then check how many possible;
 if(temp_scale == "global") min_nonPA <- 5
 data_clean <- data_clean[!(data_clean$SampleID %in% count_nonPA[count_nonPA$No_nonPA < min_nonPA, "SampleID"]),]
-nrow(data_clean); nrow(data_clean[data_clean$PA,]) #nrow=234 with 28 PAs; C: 791 vs. 48; R: 318 with 43
+nrow(data_clean); nrow(data_clean[data_clean$PA,]) #nrow=331 with 46 PAs; C: 791 vs. 48; R: 318 with 43
 data_clean %>% group_by(LC, PA) %>% count()
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
