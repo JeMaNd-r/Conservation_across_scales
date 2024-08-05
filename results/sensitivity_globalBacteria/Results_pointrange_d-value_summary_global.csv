@@ -1,0 +1,29 @@
+"","lc","fns","Label","Group_function","Organism","effect_mean","effect_SD","effect_median","effect_ci_2.5","effect_ci_17","effect_ci_83","effect_ci_97.5"
+"1","Grassland","Bac_JaccDist_av","Bacterial Dissimilarity","Dissimilarity","Bacteria",-0.0240596197779461,0.764199386803959,-0.0349242267334823,-1.21855223073273,-0.66116530979937,0.633296181583693,1.48995607856415
+"2","Grassland","Bac_richness","Bacterial Richness","Richness","Bacteria",1.68410809307839,0.903049103227871,1.58520166118674,0.435677242766084,0.839101899280124,2.48436322794371,3.8596021648793
+"3","Grassland","Bac_shannonDiv","Bacterial Shannon","Shannon","Bacteria",1.17434770212452,0.847306826540514,1.06265698516776,0.0235165228038899,0.396281317144488,1.92225270081356,3.09863100658579
+"4","Shrubland","Bac_JaccDist_av","Bacterial Dissimilarity","Dissimilarity","Bacteria",-1.09243759444636,1.00914114342584,-0.970411492389967,-2.75205098038768,-1.83329378536703,-0.239196705068506,0.434314008639069
+"5","Shrubland","Bac_richness","Bacterial Richness","Richness","Bacteria",0.996966589617331,0.878654858627637,0.839218769260005,-0.101498601484637,0.271608977624975,1.66118229226495,3.19832068194049
+"6","Shrubland","Bac_shannonDiv","Bacterial Shannon","Shannon","Bacteria",0.638242439308343,0.82471427292697,0.507133052960589,-0.431453780224467,-0.0233168324321335,1.2572175063666,2.64752037330201
+"7","Woodland","Bac_JaccDist_av","Bacterial Dissimilarity","Dissimilarity","Bacteria",1.22662996633901,0.68540888360925,1.11155805341774,0.400023716884837,0.689440438434929,1.71947863052514,2.75001209669749
+"8","Woodland","Bac_richness","Bacterial Richness","Richness","Bacteria",-1.89487767861165,1.16319275388511,-1.73288090097038,-4.26346743780878,-2.55747766655001,-0.901663915706638,-0.14157090429383
+"9","Woodland","Bac_shannonDiv","Bacterial Shannon","Shannon","Bacteria",-1.78419615466391,0.811432166948336,-1.70452090161102,-3.27093924487699,-2.3824649045024,-1.08831380954904,-0.427946435152059
+"10",NA,"Arbuscularmycorrhizal_richness","AM fungi Richness","Richness","Fungi",NA,NA,NA,NA,NA,NA,NA
+"11",NA,"Decomposer_richness","Decomposer Richness","Richness","Decomposers",NA,NA,NA,NA,NA,NA,NA
+"12",NA,"Ectomycorrhizal_richness","EM fungi Richness","Richness","Fungi",NA,NA,NA,NA,NA,NA,NA
+"13",NA,"Fungi_JaccDist_av","Fungal Dissimilarity","Dissimilarity","Fungi",NA,NA,NA,NA,NA,NA,NA
+"14",NA,"Fungi_richness","Fungal Richness","Richness","Fungi",NA,NA,NA,NA,NA,NA,NA
+"15",NA,"Fungi_shannonDiv","Fungal Shannon","Shannon","Fungi",NA,NA,NA,NA,NA,NA,NA
+"16",NA,"Invertebrate_JaccDist_av","Invertebrate Dissimilarity","Dissimilarity","Invertebrates",NA,NA,NA,NA,NA,NA,NA
+"17",NA,"Invertebrate_richness","Invertebrate Richness","Richness","Invertebrates",NA,NA,NA,NA,NA,NA,NA
+"18",NA,"Invertebrate_shannonDiv","Invertebrate Shannon","Shannon","Invertebrates",NA,NA,NA,NA,NA,NA,NA
+"19",NA,"Nematode_richness","Nematode Richness","Richness","Nematodes",NA,NA,NA,NA,NA,NA,NA
+"20",NA,"Nutrient_service","Nutrient cycling","Function","Function",NA,NA,NA,NA,NA,NA,NA
+"21",NA,"OM_decomposition_service","Decomposition (OM)","Function","Function",NA,NA,NA,NA,NA,NA,NA
+"22",NA,"Pathogen_control","Pathogen control","Function","Function",NA,NA,NA,NA,NA,NA,NA
+"23",NA,"Protist_JaccDist_av","Protist Dissimilarity","Dissimilarity","Protists",NA,NA,NA,NA,NA,NA,NA
+"24",NA,"Protist_richness","Protist Richness","Richness","Protists",NA,NA,NA,NA,NA,NA,NA
+"25",NA,"Protist_shannonDiv","Protist Shannon","Shannon","Protists",NA,NA,NA,NA,NA,NA,NA
+"26",NA,"Soil_carbon_service","Soil carbon","Function","Function",NA,NA,NA,NA,NA,NA,NA
+"27",NA,"Soil_stability_service","Soil stability","Function","Function",NA,NA,NA,NA,NA,NA,NA
+"28",NA,"Water_regulation_service","Water regulation","Function","Function",NA,NA,NA,NA,NA,NA,NA

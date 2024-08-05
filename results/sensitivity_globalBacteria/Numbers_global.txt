@@ -1,0 +1,21 @@
+[1] "global"
+Number of non-protected sites have never been paired to any PA:[1] 133
+On average, each protected and unprotected site was used in 326 (SD=103, min=210, max=533) and 104 (SD=67, min=1, max=266) of the 1000 randomizations, respectively.
+ 176  180  185  193  210  233  246  247  248 1043 1044 1045 1046 1047 1048 1052 1053 1054 1081 1082 1083 1084 1085 1089 1092 1093 1094 1095 1096 1122 1123 1149 1150 1151 1152 1153 
+ 505  497  244  225  351  322  210  245  242  533  498  499  466  486  489  227  233  247  338  330  355  316  346  228  222  244  248  520  507  257  309  345  332  283  345  334 
+1208 1223 1224 1225 1226 1231 1232 1233 1245 1246 
+ 234  222  244  316  344  239  317  234  249  223 
+Number of sites (PA/ nonPA) per LC.# A tibble: 3 x 2
+# Groups:   LC [3]
+  LC            n
+  <chr>     <int>
+1 Grassland    15
+2 Shrubland    21
+3 Woodland     10
+# A tibble: 3 x 2
+# Groups:   LC [3]
+  LC            n
+  <chr>     <int>
+1 Grassland    39
+2 Shrubland    56
+3 Woodland     49
