@@ -31,6 +31,20 @@ if(temp_scale == "global") {
   )
 }
 
+## for alternative dataset
+# if(temp_scale == "global") {
+#   raw_data <- list(
+#     "div_bac" = read_delim(here::here("Global/Glob16S_rarefyd_DivMetrics.csv")),
+#     "div_euk" = read_delim(here::here("Global/Glob18s_rarefyd_DivMetrics.csv")),
+#     
+#     "dis_bac" = read_delim(here::here("Global/Glob16SBac_rarefyd_JacDist.csv")),
+#     "dis_euk" = read_delim(here::here("Global/Glob18sEukaryotes_rarefyd_JacDist.csv")),
+#     "dis_fun" = read_delim(here::here("Global/Glob18sFungi_rarefyd_JacDist.csv")),
+#     "dis_inv" = read_delim(here::here("Global/Glob18sInvertebrate_rarefyd_JacDist.csv")),
+#     "dis_pro" = read_delim(here::here("Global/Glob18sProtists_rarefyd_JacDist.csv"))
+#   )
+# }
+
 if(temp_scale == "continental") {
   raw_data <- list(
     "div_bac" = read_delim(paste0(data_wd, "Europe/Europ16S_rarefyd_DivMetrics.csv")),
