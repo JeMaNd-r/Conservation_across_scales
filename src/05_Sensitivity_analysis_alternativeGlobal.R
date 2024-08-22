@@ -26,6 +26,15 @@ library(emmeans) # to estimate contrast i.e. EM means
 source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
 
+# add water service to functions
+fns <- c("Soil_carbon_service", "OM_decomposition_service", "Water_regulation_service", #water only for global
+         "Soil_stability_service", "Nutrient_service", "Pathogen_control", 
+         "Bac_richness", "Fungi_richness", "Invertebrate_richness", 
+         "Protist_richness", "Nematode_richness", 
+         "Bac_shannonDiv", "Fungi_shannonDiv", "Invertebrate_shannonDiv", "Protist_shannonDiv",
+         "Ectomycorrhizal_richness", "Arbuscularmycorrhizal_richness", "Decomposer_richness",
+         "Bac_JaccDist_av", "Fungi_JaccDist_av", "Protist_JaccDist_av",
+         "Invertebrate_JaccDist_av")
 
 # create directory for intermediate results
 if(!dir.exists(paste0(here::here(), "/results/sensitivity_globalAlternativeDataset"))){
@@ -306,7 +315,7 @@ count_nonPA <- count_nonPA[[1]] #G: 17 <7 & <5, 18 <10 (SampleID 1225 with No_no
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Remove sites ####
 
-temp_date <- "2024-08-21"
+temp_date <- "2024-08-22"
 
 unpaired_pa <- read.csv(paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Unpaired_protected_sites_", temp_date, ".csv"))
 head(unpaired_pa) 
@@ -371,7 +380,7 @@ write_csv(pa_pairs, file=paste0(here::here(), "/results/sensitivity_globalAltern
 temp_scale <- "global"
 
 # set date of latest analysis
-temp_date <- "2024-08-21"
+temp_date <- "2024-08-22"
 lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
 min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
 
@@ -403,7 +412,7 @@ save(d_list,  file=paste0(here::here(), "/results/sensitivity_globalAlternativeD
 temp_scale <- "global"
 
 # set date of latest analysis
-temp_date <- "2024-08-21"
+temp_date <- "2024-08-22"
 lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
 min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
 
@@ -519,9 +528,19 @@ library(tidybayes)
 
 source(paste0(here::here(), "/src/00_Parameters.R")) 
 
+# add water service to functions
+fns <- c("Soil_carbon_service", "OM_decomposition_service", "Water_regulation_service", #water only for global
+         "Soil_stability_service", "Nutrient_service", "Pathogen_control", 
+         "Bac_richness", "Fungi_richness", "Invertebrate_richness", 
+         "Protist_richness", "Nematode_richness", 
+         "Bac_shannonDiv", "Fungi_shannonDiv", "Invertebrate_shannonDiv", "Protist_shannonDiv",
+         "Ectomycorrhizal_richness", "Arbuscularmycorrhizal_richness", "Decomposer_richness",
+         "Bac_JaccDist_av", "Fungi_JaccDist_av", "Protist_JaccDist_av",
+         "Invertebrate_JaccDist_av")
+
 # set date of latest analysis
 temp_scale <- "global"
-temp_date <- "2024-08-21"
+temp_date <- "2024-08-22"
 lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
 min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
 
@@ -625,8 +644,18 @@ if(temp_scale != "global"){
 source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
 
+# add water service to functions
+fns <- c("Soil_carbon_service", "OM_decomposition_service", "Water_regulation_service", #water only for global
+         "Soil_stability_service", "Nutrient_service", "Pathogen_control", 
+         "Bac_richness", "Fungi_richness", "Invertebrate_richness", 
+         "Protist_richness", "Nematode_richness", 
+         "Bac_shannonDiv", "Fungi_shannonDiv", "Invertebrate_shannonDiv", "Protist_shannonDiv",
+         "Ectomycorrhizal_richness", "Arbuscularmycorrhizal_richness", "Decomposer_richness",
+         "Bac_JaccDist_av", "Fungi_JaccDist_av", "Protist_JaccDist_av",
+         "Invertebrate_JaccDist_av")
+
 # set date of latest analysis
-temp_date <- "2024-08-21"
+temp_date <- "2024-08-22"
 
 lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
 min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
@@ -670,8 +699,8 @@ data_locations <- data_clean %>%
   dplyr::select(Longitude,Latitude,SampleID, PA, LC)
 data_locations #G: nrow=190, C: 316, R: 161
 write_csv(data_locations, file = paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Locations_", temp_scale, ".csv"))
-nrow(data_locations %>% filter(PA==1)) #G: 46 PAs, C: 48, R: 36
-nrow(data_locations %>% filter(PA==0)) #G: 144 PAs, C: 268, R: 125
+nrow(data_locations %>% filter(PA==1)) #G: 63 PAs
+nrow(data_locations %>% filter(PA==0)) #G: 182 PAs
 
 # set limits for point maps
 if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
