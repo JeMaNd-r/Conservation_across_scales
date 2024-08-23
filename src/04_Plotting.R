@@ -15,6 +15,7 @@ library(ggrepel) #to add text not overlapping (geom_text_repel)
 library(ggtext) #to add icons as axis labels
 library(ggh4x) # for free axes in facet_grid
 library(corrplot)
+library(magick) # to create plot from multiple pngs
 
 temp_scale <- "global"
 #temp_scale <- "continental"
@@ -268,23 +269,114 @@ ggsave(filename=paste0(here::here(), "/figures/Locations_connection_", temp_scal
        plot = last_plot())
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## Boxplot mahalanobis distance ####
+## Boxplot Mahalanobis distance ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-ggplot(pa_pairs, aes(x = LC, y = mahal.min, fill = LC))+
-  geom_boxplot()+
-  geom_violin(alpha = 0.3, adjust = 0.3)+
-  theme_bw() +
-  labs(x="Land-cover type",y="Mahalanobis distance") +
-  theme(axis.text.x=element_text(size=15),text = element_text(size=20),  
-        legend.position = "none", axis.text.y = element_text(size=15), legend.title = element_blank())+
-  scale_fill_manual(values=c("Cropland" = "#4A2040",
-                             "Grassland" = "#E69F00",
-                             "Shrubland" = "#0072B2", 
-                             "Woodland" = "#009E73", 
-                             "Other" = "#000000")) #"gold3", "limegreen", "forestgreen"
-ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_mahal.distance_", temp_scale, ".png"),
-       plot = last_plot())
+for(temp_scale in c("global", "continental", "regional")){
+  # set date of latest analysis
+  if(temp_scale == "global") temp_date <- "2024-08-05"
+  if(temp_scale == "continental") temp_date <- "2024-08-01"
+  if(temp_scale == "regional") temp_date <- "2024-08-01"
+  
+  # load pairs of PA and nonPA
+  pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+  
+  # plot
+  ggplot(pa_pairs, aes(x = LC, y = mahal.min, fill = LC))+
+    geom_boxplot()+
+    geom_violin(alpha = 0.3, adjust = 0.3)+
+    theme_bw() +
+    ggtitle(paste0("Paired samples - ", temp_scale))+
+    labs(x="Habitat type",y="Mahalanobis distance") +
+    theme(axis.text.x=element_text(size=15),text = element_text(size=20),  
+          legend.position = "none", axis.text.y = element_text(size=15), legend.title = element_blank())+
+    scale_fill_manual(values=c("Cropland" = "#4A2040",
+                               "Grassland" = "#E69F00",
+                               "Shrubland" = "#0072B2", 
+                               "Woodland" = "#009E73", 
+                               "Other" = "#000000")) #"gold3", "limegreen", "forestgreen"
+  ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_mahal.distance_", temp_scale, ".png"),
+         plot = last_plot())
+}
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## APPENDIX: Boxplot Mahalanobis distance - all vs. pairs ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# calculate & plot Mahalanobis distance for all
+for(temp_scale in c("global", "continental", "regional")){
+  data <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+  
+  if(temp_scale == "global"){
+    lc_names <- lc_names_all[lc_names_all != "Other" & lc_names_all != "Cropland"]
+  } 
+  if(temp_scale == "continental"){
+    lc_names <- lc_names_all[lc_names_all != "Other" & lc_names_all != "Shrubland"]
+  }
+  if(temp_scale == "regional"){
+    lc_names <- lc_names_all[lc_names_all != "Other" & lc_names_all != "Shrubland"]
+  }
+  
+  # scale variables
+  data <- f_scale_vars(data = data, vars = mahal_vars)
+  
+  nonpa <- data[data$PA==0,c("SampleID", "LC", "PA", mahal_vars_z)]
+  pa <- data[data$PA==1,c("SampleID", "LC", "PA", mahal_vars_z)]
+  all_nonPA <- data.frame("SampleID" = "a", "PA_ID" = 1, "LC" = "lc", "mahal_dist" = 1)[0,]
+  
+  # calculate mahalanobis distance per lc type
+  for(i in 1:length(lc_names)){try({
+    temp_nonPA  <- nonpa[nonpa[,"LC"]==lc_names[i],]
+    temp_PA <- pa[pa[,"LC"]==lc_names[i],]
+    
+    sigma <- cov(temp_nonPA[,mahal_vars_z]) 
+    for(j in 1:nrow(temp_PA)){
+      mu <- as.numeric(temp_PA[j,mahal_vars_z])
+      temp_nonPA[,as.character(temp_PA[j,"SampleID"])] <- 
+        mahalanobis(temp_nonPA[,mahal_vars_z], mu, sigma, tol=1e-30)
+      #print(j)
+    }
+    
+    temp_nonPA <- temp_nonPA %>% pivot_longer(cols = as.character(temp_PA %>% pull("SampleID")),
+                                names_to = "PA_ID", values_to = "mahal_dist") %>%
+      dplyr::select(SampleID, PA_ID, LC, mahal_dist) %>% unique()
+    
+    all_nonPA <- rbind(all_nonPA, temp_nonPA)
+  })}
+  all_nonPA
+  
+  write_csv(all_nonPA, paste0(here::here(), "/figures/Data_boxplot_mahal.distance_all_", temp_scale, ".csv"))
+  
+  ggplot(all_nonPA, aes(x = LC, y = mahal_dist, fill = LC))+
+    geom_boxplot()+
+    geom_violin(alpha = 0.3, adjust = 0.3)+
+    theme_bw() +
+    ggtitle(paste0("All samples - ", temp_scale))+
+    labs(x="Habitat type",y="Mahalanobis distance") +
+    theme(axis.text.x=element_text(size=15),text = element_text(size=20),  
+          legend.position = "none", axis.text.y = element_text(size=15), legend.title = element_blank())+
+    scale_fill_manual(values=c("Cropland" = "#4A2040",
+                               "Grassland" = "#E69F00",
+                               "Shrubland" = "#0072B2", 
+                               "Woodland" = "#009E73", 
+                               "Other" = "#000000")) #"gold3", "limegreen", "forestgreen"
+  ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_mahal.distance_all_", temp_scale, ".png"),
+         plot = last_plot())
+}
+
+# put in 1 plot
+pairs_glob <- magick::image_read(paste0(here::here(), "/figures/Data_boxplot_mahal.distance_global.png"))
+pairs_cont <- magick::image_read(paste0(here::here(), "/figures/Data_boxplot_mahal.distance_continental.png"))
+pairs_regi <- magick::image_read(paste0(here::here(), "/figures/Data_boxplot_mahal.distance_regional.png"))
+all_glob <- magick::image_read(paste0(here::here(), "/figures/Data_boxplot_mahal.distance_all_global.png"))
+all_cont <- magick::image_read(paste0(here::here(), "/figures/Data_boxplot_mahal.distance_all_continental.png"))
+all_regi <- magick::image_read(paste0(here::here(), "/figures/Data_boxplot_mahal.distance_all_regional.png"))
+
+magick::image_write(magick::image_append(c(magick::image_append(c(pairs_glob, pairs_cont, pairs_regi)),
+                                           magick::image_append(c(all_glob, all_cont, all_regi))),
+                     stack = TRUE),
+                    path=paste0(here::here(), "/figures/Data_boxplot_mahal.distance_all_allScales.png"))
+rm(pairs_glob, pairs_cont, pairs_regi, all_glob, all_cont, all_regi)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Effect size per LC type ####
@@ -661,6 +753,23 @@ d_plot_all <- d_sum_all %>%
   mutate(effect_significance = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "ns", effect_direction_c),
          effect_na = ifelse(is.na(effect_mean), "not available", NA)) %>%
   mutate(effect_significance = factor(effect_significance, levels = c("negative", "positive", "ns")))
+
+# save table 
+write_csv(d_sum_all %>% 
+            dplyr::select(-X) %>%
+            dplyr::select(Group_function, Label, scale, lc, effect_mean:effect_ci_97.5) %>%
+            arrange(Group_function, Label, scale, lc) %>%
+            mutate("Habitat" = lc,
+                   "Group" = Group_function,
+                   "Slope [HPD]" = paste0(round(effect_mean, 3), 
+                                          " [", round(effect_ci_2.5, 3), "; ", round(effect_ci_97.5, 3), "] "),
+                   "Variable" = Label,
+                   "Scale_long" = factor(scale, levels = c("global", "continental", "regional")))  %>%
+            mutate("Scale" = factor(substr(scale, 1, 4), levels = c("glob", "cont", "regi"))) %>%
+            dplyr::select(Group, Variable, Scale, Habitat, "Slope [HPD]") %>%
+            pivot_wider(names_from = "Habitat", values_from = "Slope [HPD]") %>%
+            arrange(Group, Variable, Scale),
+          paste0(here::here(), "/figures/Results_pointrange_d-value_meanCI_allScales_fns.csv"))
 
 # plot
 ggplot(data = d_plot_all,
@@ -1459,186 +1568,260 @@ ggsave(filename=paste0(here::here(), "/figures/Results_pointrange_BayesianTrends
 ### FIGURE 4 - Heatmap env. conditions ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-#corrplot::corrplot(cor(data_clean %>% dplyr::select(all_of(c(fns, mahal_vars)))))
+source(paste0(here::here(), "/src/00_Parameters.R"))
+source(paste0(here::here(), "/src/00_Functions.R"))
 
-# load data
-temp_scale <- "global"
-temp_date <- "2024-08-05"
-lc_names <- lc_names[lc_names != "Other"]
-data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv")) %>%
-  mutate(scale = temp_scale)
-
-# load pairs of PA and nonPA
-pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
-
-# add data
-pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
-  rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
-  filter(!is.na(nonPA)) %>%
-  arrange(ID, nonPA, times, scale)
-pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% 
-  #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
-  full_join(
-    # pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
-    pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), mean)) %>% mutate(measure = "mean")) #%>% 
-    #   pivot_longer(cols = all_of(mahal_vars), names_to = "env") %>%
-    # rbind(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA") %>% 
-    #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")) %>%
-    # rbind(pa_env %>% filter(data == "nonPA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "nonPA") %>% 
-    #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")))
-
-pa_env <- pa_env %>% dplyr::select(ID, all_of(c(fns, mahal_vars))) 
-
-# Calculate correlations between env and fns for each site
-correlation_matrix <- sapply(mahal_vars, function(mahal_var) {
-  sapply(fns, function(fn) {
-    cor(pa_env[[mahal_var]], pa_env[[fn]], use = "na.or.complete")
-  })
-})
-
-# Convert the correlation matrix to a data frame for easier interpretation
-correlation_df <- as.data.frame(correlation_matrix)
-rownames(correlation_df) <- fns  
-colnames(correlation_df) <- mahal_vars  
-
-# Print or view the correlation matrix
-print(correlation_df)
-
-correlation_df <- correlation_df %>% 
-  rownames_to_column(var = "env") %>%  # Convert row names to a column
-  pivot_longer(cols = -env,  # Pivot to long format, excluding the env_variable column
-               names_to = "fns",
-               values_to = "correlation") %>%
-  mutate(fns = factor(fns, levels = unique(fns[order(correlation)])),
-         env = factor(env, levels = unique(env[order(correlation)])))
-
-pdf(paste0(here::here(), "/figures/Correlation_diff_PA_global.pdf"))
-ggplot(data = correlation_df)+
-  geom_tile(aes(y = env, x = fns, fill = correlation))+
-  scale_fill_distiller(type = "div")
-dev.off()
-
-
-# load pairs of PA and nonPA
-pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
-
-# add data
-pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
-  rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
-  filter(!is.na(nonPA)) %>%
-  arrange(ID, nonPA, times, scale)
-pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% 
-  #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
-  #full_join(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
- full_join(pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), diff)) %>% mutate(measure = "diff")) 
-# rbind(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA") %>% 
-#     pivot_longer(cols = all_of(mahal_vars), names_to = "env")) %>%
-# rbind(pa_env %>% filter(data == "nonPA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "nonPA") %>% 
-#     pivot_longer(cols = all_of(mahal_vars), names_to = "env")))
-
-pa_env <- pa_env %>% dplyr::select(ID, all_of(c(fns, mahal_vars))) 
-
-# Calculate correlations between env and fns for each site
-correlation_matrix <- sapply(mahal_vars, function(mahal_var) {
-  sapply(fns, function(fn) {
-    cor(pa_env[[mahal_var]], pa_env[[fn]], use = "na.or.complete")
-  })
-})
-
-# Convert the correlation matrix to a data frame for easier interpretation
-correlation_df <- as.data.frame(correlation_matrix)
-rownames(correlation_df) <- fns  
-colnames(correlation_df) <- mahal_vars  
-
-# Print or view the correlation matrix
-print(correlation_df)
-
-correlation_df <- correlation_df %>% 
-  rownames_to_column(var = "env") %>%  # Convert row names to a column
-  pivot_longer(cols = -env,  # Pivot to long format, excluding the env_variable column
-               names_to = "fns",
-               values_to = "correlation") %>%
-  mutate(fns = factor(fns, levels = unique(fns[order(correlation)])),
-         env = factor(env, levels = unique(env[order(correlation)])))
-
-pdf(paste0(here::here(), "/figures/Correlation_diff_diff_global.pdf"))
-ggplot(data = correlation_df)+
-  geom_tile(aes(y = env, x = fns, fill = correlation))+
-  scale_fill_distiller(type = "div")
-dev.off()
-
-
-#### Diff. in environmental variables scaled ####
-# load pairs of PA and nonPA
-pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale, "/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
-data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
-data_clean <- f_scale_vars(data = data_clean, vars = c(mahal_vars, fns)) %>% 
-  dplyr::select(-all_of(c(mahal_vars, fns)))
-colnames(data_clean) <- gsub(x=colnames(data_clean), ".z", "")
-
-# add data
-pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
-  rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
-  filter(!is.na(nonPA)) %>%
-  arrange(ID, nonPA, times) #, scale
-colnames(pa_env) <- gsub(x = colnames(pa_env), "corrhal", "corrhizal") #too long name with .z, thus "al" was removed by R
-pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% 
-  #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
-  #full_join(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
-  full_join(pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), diff)) %>% mutate(measure = "diff")) 
-# rbind(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA") %>% 
-#     pivot_longer(cols = all_of(mahal_vars), names_to = "env")) %>%
-# rbind(pa_env %>% filter(data == "nonPA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "nonPA") %>% 
-#     pivot_longer(cols = all_of(mahal_vars), names_to = "env")))
-
-pa_env <- pa_env %>% dplyr::select(ID, all_of(c(fns, mahal_vars))) 
-
-pa_env_long <- pa_env %>% 
-  pivot_longer(cols = all_of(mahal_vars), names_to = "mahal", 
-               values_to = "value_mahal") %>%
-  pivot_longer(cols = all_of(fns), names_to = "function", 
-               values_to = "value_fns") %>%
-  full_join(fns_labels %>% dplyr::select(Function, Group_function, Label_short), by = c("function" = "Function")) %>%
-  dplyr::select(-nonPA, -times, -n, -ID) %>%
-  group_by(LC, Group_function, mahal) %>%
-  summarize(across(c(value_fns, value_mahal), list("mean" = function(x) mean(x, na.rm = TRUE),
-                                                   "sd" = function(x) mean(x, na.rm = TRUE)))) 
-pa_env_long
+all_corr <- data.frame("LC" = "lc", "fns" = "fns", "correlation" = 1, "scale" = "scale")[0,]
   
-# plot
-ggplot(data = pa_env_long,
-       aes(x = value_mahal_mean, 
-           y = mahal, color = value_fns_mean, 
-           shape = Group_function), alpha = 0.5)+
-  geom_jitter(height = 0.4, width = 0)
+for(temp_scale in c("global", "continental", "regional")){
+  # set date of latest analysis
+  if(temp_scale == "global") temp_date <- "2024-08-05"
+  if(temp_scale == "continental") temp_date <- "2024-08-01"
+  if(temp_scale == "regional") temp_date <- "2024-08-01"
+  
+  if(temp_scale == "global"){
+    lc_names <- lc_names_all[lc_names_all != "Other" & lc_names_all != "Cropland"]
+  } 
+  if(temp_scale == "continental"){
+    lc_names <- lc_names_all[lc_names_all != "Other" & lc_names_all != "Shrubland"]
+  }
+  if(temp_scale == "regional"){
+    lc_names <- lc_names_all[lc_names_all != "Other" & lc_names_all != "Shrubland"]
+  }
 
-# # same for other 2 scales
-# for(temp_scale in c("continental", "regional")){
-#   lc_names <- c("Cropland", "Grassland", "Shrubland", "Woodland", "Other")
-#   
-#   # set date of latest analysis
-#   if(temp_scale == "continental") temp_date <- "2023-12-14"
-#   if(temp_scale == "regional") temp_date <- "2023-12-14"
-#   
-#   if(temp_scale == "continental") lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
-#   if(temp_scale == "regional"){
-#     lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
-#     min_size <- 7
-#   }
-#   
-#   #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#   ## Load soil biodiversity data 
-#   data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
-#   data_clean_all <- full_join(data_clean_all, data_clean %>% mutate(scale = temp_scale))
-#   
-#   # load pairs of PA and nonPA
-#   pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
-#   head(pa_pairs)
-# }
-# data_clean_all
+  data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+  
+  # load pairs of PA and nonPA
+  pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+  
+  # add data
+  pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
+    rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
+    filter(!is.na(nonPA)) %>%
+    arrange(ID, nonPA, times) 
+  
+  pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% 
+    summarize(across(all_of(fns), diff),
+              across(mahal.min, mean)) %>% 
+    dplyr::select(ID, nonPA, mahal.min, LC, all_of(fns))
+  
+  # Calculate correlations between env and fns for each site
+  correlation_matrix <- sapply(fns, function(fn) {
+    sapply(lc_names, function(lc) {
+      pa_temp <- pa_env %>% filter(LC == lc)
+      cor(pa_temp[["mahal.min"]], pa_temp[[fn]], use = "na.or.complete")
+    })
+  })
+  
+  # Convert the correlation matrix to a data frame for easier interpretation
+  correlation_df <- as.data.frame(correlation_matrix)
+  rownames(correlation_df) <- lc_names  
+  colnames(correlation_df) <- fns  
+  
+  correlation_df <- correlation_df %>% 
+    rownames_to_column(var = "LC") %>%  # Convert row names to a column
+    pivot_longer(cols = -LC,  # Pivot to long format, excluding the env_variable column
+                 names_to = "fns",
+                 values_to = "correlation") %>%
+    mutate(fns = factor(fns, levels = unique(fns[order(correlation)])),
+           LC = factor(LC, levels = lc_names),
+           scale = temp_scale)
+
+  all_corr <- rbind(all_corr, correlation_df)
+}
+all_corr
+
+ggplot(data = all_corr %>%
+         mutate(LC = factor(LC, levels = lc_names_all[lc_names_all != "Other"]),
+                scale = factor(scale, levels = c("global", "continental", "regional")),
+                scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='70'>",
+                                     ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='70'>",
+                                            ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>", NA)))) %>%
+         full_join(fns_labels %>% 
+                     filter(Function %in% fns),
+                     dplyr::select(Label_short, Function), 
+                   by = c("fns" = "Function")) %>%
+         mutate(Label_short = factor(Label_short, levels = rev(fns_labels$Label_short)),
+                scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>",
+                                                           "<img src='figures/icon_location-black.png' width='70'>",
+                                                           "<img src='figures/icon_flag-Portugal.png' width='70'>" ))))+
+  geom_tile(aes(x = LC, y = Label_short, fill = correlation))+
+  scale_fill_distiller(type = "div", na.value = "white", limits = c(-0.7, 0.7),
+                       name = "Correlation")+
+  scale_x_discrete(labels = c(
+    "Cropland" = "<img src='figures/icon_harvest.png' width='20'>",
+    "Grassland" = "<img src='figures/icon_grass.png' width='17'>",
+    "Shrubland" = "<img src='figures/icon_shrub-crop.png' width='35'>",
+    "Woodland" = "<img src='figures/icon_forest.png' width='30'>"
+  ))+
+  facet_grid(cols = vars(scale_icon))+
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_text(size = 15),
+        strip.text.x = ggtext::element_markdown(vjust = 0.5),
+        strip.background = element_blank(),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        axis.text.x = ggtext::element_markdown(vjust = 0))
+ggsave(paste0(here::here(), "/figures/Correlation_diff_mahal_allScales.png"),
+       last_plot(),
+       height = 10, width = 8)
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## OLD code for diff x env correlation heatmap
+# #corrplot::corrplot(cor(data_clean %>% dplyr::select(all_of(c(fns, mahal_vars)))))
+# 
+# # load data
+# temp_scale <- "global"
+# temp_date <- "2024-08-05"
+# lc_names <- lc_names[lc_names != "Other"]
+# data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv")) %>%
+#   mutate(scale = temp_scale)
+# 
+# # load pairs of PA and nonPA
+# pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+# 
+# # add data
+# pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
+#   rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
+#   filter(!is.na(nonPA)) %>%
+#   arrange(ID, nonPA, times, scale)
+# pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% 
+#   #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
+#   full_join(
+#     # pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
+#     pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), mean)) %>% mutate(measure = "mean")) #%>% 
+#     #   pivot_longer(cols = all_of(mahal_vars), names_to = "env") %>%
+#     # rbind(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA") %>% 
+#     #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")) %>%
+#     # rbind(pa_env %>% filter(data == "nonPA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "nonPA") %>% 
+#     #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")))
+# 
+# pa_env <- pa_env %>% dplyr::select(ID, all_of(c(fns, mahal_vars))) 
+# 
+# # Calculate correlations between env and fns for each site
+# correlation_matrix <- sapply(mahal_vars, function(mahal_var) {
+#   sapply(fns, function(fn) {
+#     cor(pa_env[[mahal_var]], pa_env[[fn]], use = "na.or.complete")
+#   })
+# })
+# 
+# # Convert the correlation matrix to a data frame for easier interpretation
+# correlation_df <- as.data.frame(correlation_matrix)
+# rownames(correlation_df) <- fns  
+# colnames(correlation_df) <- mahal_vars  
+# 
+# # Print or view the correlation matrix
+# print(correlation_df)
+# 
+# correlation_df <- correlation_df %>% 
+#   rownames_to_column(var = "env") %>%  # Convert row names to a column
+#   pivot_longer(cols = -env,  # Pivot to long format, excluding the env_variable column
+#                names_to = "fns",
+#                values_to = "correlation") %>%
+#   mutate(fns = factor(fns, levels = unique(fns[order(correlation)])),
+#          env = factor(env, levels = unique(env[order(correlation)])))
+# 
+# pdf(paste0(here::here(), "/figures/Correlation_diff_PA_global.pdf"))
+# ggplot(data = correlation_df)+
+#   geom_tile(aes(y = env, x = fns, fill = correlation))+
+#   scale_fill_distiller(type = "div")
+# dev.off()
 # 
 # 
+# # load pairs of PA and nonPA
+# pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+# 
+# # add data
+# pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
+#   rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
+#   filter(!is.na(nonPA)) %>%
+#   arrange(ID, nonPA, times, scale)
+# pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% 
+#   #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
+#   #full_join(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
+#  full_join(pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), diff)) %>% mutate(measure = "diff")) 
+# # rbind(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA") %>% 
+# #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")) %>%
+# # rbind(pa_env %>% filter(data == "nonPA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "nonPA") %>% 
+# #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")))
+# 
+# pa_env <- pa_env %>% dplyr::select(ID, all_of(c(fns, mahal_vars))) 
+# 
+# # Calculate correlations between env and fns for each site
+# correlation_matrix <- sapply(mahal_vars, function(mahal_var) {
+#   sapply(fns, function(fn) {
+#     cor(pa_env[[mahal_var]], pa_env[[fn]], use = "na.or.complete")
+#   })
+# })
+# 
+# # Convert the correlation matrix to a data frame for easier interpretation
+# correlation_df <- as.data.frame(correlation_matrix)
+# rownames(correlation_df) <- fns  
+# colnames(correlation_df) <- mahal_vars  
+# 
+# # Print or view the correlation matrix
+# print(correlation_df)
+# 
+# correlation_df <- correlation_df %>% 
+#   rownames_to_column(var = "env") %>%  # Convert row names to a column
+#   pivot_longer(cols = -env,  # Pivot to long format, excluding the env_variable column
+#                names_to = "fns",
+#                values_to = "correlation") %>%
+#   mutate(fns = factor(fns, levels = unique(fns[order(correlation)])),
+#          env = factor(env, levels = unique(env[order(correlation)])))
+# 
+# pdf(paste0(here::here(), "/figures/Correlation_diff_diff_global.pdf"))
+# ggplot(data = correlation_df)+
+#   geom_tile(aes(y = env, x = fns, fill = correlation))+
+#   scale_fill_distiller(type = "div")
+# dev.off()
 
+
+# #### Diff. in environmental variables scaled ####
+# # load pairs of PA and nonPA
+# pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale, "/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+# data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+# data_clean <- f_scale_vars(data = data_clean, vars = c(mahal_vars, fns)) %>% 
+#   dplyr::select(-all_of(c(mahal_vars, fns)))
+# colnames(data_clean) <- gsub(x=colnames(data_clean), ".z", "")
+# 
+# # add data
+# pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
+#   rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
+#   filter(!is.na(nonPA)) %>%
+#   arrange(ID, nonPA, times) #, scale
+# colnames(pa_env) <- gsub(x = colnames(pa_env), "corrhal", "corrhizal") #too long name with .z, thus "al" was removed by R
+# pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(fns), diff))  %>% 
+#   #pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
+#   #full_join(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA"))
+#   full_join(pa_env %>% group_by(ID, nonPA, LC, times, n) %>% summarize(across(all_of(mahal_vars), diff)) %>% mutate(measure = "diff")) 
+# # rbind(pa_env %>% filter(data == "PA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "PA") %>% 
+# #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")) %>%
+# # rbind(pa_env %>% filter(data == "nonPA") %>% dplyr::select(ID, nonPA, LC, times, n, all_of(mahal_vars)) %>% mutate(measure = "nonPA") %>% 
+# #     pivot_longer(cols = all_of(mahal_vars), names_to = "env")))
+# 
+# pa_env <- pa_env %>% dplyr::select(ID, all_of(c(fns, mahal_vars))) 
+# 
+# pa_env_long <- pa_env %>% 
+#   pivot_longer(cols = all_of(mahal_vars), names_to = "mahal", 
+#                values_to = "value_mahal") %>%
+#   pivot_longer(cols = all_of(fns), names_to = "function", 
+#                values_to = "value_fns") %>%
+#   full_join(fns_labels %>% dplyr::select(Function, Group_function, Label_short), by = c("function" = "Function")) %>%
+#   dplyr::select(-nonPA, -times, -n, -ID) %>%
+#   group_by(LC, Group_function, mahal) %>%
+#   summarize(across(c(value_fns, value_mahal), list("mean" = function(x) mean(x, na.rm = TRUE),
+#                                                    "sd" = function(x) mean(x, na.rm = TRUE)))) 
+# pa_env_long
+#   
+# # plot
+# ggplot(data = pa_env_long,
+#        aes(x = value_mahal_mean, 
+#            y = mahal, color = value_fns_mean, 
+#            shape = Group_function), alpha = 0.5)+
+#   geom_jitter(height = 0.4, width = 0)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Raw data biplots ####

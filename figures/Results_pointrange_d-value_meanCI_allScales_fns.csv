@@ -1,0 +1,67 @@
+Group,Variable,Scale,Cropland,Grassland,Woodland,Shrubland,NA
+Dissimilarity,Bacterial Dissimilarity,glob,NA,0.047 [-0.82; 1.201] ,0.611 [0.166; 1.092] ,-0.623 [-2.073; 0.815] ,NA
+Dissimilarity,Bacterial Dissimilarity,cont,-0.009 [-0.429; 0.476] ,-0.094 [-0.662; 0.704] ,0.114 [-0.48; 0.851] ,NA,NA
+Dissimilarity,Bacterial Dissimilarity,regi,0.903 [0.187; 1.648] ,0.32 [-0.324; 1.187] ,-0.161 [-1.101; 0.678] ,NA,NA
+Dissimilarity,Fungal Dissimilarity,glob,NA,0.185 [-0.593; 1.284] ,0.065 [-0.793; 1.249] ,-0.816 [-2.131; 0.664] ,NA
+Dissimilarity,Fungal Dissimilarity,cont,-0.263 [-0.9; 0.464] ,0.421 [-0.063; 1.104] ,-0.082 [-0.758; 0.608] ,NA,NA
+Dissimilarity,Fungal Dissimilarity,regi,-0.627 [-1.21; 0.074] ,-0.037 [-0.683; 0.776] ,-0.221 [-1.14; 0.814] ,NA,NA
+Dissimilarity,Invertebrate Dissimilarity,glob,NA,0.121 [-0.753; 1.468] ,-0.261 [-1.014; 0.565] ,-0.518 [-1.851; 0.809] ,NA
+Dissimilarity,Invertebrate Dissimilarity,cont,0.06 [-0.615; 0.868] ,-0.275 [-0.848; 0.365] ,0.042 [-0.596; 0.796] ,NA,NA
+Dissimilarity,Invertebrate Dissimilarity,regi,1.407 [0.718; 2.382] ,0.177 [-0.415; 0.975] ,0.31 [-0.556; 1.368] ,NA,NA
+Dissimilarity,Protist Dissimilarity,glob,NA,-0.53 [-1.56; 0.678] ,-0.055 [-0.824; 1.189] ,-0.089 [-1.191; 1.195] ,NA
+Dissimilarity,Protist Dissimilarity,cont,0.2 [-0.396; 0.95] ,0.296 [-0.245; 0.984] ,-0.101 [-0.805; 0.625] ,NA,NA
+Dissimilarity,Protist Dissimilarity,regi,0.408 [-0.258; 1.126] ,0.436 [-0.038; 0.977] ,0.053 [-0.808; 1.065] ,NA,NA
+Function,Decomposition (OM),glob,NA,-1.784 [-3.361; -0.708] ,-0.163 [-0.571; 0.487] ,0.47 [-0.397; 1.793] ,NA
+Function,Decomposition (OM),cont,-0.437 [-1.048; 0.291] ,0.47 [-0.124; 1.298] ,-0.52 [-1.055; 0.142] ,NA,NA
+Function,Decomposition (OM),regi,-0.126 [-0.867; 0.634] ,0.517 [0.042; 1.071] ,0.191 [-0.675; 1.163] ,NA,NA
+Function,Nutrient cycling,glob,NA,-1.05 [-2.179; 0.127] ,-0.412 [-0.927; 0.85] ,0.489 [-0.56; 2.412] ,NA
+Function,Nutrient cycling,cont,-0.109 [-0.731; 0.504] ,0.039 [-0.535; 0.683] ,-0.169 [-0.751; 0.684] ,NA,NA
+Function,Nutrient cycling,regi,0.423 [-0.286; 1.09] ,-1.039 [-1.643; -0.423] ,0.065 [-0.642; 1.048] ,NA,NA
+Function,Pathogen control,glob,NA,-1.535 [-2.826; 0.01] ,-0.469 [-0.715; -0.152] ,-0.078 [-1.344; 1.266] ,NA
+Function,Pathogen control,cont,0.239 [-0.43; 0.96] ,0.254 [-0.319; 0.932] ,0.063 [-0.574; 0.823] ,NA,NA
+Function,Pathogen control,regi,-0.938 [-1.757; -0.097] ,-0.641 [-1.105; -0.016] ,-0.218 [-1.147; 0.769] ,NA,NA
+Function,Soil carbon,glob,NA,-0.919 [-1.785; 0.021] ,-0.614 [-1.048; 0.65] ,0.679 [-0.31; 2.275] ,NA
+Function,Soil carbon,cont,-0.419 [-0.939; 0.353] ,0.325 [-0.269; 0.843] ,-0.044 [-0.631; 0.873] ,NA,NA
+Function,Soil carbon,regi,-0.687 [-1.404; 0.121] ,0.006 [-0.441; 0.545] ,-0.32 [-1.102; 0.801] ,NA,NA
+Function,Soil stability,glob,NA,-2.147 [-3.529; -0.932] ,-0.489 [-1.407; 0.417] ,0.865 [-0.094; 2.103] ,NA
+Function,Soil stability,cont,0.126 [-0.491; 0.811] ,-0.113 [-0.702; 0.494] ,-0.341 [-0.877; 0.283] ,NA,NA
+Function,Soil stability,regi,-1.465 [-2.358; -0.65] ,0.296 [-0.259; 0.897] ,0.103 [-0.75; 1.157] ,NA,NA
+Function,Water regulation,glob,NA,NA,NA,NA,NA [NA; NA] 
+Function,Water regulation,cont,NA,NA,NA,NA,NA [NA; NA] 
+Function,Water regulation,regi,NA,NA,NA,NA,NA [NA; NA] 
+Richness,AM fungi Richness,glob,NA,-0.843 [-1.897; 0.122] ,-0.201 [-0.726; 0.375] ,0.921 [-0.087; 2.408] ,NA
+Richness,AM fungi Richness,cont,0.341 [-0.244; 0.963] ,0.696 [0.091; 1.579] ,0.161 [-0.525; 1.106] ,NA,NA
+Richness,AM fungi Richness,regi,-0.66 [-1.445; 0.153] ,-1.529 [-2.521; -0.693] ,0.338 [-0.498; 1.26] ,NA,NA
+Richness,Bacterial Richness,glob,NA,-0.159 [-0.936; 0.771] ,-0.76 [-1.352; 0.084] ,0.48 [-0.583; 2.412] ,NA
+Richness,Bacterial Richness,cont,0.063 [-0.455; 0.68] ,-0.134 [-0.75; 0.525] ,-0.129 [-0.729; 0.513] ,NA,NA
+Richness,Bacterial Richness,regi,-0.908 [-1.379; -0.232] ,-1.143 [-1.764; -0.519] ,0.142 [-0.648; 1.237] ,NA,NA
+Richness,Decomposer Richness,glob,NA,-1.29 [-2.777; -0.32] ,0.001 [-0.574; 0.675] ,1.379 [0.114; 3.512] ,NA
+Richness,Decomposer Richness,cont,0.848 [0.422; 1.303] ,0.21 [-0.397; 0.741] ,0.222 [-0.461; 0.925] ,NA,NA
+Richness,Decomposer Richness,regi,-0.12 [-0.829; 0.674] ,0.755 [-0.096; 2.259] ,0.317 [-0.545; 1.255] ,NA,NA
+Richness,EM fungi Richness,glob,NA,-0.589 [-1.64; 0.447] ,-1.286 [-1.816; -0.859] ,0.343 [-0.9; 1.78] ,NA
+Richness,EM fungi Richness,cont,0.429 [-0.268; 0.999] ,-0.138 [-0.689; 0.644] ,-0.154 [-0.811; 0.694] ,NA,NA
+Richness,EM fungi Richness,regi,-0.623 [-1.204; 0.167] ,1.08 [0.86; 1.312] ,0.279 [-0.496; 1.252] ,NA,NA
+Richness,Fungal Richness,glob,NA,-0.981 [-2.62; 0.106] ,-0.719 [-1.405; 0.006] ,1.036 [-0.083; 3.021] ,NA
+Richness,Fungal Richness,cont,0.341 [-0.271; 1.159] ,0.157 [-0.421; 0.912] ,0.03 [-0.612; 0.759] ,NA,NA
+Richness,Fungal Richness,regi,-0.638 [-1.449; 0.234] ,0.274 [-0.452; 1.382] ,0.253 [-0.485; 1.326] ,NA,NA
+Richness,Invertebrate Richness,glob,NA,-0.357 [-1.341; 0.623] ,0.794 [0.022; 2.041] ,0.513 [-0.496; 2.099] ,NA
+Richness,Invertebrate Richness,cont,-0.147 [-0.765; 0.511] ,0.178 [-0.434; 1.05] ,0.005 [-0.675; 0.66] ,NA,NA
+Richness,Invertebrate Richness,regi,-1.607 [-2.429; -0.785] ,0.252 [-0.238; 0.881] ,-0.239 [-1.081; 0.761] ,NA,NA
+Richness,Nematode Richness,glob,NA,-0.907 [-2.137; 0.135] ,0.297 [-0.538; 1.615] ,0.229 [-0.648; 1.529] ,NA
+Richness,Nematode Richness,cont,-0.043 [-0.634; 0.686] ,0.289 [-0.294; 1.041] ,-0.373 [-1.025; 0.396] ,NA,NA
+Richness,Nematode Richness,regi,-2.133 [-3.558; -1.016] ,-0.055 [-0.72; 0.681] ,-0.297 [-1.029; 0.654] ,NA,NA
+Richness,Protist Richness,glob,NA,-1.29 [-2.437; -0.159] ,1.349 [0.448; 2.625] ,0.124 [-0.956; 1.689] ,NA
+Richness,Protist Richness,cont,-0.044 [-0.679; 0.66] ,-0.215 [-0.753; 0.479] ,-0.305 [-0.903; 0.489] ,NA,NA
+Richness,Protist Richness,regi,-1.052 [-1.849; -0.187] ,-0.527 [-1.248; 0.229] ,-0.223 [-0.993; 0.837] ,NA,NA
+Shannon,Bacterial Shannon,glob,NA,-0.433 [-1.144; 0.503] ,-0.844 [-1.33; -0.158] ,0.449 [-0.557; 2.143] ,NA
+Shannon,Bacterial Shannon,cont,-0.009 [-0.602; 0.627] ,-0.596 [-1.23; 0.091] ,-0.131 [-0.78; 0.534] ,NA,NA
+Shannon,Bacterial Shannon,regi,-0.856 [-1.559; 0.019] ,-1.239 [-1.834; -0.658] ,0.077 [-0.7; 1.254] ,NA,NA
+Shannon,Fungal Shannon,glob,NA,-1.462 [-3.076; -0.145] ,0.418 [-0.245; 0.999] ,1.148 [0.044; 2.812] ,NA
+Shannon,Fungal Shannon,cont,-0.229 [-0.834; 0.561] ,0.015 [-0.508; 0.774] ,-0.186 [-0.76; 0.684] ,NA,NA
+Shannon,Fungal Shannon,regi,-0.194 [-1.379; 0.687] ,0.174 [-0.442; 0.947] ,0.204 [-0.629; 1.34] ,NA,NA
+Shannon,Invertebrate Shannon,glob,NA,-1.105 [-1.984; -0.219] ,0.096 [-0.446; 0.707] ,0.383 [-0.748; 2.015] ,NA
+Shannon,Invertebrate Shannon,cont,-0.361 [-0.987; 0.36] ,0.213 [-0.376; 1.073] ,0.076 [-0.57; 0.783] ,NA,NA
+Shannon,Invertebrate Shannon,regi,-0.444 [-1.423; 0.466] ,-0.382 [-1.15; 0.443] ,-0.194 [-1.051; 0.81] ,NA,NA
+Shannon,Protist Shannon,glob,NA,0.182 [-1.241; 1.263] ,1.533 [0.825; 2.733] ,0.381 [-0.673; 1.98] ,NA
+Shannon,Protist Shannon,cont,-0.142 [-0.895; 0.63] ,0.063 [-0.518; 0.737] ,-0.095 [-0.698; 0.712] ,NA,NA
+Shannon,Protist Shannon,regi,-0.575 [-1.552; 0.355] ,0.745 [0.168; 1.393] ,0.339 [-0.704; 1.27] ,NA,NA
