@@ -623,8 +623,6 @@ library(ggh4x) # for free axes in facet_grid
 library(corrplot)
 
 temp_scale <- "global"
-#temp_scale <- "continental"
-#temp_scale <- "regional"
 
 # load background map
 world.inp <- map_data("world")
