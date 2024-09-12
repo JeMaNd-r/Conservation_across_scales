@@ -21,7 +21,7 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 # temp_scale <- "regional"
 
 # set date of latest analysis
-if(temp_scale == "global") temp_date <- "2024-08-05"
+if(temp_scale == "global") temp_date <- "2024-09-12"
 if(temp_scale == "continental") temp_date <- "2024-08-01"
 if(temp_scale == "regional") temp_date <- "2024-08-01"
 

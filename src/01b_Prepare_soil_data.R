@@ -17,7 +17,7 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 ## 1. GLOBAL ----------------------------------------- ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Load soil biodiversity data ####
-coord_glob <- readxl::read_xlsx(paste0(here::here(), "/data_raw/Global_Atlas_drylands_V1.xlsx"),
+coord_glob <- readxl::read_xlsx(paste0(here::here(), "/data_raw/Global_Atlas_drylands_V2.xlsx"),
                                sheet = "Database")
 coord_glob #551 
 coord_glob %>% filter(!is.na(ID_sequencing_16S)) #338
@@ -33,7 +33,7 @@ data_glob <- coord_glob %>%
                 "ORC", "BGL veg", "FOS veg", "MIN veg",
                 #"WHC veg", 
                 "Plant_cover",             
-                "TON", "Soil_total_P", "AVP", "AMO", "NIT", "DON") %>%
+                "TON", "Soil_total_P", "AVP", "DIN", "DON") %>%
   mutate(ID_numb = str_replace(ID_sequencing_16S,"FM", "1")) %>% #ID_sequencing_16s goes to 249, FMxxx
   mutate(ID_numb = str_replace(ID_numb, "X", "")) %>%
   mutate(ID_numb = as.numeric(ID_numb)) %>%
@@ -109,8 +109,7 @@ data_glob <- data_glob %>%
          Nutrient_service = (scale(TON)[,1]+
                                scale(Soil_total_P)[,1]+ 
                                scale(AVP)[,1]+
-                               scale(AMO)[,1]+
-                               scale(NIT)[,1]+
+                               scale(DIN)[,1]+
                                scale(DON)[,1])/6)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -

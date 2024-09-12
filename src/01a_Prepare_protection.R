@@ -37,7 +37,7 @@ shp_all
 save(shp_all, file="D:/EIE_Macroecology/_students/Romy/_Shapefiles/WDPA_WDOECM_Nov2022_Public_all_shp/WDPA_WDOECM_Nov2022_Public_all_merged_new.RData")
 gc()
 
-load("D:/EIE_Macroecology/_students/Romy/_Shapefiles/WDPA_WDOECM_Nov2022_Public_all_shp/WDPA_WDOECM_Nov2022_Public_all_merged_new.RData") #shp_all
+#load("D:/EIE_Macroecology/_students/Romy/_Shapefiles/WDPA_WDOECM_Nov2022_Public_all_shp/WDPA_WDOECM_Nov2022_Public_all_merged_new.RData") #shp_all
 #shp_all <- terra::vect("D:/EIE_Macroecology/_students/Romy/_Shapefiles/WDPA_WDOECM_Nov2022_Public_all_shp/WDPA_WDOECM_Nov2022_Public_all_merged.shp") #= merged_new.RData but not all saved due to size
 
 #- - - - - - - - - - - - - - - - - - - - - -
@@ -46,7 +46,7 @@ load("D:/EIE_Macroecology/_students/Romy/_Shapefiles/WDPA_WDOECM_Nov2022_Public_
 
 ### global ####
 # load points
-data_glob <- readxl::read_xlsx(paste0(here::here(), "/data_raw/Global_Atlas_drylands_V1.xlsx"),
+data_glob <- readxl::read_xlsx(paste0(here::here(), "/data_raw/Global_Atlas_drylands_V2.xlsx"),
                                sheet = "Database")
 data_glob <- data_glob %>% filter(!is.na("ID_sequencing_16s"))
 
@@ -55,7 +55,7 @@ data_pa <- f_extract_pa(data = data_glob,
              col_id = "ID_sequencing_16S",
              shp = shp_all, col_pa = "WDPAID")
 
-table(data_pa$PA)
+table(data_pa$PA) #400 nonPA, 241 PA
 
 write_csv(data_pa, paste0(here::here(), "/intermediates/PA_assignment_global.csv"))
 

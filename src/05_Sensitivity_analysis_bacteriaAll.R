@@ -39,7 +39,7 @@ if(!dir.exists(paste0(here::here(), "/results/sensitivity_globalBacteria"))){
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 ### Load soil biodiversity data ####
-coord_glob <- readxl::read_xlsx(paste0(here::here(), "/data_raw/Global_Atlas_drylands_V1.xlsx"),
+coord_glob <- readxl::read_xlsx(paste0(here::here(), "/data_raw/Global_Atlas_drylands_V2.xlsx"),
                                 sheet = "Database")
 coord_glob #551 
 coord_glob %>% filter(!is.na(ID_sequencing_16S)) #338
@@ -55,7 +55,7 @@ data_glob <- coord_glob %>%
                 "ORC", "BGL veg", "FOS veg", "MIN veg",
                 #"WHC veg", 
                 "Plant_cover",             
-                "TON", "Soil_total_P", "AVP", "AMO", "NIT", "DON") %>%
+                "TON", "Soil_total_P", "AVP", "DIN", "DON") %>%
   mutate(ID_numb = str_replace(ID_sequencing_16S,"FM", "1")) %>% #ID_sequencing_16s goes to 249, FMxxx
   mutate(ID_numb = str_replace(ID_numb, "X", "")) %>%
   mutate(ID_numb = as.numeric(ID_numb)) %>%
@@ -131,8 +131,7 @@ data_glob <- data_glob %>%
          Nutrient_service = (scale(TON)[,1]+
                                scale(Soil_total_P)[,1]+ 
                                scale(AVP)[,1]+
-                               scale(AMO)[,1]+
-                               scale(NIT)[,1]+
+                               scale(DIN)[,1]+
                                scale(DON)[,1])/6)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -266,7 +265,7 @@ count_nonPA <- f_check_pairs(data = data_clean,
                              col_id = "SampleID", col_lc = "LC", 
                              vars_z = mahal_vars_z)
 all_nonPA <- count_nonPA[[2]]
-count_nonPA <- count_nonPA[[1]] #G: 7 <7, 13 <10; C: 16 without enough (10) nonPAs for pairing
+count_nonPA <- count_nonPA[[1]] #G: 7 <5, 7 <7, 14 <10; C: 16 without enough (10) nonPAs for pairing
 #head(count_nonPA)
 
 #View(all_nonPA %>% dplyr::select(SampleID, count_nonPA[count_nonPA$n<10 & !is.na(count_nonPA$SampleID), "SampleID"]))
@@ -292,7 +291,7 @@ head(unpaired_pa)
 # Note: There were nonPA sites with mahalanobis distance below threshold
 # for three protected sites with SampleID. They have to been removed.
 data_clean <- data_clean[!(data_clean$SampleID %in% unpaired_pa$SampleID),] 
-nrow(data_clean); nrow(data_clean[data_clean$PA,]) #G: nrow=338 with 53 PAs, C: 807 vs. 64; R. 324 with 49
+nrow(data_clean); nrow(data_clean[data_clean$PA,]) #G: nrow=330 with 53 PAs, C: 807 vs. 64; R. 324 with 49
 
 # Remove sites that can only be paired less than min_nonPA times
 # start with something small, then check how many possible;
@@ -314,6 +313,7 @@ table(data_clean$LC, data_clean$PA)
 #           exclude Shrublands & Others to get it running (otherwise no complete pairing achieved) 
 lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
 min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+# Note: could be 10 as minimum number of samples per LC = 10
 
 # The following function will print the number of times it successfully 
 # paired sites. It will show the same number multiple times if it didn't 
@@ -351,7 +351,7 @@ write_csv(pa_pairs, file=paste0(here::here(), "/results/sensitivity_globalBacter
 temp_scale <- "global"
 
 # set date of latest analysis
-temp_date <- "2024-08-05"
+temp_date <- "2024-09-12"
 lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
 min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
 
@@ -383,7 +383,7 @@ save(d_list,  file=paste0(here::here(), "/results/sensitivity_globalBacteria/d_1
 temp_scale <- "global"
 
 # set date of latest analysis
-temp_date <- "2024-08-05"
+temp_date <- "2024-09-12"
 lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
 min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
 
@@ -504,7 +504,7 @@ fns <- c("Bac_richness", "Bac_shannonDiv", "Bac_JaccDist_av")
 
 # set date of latest analysis
 temp_scale <- "global"
-temp_date <- "2024-08-05"
+temp_date <- "2024-09-12"
 lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
 min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
 
@@ -612,7 +612,7 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 fns <- c("Bac_richness", "Bac_shannonDiv", "Bac_JaccDist_av")
 
 # set date of latest analysis
-temp_date <- "2024-08-05"
+temp_date <- "2024-09-12"
 
 lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
 min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC

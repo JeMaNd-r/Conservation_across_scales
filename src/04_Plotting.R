@@ -40,7 +40,7 @@ source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
 
 # set date of latest analysis
-if(temp_scale == "global") temp_date <- "2024-08-05"
+if(temp_scale == "global") temp_date <- "2024-09-12"
 if(temp_scale == "continental") temp_date <- "2024-08-01"
 if(temp_scale == "regional") temp_date <- "2024-08-01"
 
@@ -100,7 +100,7 @@ data_locations <- data_clean %>%
 data_locations #G: nrow=126, C: 316, R: 161
 write_csv(data_locations, file = paste0(here::here(), "/results/Locations_", temp_scale, ".csv"))
 nrow(data_locations %>% filter(PA==1)) #G: 28 PAs, C: 48, R: 36
-nrow(data_locations %>% filter(PA==0)) #G: 98 PAs, C: 268, R: 125
+nrow(data_locations %>% filter(PA==0)) #G: 93 PAs, C: 268, R: 125
 
 # set limits for point maps
 if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
@@ -122,7 +122,7 @@ ggplot()+
                                       size = as.character(PA)),
              stroke = 2)+ #increase circle line width; G: 2, C+R:3
   scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
-  scale_size_manual(values = c("0" =2, "1" = 4))+ #G: 2,4, C+R:3,8
+  scale_size_manual(values = c("0" =1.5, "1" = 4.5))+ #G: 1.4,4.5, C+R:3,8
   scale_color_manual(values = c("Cropland" = "#4A2040",
                                 "Grassland" = "#E69F00",
                                 "Shrubland" = "#0072B2", 
@@ -172,7 +172,7 @@ ggplot()+
                                       size = as.character(PA)),
              stroke = 2)+ #increase circle line width; G+C: 2; R:3
   scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
-  scale_size_manual(values = c("0" =2, "1" = 4))+ #G:+C: 2,4; ,R:3,8 
+  scale_size_manual(values = c("0" =1.5, "1" = 4.5))+ #G:+C: 2,4; ,R:3,8 
   scale_color_manual(values = c("Cropland" = "#4A2040",
                                 "Grassland" = "#E69F00",
                                 "Shrubland" = "#0072B2", 

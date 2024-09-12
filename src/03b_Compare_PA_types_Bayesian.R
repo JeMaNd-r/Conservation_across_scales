@@ -25,7 +25,7 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 # temp_scale <- "regional"
 
 # set date of latest analysis
-if(temp_scale == "global") temp_date <- "2024-08-05"
+if(temp_scale == "global") temp_date <- "2024-09-12"
 if(temp_scale == "continental") temp_date <- "2024-08-01"
 if(temp_scale == "regional") temp_date <- "2024-08-01"
 
@@ -154,11 +154,11 @@ library(brms)
 library(modelr)
 library(tidybayes)
 
-for(temp_scale in c("global", "continental", "regional")){
+for(temp_scale in c("global")){ #, "continental", "regional"
   source(paste0(here::here(), "/src/00_Parameters.R")) 
 
   # set date of latest analysis
-  if(temp_scale == "global") temp_date <- "2024-08-05"
+  if(temp_scale == "global") temp_date <- "2024-09-12"
   if(temp_scale == "continental") temp_date <- "2024-08-01"
   if(temp_scale == "regional") temp_date <- "2024-08-01"
   
@@ -231,7 +231,7 @@ for(temp_scale in c("global", "continental", "regional")){
 }
 
 # extract emtrends
-for(temp_scale in c("global", "continental", "regional")){
+for(temp_scale in c("global")){ #, "continental", "regional"
   load(file=paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, "_summary.RData")) #fixed_effects
   emtrends <- sapply(fixed_effects,function(x) x[2])
   for(i in 1:length(emtrends)){
