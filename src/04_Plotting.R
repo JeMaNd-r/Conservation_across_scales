@@ -274,7 +274,7 @@ ggsave(filename=paste0(here::here(), "/figures/Locations_connection_", temp_scal
 
 for(temp_scale in c("global", "continental", "regional")){
   # set date of latest analysis
-  if(temp_scale == "global") temp_date <- "2024-08-05"
+  if(temp_scale == "global") temp_date <- "2024-09-12"
   if(temp_scale == "continental") temp_date <- "2024-08-01"
   if(temp_scale == "regional") temp_date <- "2024-08-01"
   

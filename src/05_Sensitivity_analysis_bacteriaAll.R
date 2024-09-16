@@ -587,8 +587,6 @@ library(ggh4x) # for free axes in facet_grid
 library(corrplot)
 
 temp_scale <- "global"
-#temp_scale <- "continental"
-#temp_scale <- "regional"
 
 # load background map
 world.inp <- map_data("world")
@@ -677,7 +675,7 @@ ggplot()+
                                       size = as.character(PA)),
              stroke = 1)+ #increase circle line width; G: 0.9, C+R:3
   scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
-  scale_size_manual(values = c("0" =1, "1" = 1.8))+ #G: 0.4,1.2, C+R:3,8
+  scale_size_manual(values = c("0" =1.5, "1" = 2.5))+ #G: 0.4,1.2, C+R:3,8
   scale_color_manual(values = c("Cropland" = "#4A2040",
                                 "Grassland" = "#E69F00",
                                 "Shrubland" = "#0072B2", 

@@ -1,47 +1,47 @@
 $Bac_richness
 $Bac_richness$fixef
                           Estimate Est.Error       Q2.5      Q97.5
-Intercept               3864.38557  88.03957 3692.88377 4038.50244
-LCShrubland               18.53627 113.95345 -206.06976  241.26644
-LCWoodland               717.37296 149.87060  424.23578 1007.86567
-PA_rank_rev               30.78593  22.17651  -12.85332   74.23847
-LCShrubland:PA_rank_rev   -8.51457  30.51610  -68.23906   51.31055
-LCWoodland:PA_rank_rev  -159.04401  42.29949 -242.10650  -75.60738
+Intercept               3864.65575  87.54399 3693.89073 4036.41163
+LCShrubland               17.67260 112.49653 -200.24037  237.66269
+LCWoodland               717.17962 149.30938  427.34057 1012.09031
+PA_rank_rev               30.63258  22.29680  -12.68663   74.24063
+LCShrubland:PA_rank_rev   -8.13067  30.38698  -68.39024   50.61879
+LCWoodland:PA_rank_rev  -158.89309  42.09130 -241.79070  -76.77938
 
 $Bac_richness$emtrends
 # A tibble: 3 x 4
   LC        PA_rank_rev.trend lower.HPD upper.HPD
   <fct>                 <dbl>     <dbl>     <dbl>
-1 Grassland              30.7     -12.4      74.6
-2 Shrubland              22.4     -19.0      62.6
-3 Woodland             -128.     -199.      -57.8
+1 Grassland              30.5     -12.9      74.0
+2 Shrubland              22.6     -17.3      63.1
+3 Woodland             -128.     -197.      -55.8
 
 $Bac_richness$emmeans
 # A tibble: 3 x 5
   PA_rank_rev LC        emmean lower.HPD upper.HPD
         <dbl> <fct>      <dbl>     <dbl>     <dbl>
-1        2.44 Grassland  3939.     3811.     4071.
-2        2.44 Shrubland  3937.     3835.     4045.
-3        2.44 Woodland   4269.     4114.     4419.
+1        2.44 Grassland  3939.     3811.     4068.
+2        2.44 Shrubland  3938.     3833.     4043.
+3        2.44 Woodland   4268.     4118.     4418.
 
 
 $Bac_shannonDiv
 $Bac_shannonDiv$fixef
-                             Estimate  Est.Error        Q2.5       Q97.5
-Intercept                7.457107e+00 0.04434671  7.36930141  7.54397324
-LCShrubland             -1.070448e-02 0.05717355 -0.12394520  0.10156791
-LCWoodland               3.601177e-01 0.07531046  0.21292981  0.50836770
-PA_rank_rev              1.189093e-02 0.01123968 -0.01011024  0.03402943
-LCShrubland:PA_rank_rev -1.343313e-05 0.01527391 -0.02975053  0.02973074
-LCWoodland:PA_rank_rev  -8.683577e-02 0.02150323 -0.12892619 -0.04446896
+                             Estimate  Est.Error         Q2.5       Q97.5
+Intercept                7.457082e+00 0.04465038  7.369388818  7.54400991
+LCShrubland             -1.110052e-02 0.05766952 -0.124778561  0.10226401
+LCWoodland               3.602006e-01 0.07514272  0.213410592  0.50791577
+PA_rank_rev              1.189094e-02 0.01125205 -0.009985377  0.03399796
+LCShrubland:PA_rank_rev  9.422565e-05 0.01539842 -0.030374229  0.03034512
+LCWoodland:PA_rank_rev  -8.681870e-02 0.02126093 -0.128828890 -0.04532461
 
 $Bac_shannonDiv$emtrends
 # A tibble: 3 x 4
   LC        PA_rank_rev.trend lower.HPD upper.HPD
   <fct>                 <dbl>     <dbl>     <dbl>
-1 Grassland            0.0119  -0.0101     0.0340
-2 Shrubland            0.0119  -0.00817    0.0326
-3 Woodland            -0.0750  -0.111     -0.0395
+1 Grassland            0.0118  -0.0101     0.0339
+2 Shrubland            0.0120  -0.00921    0.0319
+3 Woodland            -0.0749  -0.110     -0.0384
 
 $Bac_shannonDiv$emmeans
 # A tibble: 3 x 5
@@ -55,27 +55,27 @@ $Bac_shannonDiv$emmeans
 $Bac_JaccDist_av
 $Bac_JaccDist_av$fixef
                              Estimate    Est.Error          Q2.5        Q97.5
-Intercept                0.8823534544 0.0019795487  0.8784487750 0.8862600683
-LCShrubland             -0.0020364407 0.0025509477 -0.0070322749 0.0029481915
-LCWoodland              -0.0062200801 0.0033398667 -0.0127335286 0.0004016079
-PA_rank_rev              0.0000801187 0.0004958639 -0.0008994228 0.0010591602
-LCShrubland:PA_rank_rev -0.0010297350 0.0006828378 -0.0023726020 0.0003242637
-LCWoodland:PA_rank_rev   0.0030847963 0.0009491886  0.0012141928 0.0049530997
+Intercept                8.823455e-01 0.0019762149  0.8784336352 0.8862087354
+LCShrubland             -2.009925e-03 0.0025584133 -0.0070101460 0.0029818624
+LCWoodland              -6.201086e-03 0.0033311438 -0.0127076701 0.0003674740
+PA_rank_rev              8.047828e-05 0.0004995533 -0.0009008751 0.0010609653
+LCShrubland:PA_rank_rev -1.033352e-03 0.0006849620 -0.0023655863 0.0003194185
+LCWoodland:PA_rank_rev   3.079615e-03 0.0009479384  0.0012093422 0.0049505943
 
 $Bac_JaccDist_av$emtrends
 # A tibble: 3 x 4
   LC        PA_rank_rev.trend lower.HPD  upper.HPD
   <fct>                 <dbl>     <dbl>      <dbl>
-1 Grassland         0.0000828 -0.000906  0.00105  
-2 Shrubland        -0.000950  -0.00184  -0.0000161
-3 Woodland          0.00317    0.00154   0.00472  
+1 Grassland         0.0000795 -0.000888  0.00107  
+2 Shrubland        -0.000953  -0.00185  -0.0000193
+3 Woodland          0.00316    0.00164   0.00478  
 
 $Bac_JaccDist_av$emmeans
 # A tibble: 3 x 5
   PA_rank_rev LC        emmean lower.HPD upper.HPD
         <dbl> <fct>      <dbl>     <dbl>     <dbl>
-1        2.44 Grassland  0.883     0.880     0.885
+1        2.44 Grassland  0.883     0.880     0.886
 2        2.44 Shrubland  0.878     0.876     0.880
-3        2.44 Woodland   0.884     0.880     0.887
+3        2.44 Woodland   0.884     0.881     0.887
 
 
