@@ -742,7 +742,7 @@ ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeData
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 ## Save some numbers
-sink(paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Numbers_", temp_scale, ".txt"))
+sink(paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Numbers_d-value_", temp_scale, ".txt"))
 
 print(temp_scale)
 # look what non-protected sites have (not) been paired to any PA
@@ -876,9 +876,9 @@ d_df <- d_df %>% full_join(fns_labels, by=c("fns"="Function")) %>%
 #        plot = last_plot())
 
 # save data for plot
-write.csv(d_df, file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Data_pointrange_d-value_", temp_scale, ".csv"), row.names = FALSE)
+write.csv(d_df, file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Data_d-value_", temp_scale, ".csv"), row.names = FALSE)
 
-d_df <- read_csv(file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Data_pointrange_d-value_", temp_scale, ".csv"))
+d_df <- read_csv(file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Data_d-value_", temp_scale, ".csv"))
 
 d_summary <- d_df %>% 
   dplyr::select(-run) %>%
@@ -891,10 +891,10 @@ d_summary <- d_df %>%
                                        "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
                                        "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE))))
 d_summary
-write.csv(d_summary, file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_d-value_summary_", temp_scale, ".csv"))
+write.csv(d_summary, file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_d-value_summary_", temp_scale, ".csv"))
 
 # mean per lc type
-d_summary <- read.csv(file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_d-value_summary_", temp_scale, ".csv"))
+d_summary <- read.csv(file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_d-value_summary_", temp_scale, ".csv"))
 
 d_summary %>% ungroup() %>% group_by(lc) %>% 
   summarize(across(c(effect_median, effect_ci_2.5:effect_ci_97.5), 
@@ -964,7 +964,7 @@ ggplot(data = d_df %>%
         panel.grid.major.y = element_blank(),
         strip.background = element_rect(fill="white"), #chocolate4
         strip.text = element_text(color="black")) #white
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_d-value_", temp_scale, ".png"),
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_d-value_", temp_scale, ".png"),
        plot = last_plot(),
        width=5, height=4)
 
@@ -1018,7 +1018,7 @@ ggplot(data = d_summary %>%
         panel.grid.minor = element_blank(),
         strip.background = element_rect(fill="white"), #chocolate4
         strip.text = element_text(color="black")) #white
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_d-value_medianSD_", temp_scale, ".png"),
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_d-value_medianSD_", temp_scale, ".png"),
        plot = last_plot())
 
 ## heatmap
@@ -1049,7 +1049,7 @@ ggplot(data = d_summary %>%
         panel.grid.minor = element_blank(),
         strip.background = element_rect(fill="white"), #chocolate4
         strip.text = element_text(color="black")) #white
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_d-value_medianSD_", temp_scale, ".png"),
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_d-value_medianSD_", temp_scale, ".png"),
        plot = last_plot())
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1058,9 +1058,9 @@ ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeData
 #### FIGURE 2 - Heatmap ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # mean per lc type and all 3 scales
-d_sum_glob <- read.csv(file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_d-value_summary_global.csv"))
-d_sum_cont <- read.csv(file=paste0(here::here(), "/figures/Results_pointrange_d-value_summary_continental.csv"))
-d_sum_regi <- read.csv(file=paste0(here::here(), "/figures/Results_pointrange_d-value_summary_regional.csv"))
+d_sum_glob <- read.csv(file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_d-value_summary_global.csv"))
+d_sum_cont <- read.csv(file=paste0(here::here(), "/figures/Results_d-value_summary_continental.csv"))
+d_sum_regi <- read.csv(file=paste0(here::here(), "/figures/Results_d-value_summary_regional.csv"))
 
 d_sum_all <- rbind(d_sum_glob %>% mutate("scale" = "global"), 
                    d_sum_cont %>% mutate("scale" = "continental")) %>%
@@ -1177,7 +1177,7 @@ ggplot(data = d_plot_all,
     panel.border = element_blank(),
     strip.background = element_rect(fill="white", color = "white"), #chocolate4
     strip.text = element_text(color="black", size = 15, hjust = 0)) #white
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_d-value_meanCI_allScales_fns.png"),
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_d-value_meanCI_allScales_fns.png"),
        plot = last_plot(), 
        width = 4400, height = 3800, units = "px")
 
@@ -1196,9 +1196,9 @@ table(d_plot_all %>% filter(!is.na(effect_significance)) %>% dplyr::select(scale
 ### APPENDIX S2 Pointrange plot grouped per estimate type ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-d_df_glob <- read_csv(file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Data_pointrange_d-value_global.csv"))
-d_df_cont <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_continental.csv"))
-d_df_regi <- read_csv(file=paste0(here::here(), "/figures/Data_pointrange_d-value_regional.csv"))
+d_df_glob <- read_csv(file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Data_d-value_global.csv"))
+d_df_cont <- read_csv(file=paste0(here::here(), "/figures/Data_d-value_continental.csv"))
+d_df_regi <- read_csv(file=paste0(here::here(), "/figures/Data_d-value_regional.csv"))
 
 d_df_all <- rbind(d_df_glob %>% mutate("scale" = "global"), 
                   d_df_cont %>% mutate("scale" = "continental")) %>%
@@ -1225,7 +1225,7 @@ write_csv(d_df_grouped %>%
             mutate(across(c(effect_median, effect_ci2.5, effect_ci92.5), function(x) round(x, 3))) %>%
             mutate(ci_95 = paste0("[", effect_ci2.5, "; ", effect_ci92.5, "]")) %>%
             dplyr::select(-effect_ci2.5, -effect_ci92.5), 
-          paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_d-value_medianCI_allScales_grouped.csv"))
+          paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_d-value_medianCI_allScales_grouped.csv"))
 
 ggplot(data = d_df_grouped,
        aes(fill = lc, color = lc, 
@@ -1269,7 +1269,7 @@ ggplot(data = d_df_grouped,
         strip.text = element_text(size = 20, hjust = 0),
         plot.background = element_rect(fill = "white", color = "white"))
 
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_d-value_medianCI_allScales_grouped.png"),
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_d-value_medianCI_allScales_grouped.png"),
        plot = last_plot(), 
        width = 2700, height = 2200,
        units = "px")
@@ -1336,7 +1336,7 @@ pars_summary <- pars_long %>% group_by(lc, fns) %>%
                                "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE)))) %>%
   arrange(lc, fns)
 pars_summary
-write_csv(pars_summary, file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_parsBayesian_summary_", temp_scale, ".csv"))
+write_csv(pars_summary, file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_intercept_parsBayesian_summary_", temp_scale, ".csv"))
 
 # extract sample size
 n_table <- data_clean %>% filter(LC!="Other") %>%
@@ -1346,7 +1346,7 @@ n_table <- data_clean %>% filter(LC!="Other") %>%
   arrange(PA_rank) %>% ungroup() %>%
   dplyr::select(-PA_rank)
 n_table
-write_csv(n_table, file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_parsBayesian_nTable_", temp_scale, ".csv"))
+write_csv(n_table, file=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_intercept_parsBayesian_nTable_", temp_scale, ".csv"))
 
 ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
          # add number of sizes to plot
@@ -1387,7 +1387,7 @@ ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
         panel.grid.major.y = element_blank(),
         legend.position = "bottom",
         text = element_text(size = 13))
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_parsBayesian_", temp_scale, ".png"),
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_intercept_parsBayesian_", temp_scale, ".png"),
        plot = last_plot(),
        width=12, height=10)
 
@@ -1425,7 +1425,7 @@ for(temp_scale in c("global", "continental", "regional")){
           strip.text = element_text(size = 15, hjust=0),
           legend.position = c(0.8, 0.1),
           legend.box = "horizontal")
-  ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_regressions_parsBayesian_", temp_scale,".png"),
+  ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_slope_parsBayesian_", temp_scale,".png"),
          plot = last_plot(),
          width=15, height=10)
 }
@@ -1563,7 +1563,7 @@ ggplot(pars_all %>%
         strip.text.x = element_text(size = 30, hjust = 0, vjust = 1),
         strip.text.y = ggtext::element_markdown(vjust = 0.5))
 
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_BayesianTrends_allScales_grouped.png"),
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_slope_BayesianTrends_allScales_grouped.png"),
        plot = last_plot(), 
        width = 5000, height = 4000,
        units = "px")
@@ -1598,7 +1598,7 @@ write_csv(pars_sum %>%
                    "Scale" = factor(scale, levels = c("global", "continental", "regional"))) %>%
             dplyr::select(Group_function, Scale, LC, trend, SE, "95% CI") %>%
             arrange(Group_function, Scale, LC),
-          paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_BayesianTrends_allScales_grouped.csv"))
+          paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_slope_BayesianTrends_allScales_grouped.csv"))
 
 write_csv(pars_all %>%
             full_join(fns_labels %>% dplyr::select(Function, Group_function, Label_short), by = c("fns" = "Function")) %>%
@@ -1627,5 +1627,5 @@ write_csv(pars_all %>%
             dplyr::select(Group, Variable, Scale, Habitat, "Slope [HPD]") %>%
             pivot_wider(names_from = "Habitat", values_from = "Slope [HPD]") %>%
             arrange(Group, Variable, Scale),
-          paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_pointrange_BayesianTrends_allScales.csv"))
+          paste0(here::here(), "/results/sensitivity_globalAlternativeDataset/Results_slope_BayesianTrends_allScales.csv"))
 
