@@ -526,6 +526,85 @@ f_compare_pa_types <- function(data, protect_levels, col_fns) {
   
 }  
 
+#- - - - - - - - - - - - - - - - - - - - - -
+### Compare PA and nonPA using Bayesian stats ####
+
+f_compare_pa_dummy <- function(data, col_fns) {
+  
+  # data:           focal dataframe 
+  # col_fns:        names of columns of response variables
+  
+  # create empty list
+  pars_list <- vector("list", length = length(lc_names))
+  names(pars_list) <- lc_names
+  pars_list <- lapply(pars_list, 
+                      function(x) {
+                        x <- vector("list", length = length(col_fns))
+                        names(x) <- col_fns
+                        
+                        lapply(x, 
+                               function(y) {
+                                 y <- vector("list", length = 1)
+                               }
+                        )
+                      }
+  )
+  
+  stan_data <- pars_list
+  stan_fit <- pars_list
+  
+  # individual tests per LC type
+  for(lc in lc_names){
+    
+    print("#####################################")
+    print(paste0("Run land cover ", lc))
+    
+    # subset data based on land cover type
+    temp_data <- data %>%
+      filter(LC==lc) %>%
+      arrange(PA)
+    
+    for(no_fns in 1:(length(col_fns))){
+      
+      temp_n_groups <- 2
+      
+      stan_data[[lc]][[no_fns]] <- list(n = nrow(temp_data),
+                                        y = pull(temp_data[,col_fns[no_fns]]),
+                                        group = temp_data$PA+1,
+                                        n_group = temp_n_groups)
+      
+      stan_fit[[lc]][[no_fns]] <- sampling(stan_model, data = stan_data[[lc]][[no_fns]],
+                                           chains = 4, iter = 10000, warmup = 2000,
+                                           show_messages = TRUE)
+      #print(stan_fit, digits = 3, probs = c(0.025, 0.975))
+      
+      temp_pars <- rstan::extract(stan_fit[[lc]][[no_fns]], pars=c(paste0("a[", 1:temp_n_groups, "]"), "sigma", "mu_a", "sigma_a"))
+      names(temp_pars)[1:temp_n_groups] <- unique(temp_data$PA)
+      
+      pars_list[[lc]][[no_fns]] <- temp_pars
+      
+      stan_fit[[lc]][[no_fns]] <- NULL
+      stan_data[[lc]][[no_fns]] <- NULL
+      
+    }
+    
+    gc()
+    #unlink(file.path("tmp", "Rtmp*"), recursive = T)
+    
+    # remove temporary files
+    dso_filenames <- dir(tempdir(), pattern=.Platform$dynlib.ext)
+    filenames  <- dir(tempdir())
+    for (i in seq(dso_filenames))
+      try(dyn.unload(file.path(tempdir(), dso_filenames[i])))
+    for (i in seq(filenames))
+      if (file.exists(file.path(tempdir(), filenames[i])) & nchar(filenames[i]) < 42) # some files w/ long filenames that didn't like to be removeed
+        file.remove(file.path(tempdir(), filenames[i]))
+    
+  }
+  return(pars_list)
+  
+}  
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Combine Bayesian list into df ####
 # combine individual list elements (c) per fns & lc into one vector

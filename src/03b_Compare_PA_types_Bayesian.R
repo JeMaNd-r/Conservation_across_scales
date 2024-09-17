@@ -69,7 +69,7 @@ protect_legend$PA_rank_rev <- max(protect_legend$PA_rank) - protect_legend$PA_ra
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Compare difference between PA types (incl. nonPA) ####
-# using Bayesian model
+# using Bayesian model - random intercept model
 
 # define stan code for linear model
 stan_code = '
@@ -149,6 +149,7 @@ save(pars_sample, file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_"
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Compare difference using brms & linear regression model ####
+# random-slope model
 
 library(brms)
 library(modelr)
@@ -243,3 +244,61 @@ for(temp_scale in c("global")){ #, "continental", "regional"
   write_csv(emtrends, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_emtrends.csv"))
 }
 
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Compare difference between PA and nonPA (Bayesian) ####
+# random intercept model but with 2 groups only
+
+# define stan code for linear model
+stan_code = '
+  data {
+    int n;
+    int n_group;
+    real y[n];
+    int group[n];
+  }
+  parameters {
+    real a[n_group];
+    real<lower=0> sigma;
+    real mu_a;
+    real<lower=0> sigma_a;
+  }
+  model {
+    // priors
+    mu_a ~ normal(0,10);
+    sigma_a ~ normal(0,10);
+    
+    for (j in 1:n_group){
+     a[j] ~ normal(mu_a,sigma_a);
+    }
+    
+    sigma ~ normal(0,10);
+    
+    // likelihood
+    for(i in 1:n){
+      y[i] ~ normal(a[ group[i] ], sigma);
+    }
+  }
+'
+
+stan_model <- stan_model(model_code = stan_code)
+
+pars_list <- f_compare_pa_dummy(data = data_clean, 
+                                col_fns = fns)
+# 2 levels (0 = nonPA = coded as 1 and PA = 1 = coded as 2)
+
+save(pars_list, file=paste0(here::here(), "/intermediates/pars_PAdummy_Bayesian_", temp_scale, ".RData"))
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# combine individual list elements (c) per fns & lc into one vector
+# that is, we have one list element per fns and lc containing the values
+
+load(file=paste0(here::here(), "/intermediates/pars_PAdummy_Bayesian_", temp_scale, ".RData")) #pars_list
+
+pars_sample <- f_combine_pars_list(pars_list = pars_list)
+str(pars_sample)
+
+rm(pars_list)
+gc()
+
+### Save total list with p tables & effect sizes ####
+save(pars_sample, file=paste0(here::here(), "/results/pars_PAdummy_Bayesian_df_", temp_scale, ".RData"))
