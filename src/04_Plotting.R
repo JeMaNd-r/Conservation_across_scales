@@ -1619,7 +1619,7 @@ ggsave(filename=paste0(here::here(), "/figures/Results_slope_BayesianTrends_allS
 #        width=12, height=10)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## FIGURE 4 - Heatmap env. conditions ####
+## APPENDIX FIGURE - Heatmap env. conditions ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 source(paste0(here::here(), "/src/00_Parameters.R"))
@@ -1664,14 +1664,16 @@ for(temp_scale in c("global", "continental", "regional")){
   correlation_matrix <- sapply(fns, function(fn) {
     sapply(lc_names, function(lc) {
       pa_temp <- pa_env %>% filter(LC == lc)
-      cor.test(pa_temp[["mahal.min"]], pa_temp[[fn]], use = "na.or.complete")[["estimate"]][["cor"]]
+      cor.test(pa_temp[["mahal.min"]], pa_temp[[fn]], 
+               use = "na.or.complete", method = "spearman")[["estimate"]][["rho"]] #cor for Pearson, rho for Spearman, tau for Kendall
     })
   })
   
   correlation_p_matrix <- sapply(fns, function(fn) {
     sapply(lc_names, function(lc) {
       pa_temp <- pa_env %>% filter(LC == lc)
-      round(cor.test(pa_temp[["mahal.min"]], pa_temp[[fn]], use = "na.or.complete")[["p.value"]],3)
+      round(cor.test(pa_temp[["mahal.min"]], pa_temp[[fn]], 
+                     use = "na.or.complete", method = "spearman")[["p.value"]],3)
     })
   })
   
@@ -1731,6 +1733,20 @@ all_corr_plot <- all_corr_plot %>%
               filter(!is.na(effect_significance)) %>%
               rename(LC = lc) %>%
               dplyr::select(Label_short, LC, fns, Group_function, effect_significance, scale))
+
+# save
+write.csv(all_corr_plot %>%
+            mutate("Correlation [p value]" = paste0(round(correlation, 3), 
+                                                    " [", ifelse(p_value<0.002, "<0.002", round(p_value, 3)), "] ", 
+                                                    ifelse(p_value < 0.05, "*", "ns"))) %>%
+            dplyr::select(Group_function, Label_short, scale, LC, `Correlation [p value]`) %>%
+            rename(Group = Group_function,
+                   Variable = Label_short, 
+                   Scale = scale) %>%
+            pivot_wider(id_cols = c(Group, Variable, Scale), names_from = LC, values_from = `Correlation [p value]`) %>%
+            dplyr::select(Group, Variable, Scale, Cropland, Grassland, Shrubland, Woodland) %>%
+            arrange(Group, Variable, Scale),
+          paste0(here::here(), "/figures/Correlation_diff_mahal_allScales.csv"))
 
 # plotting
 ggplot(data = all_corr_plot)+
