@@ -86,6 +86,9 @@ load(file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_", temp_scale,
 
 #pars_sample <- pars_sample %>% group_by(fns, lc) %>% slice_sample(n=10000)
 
+# load Bayesian results from PA-nonPA comparison
+load(file=paste0(here::here(), "/results/pars_PAdummy_Bayesian_df_", temp_scale, ".RData")) #pars_dummy_sample
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Sampling locations ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1565,19 +1568,68 @@ ggplot(data = pars_all %>%
 ggsave(filename=paste0(here::here(), "/figures/Results_slope_BayesianTrends_allScales_fns.png"),
        plot = last_plot(), 
        width = 4400, height = 3800, units = "px")
+# 
+# #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# ## Bayesian results (PA-nonPA comparison) ####
+# #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# # similar approach to effect size analysis 
+#
+# pars_dummy_plot <- pars_dummy_sample %>%
+#   full_join(fns_labels, by = c("fns" = "Function")) %>%
+#   pivot_longer(cols = c("0", "1"), names_to = "PA", values_to = "fns_value") %>%
+#   dplyr::select(-sigma, -sigma_a, -mu_a)
+# 
+# ggplot(pars_dummy_plot %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
+#          # # add number of sizes to plot
+#          # rbind(data_clean %>% filter(LC!="Other") %>%
+#          #         group_by(LC, PA_type) %>% count() %>%
+#          #         rename(lc=LC, value=n) %>%
+#          #         mutate(fns="Number of sites",
+#          #                fns_value=NA,
+#          #                PA=NA,
+#          #                #Label_pa=ifelse(is.na(PA_type), "Unprotected", PA_type),
+#          #                Label="Number of sites",
+#          #                #Label_fns = Label,
+#          #                Label_short = Label,
+#          #                Group_function=NA,
+#          #                Organism=NA) %>%
+#          #         dplyr::select(colnames(pars_dummy_plot))) %>%
+#          #filter(Label_fns != "Water regulation") %>%%>%
+#          filter(!is.na(PA)) %>%
+#          filter(!is.na(fns_value)) %>%
+#          mutate(Label_fns = factor(Label, levels = labels_order)),
+#        aes(y=PA, x=fns_value, color=lc))+
+#   
+#   ggdist::stat_halfeye(position = position_dodge2())+ 
+#   facet_wrap(vars(Label_fns), scales = "free_x", ncol=6, drop=FALSE)+
+#   
+#   scale_color_manual(values=c("Cropland" = "#4A2040",
+#                               "Grassland" = "#E69F00",
+#                               "Shrubland" = "#0072B2",
+#                               "Woodland" = "#009E73",
+#                               "Other" = "#000000"), name="Habitat type")+
+#   ylab("")+ xlab("")+
+#   theme_bw()+
+#   theme(panel.grid.minor = element_blank(),
+#         panel.grid.major.y = element_blank(),
+#         legend.position = "bottom",
+#         text = element_text(size = 13))
+# ggsave(filename=paste0(here::here(), "/figures/Results_comparison_Bayesian_", temp_scale, ".png"),
+#        plot = last_plot(),
+#        width=12, height=10)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### FIGURE 4 - Heatmap env. conditions ####
+## FIGURE 4 - Heatmap env. conditions ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
 
-all_corr <- data.frame("LC" = "lc", "fns" = "fns", "correlation" = 1, "scale" = "scale")[0,]
+all_corr <- data.frame("LC" = "lc", "fns" = "fns", "correlation" = 1, "scale" = "scale", "p_value" = 1)[0,]
   
 for(temp_scale in c("global", "continental", "regional")){
   # set date of latest analysis
-  if(temp_scale == "global") temp_date <- "2024-08-05"
+  if(temp_scale == "global") temp_date <- "2024-09-12"
   if(temp_scale == "continental") temp_date <- "2024-08-01"
   if(temp_scale == "regional") temp_date <- "2024-08-01"
   
@@ -1602,6 +1654,7 @@ for(temp_scale in c("global", "continental", "regional")){
     filter(!is.na(nonPA)) %>%
     arrange(ID, nonPA, times) 
   
+  # calculate difference for fns columns and mean for mahal.min column (= mahal.min because same for both) within each group
   pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% 
     summarize(across(all_of(fns), diff),
               across(mahal.min, mean)) %>% 
@@ -1611,14 +1664,25 @@ for(temp_scale in c("global", "continental", "regional")){
   correlation_matrix <- sapply(fns, function(fn) {
     sapply(lc_names, function(lc) {
       pa_temp <- pa_env %>% filter(LC == lc)
-      cor(pa_temp[["mahal.min"]], pa_temp[[fn]], use = "na.or.complete")
+      cor.test(pa_temp[["mahal.min"]], pa_temp[[fn]], use = "na.or.complete")[["estimate"]][["cor"]]
+    })
+  })
+  
+  correlation_p_matrix <- sapply(fns, function(fn) {
+    sapply(lc_names, function(lc) {
+      pa_temp <- pa_env %>% filter(LC == lc)
+      round(cor.test(pa_temp[["mahal.min"]], pa_temp[[fn]], use = "na.or.complete")[["p.value"]],3)
     })
   })
   
   # Convert the correlation matrix to a data frame for easier interpretation
   correlation_df <- as.data.frame(correlation_matrix)
   rownames(correlation_df) <- lc_names  
-  colnames(correlation_df) <- fns  
+  colnames(correlation_df) <- fns 
+  
+  correlation_p_df <- as.data.frame(correlation_p_matrix)
+  rownames(correlation_p_df) <- lc_names  
+  colnames(correlation_p_df) <- fns  
   
   correlation_df <- correlation_df %>% 
     rownames_to_column(var = "LC") %>%  # Convert row names to a column
@@ -1628,26 +1692,57 @@ for(temp_scale in c("global", "continental", "regional")){
     mutate(fns = factor(fns, levels = unique(fns[order(correlation)])),
            LC = factor(LC, levels = lc_names),
            scale = temp_scale)
+  
+  correlation_p_df <- correlation_p_df %>% 
+    rownames_to_column(var = "LC") %>%  # Convert row names to a column
+    pivot_longer(cols = -LC,  # Pivot to long format, excluding the env_variable column
+                 names_to = "fns",
+                 values_to = "p_value") %>%
+    mutate(fns = factor(fns, levels = unique(fns[order(p_value)])),
+           LC = factor(LC, levels = lc_names),
+           scale = temp_scale)
+  
+  correlation_df <- correlation_df %>%
+    full_join(correlation_p_df)
 
   all_corr <- rbind(all_corr, correlation_df)
 }
 all_corr
 
-ggplot(data = all_corr %>%
-         mutate(LC = factor(LC, levels = lc_names_all[lc_names_all != "Other"]),
-                scale = factor(scale, levels = c("global", "continental", "regional")),
-                scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='70'>",
-                                     ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='70'>",
-                                            ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>", NA)))) %>%
-         full_join(fns_labels %>% 
-                     filter(Function %in% fns),
-                     dplyr::select(Label_short, Function), 
-                   by = c("fns" = "Function")) %>%
-         mutate(Label_short = factor(Label_short, levels = rev(fns_labels$Label_short)),
-                scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>",
-                                                           "<img src='figures/icon_location-black.png' width='70'>",
-                                                           "<img src='figures/icon_flag-Portugal.png' width='70'>" ))))+
+# long format
+all_corr_plot <- all_corr %>%
+  mutate(LC = factor(LC, levels = lc_names_all[lc_names_all != "Other"]),
+         scale = factor(scale, levels = c("global", "continental", "regional")),
+         scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='70'>",
+                             ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='70'>",
+                                    ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>", NA)))) %>%
+  full_join(fns_labels %>% 
+              filter(Function %in% fns),
+            dplyr::select(Label_short, Function), 
+            by = c("fns" = "Function")) %>%
+  mutate(Label_short = factor(Label_short, levels = rev(fns_labels$Label_short)),
+         scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>",
+                                                    "<img src='figures/icon_location-black.png' width='70'>",
+                                                    "<img src='figures/icon_flag-Portugal.png' width='70'>" )))
+
+# add d-values (effect size results)
+all_corr_plot <- all_corr_plot %>% 
+  full_join(d_plot_all %>%
+              filter(!is.na(effect_significance)) %>%
+              rename(LC = lc) %>%
+              dplyr::select(Label_short, LC, fns, Group_function, effect_significance, scale))
+
+# plotting
+ggplot(data = all_corr_plot)+
   geom_tile(aes(x = LC, y = Label_short, fill = correlation))+
+  
+  geom_point(data = all_corr_plot %>% filter(p_value >= 0.05),
+             aes(x = LC, y = Label_short), shape = 4)+
+  
+  geom_point(data = all_corr_plot %>% filter(effect_significance != "ns"),
+             aes(x = LC, y = Label_short), shape = 0, size = 8)+
+  
+  scale_shape_manual(values = c(NA, 4))+
   scale_fill_distiller(type = "div", na.value = "white", limits = c(-0.7, 0.7),
                        name = "Correlation")+
   scale_x_discrete(labels = c(
