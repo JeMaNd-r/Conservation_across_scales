@@ -1,9 +1,28 @@
 # **Comparison of protected and unprotected soils across scales**
 This repository contains the scripts, input and output for the comparison of soil diversity and functioning estimates in protected and unprotected sampling sites across three spatial scales (global, continental: Europe, regional: North-Portugal). 
 
+This README.md file was written by Romy Zeiss and last updated on 2024-09-25. 
+The structure of the README file is based on [this one](https://github.com/JWicquart/fish_growth/blob/master/README.md)
+
 **The respective study is presented in the following article**:
 
 [Zeiss et al (in Review) ... .](DOI)
+
+
+## Table of Contents
+- [1. How to download this project?](#1-how-to-download-this-project)
+- [2. Description of the project](#2-description-of-the-project)
+  - [2.1 Project organization](#21-project-organization)
+  - [2.2 Datasets description](#22-datasets-description)
+    - [2.2.1 Raw data](#221-raw-data)
+    - [2.2.2 Intermediate results](#222-intermediate-results)
+    - [2.2.3 Results](#223-results)
+  - [2.3 Code description](#23-code-description)
+- [3. How to report issues?](#3-how-to-report-issues)
+- [4. Reproducibility parameters](#4-reproducibility-parameters)
+- [5. Contributing](#5-contributing)
+- [6. License](#6-license)
+- [7. Use of ChatGPT](#7-use-of-chatgpt-in-project-development)
 
 
 ## 1. How to download this project?
@@ -236,4 +255,13 @@ loaded via a namespace (and not attached):
 [113] scales_1.2.1         xts_0.13.2           crayon_1.5.2         rlang_1.1.1          mnormt_2.1.1         shinyjs_2.1.0
 ```
 
-This README.md file was written by Romy Zeiss and last updated on 2024-09-25.
+## 5. Contributing
+
+
+## 6. License
+
+
+## 7. Use of ChatGPT in Project Development
+
+This project was partially developed with the assistance of OpenAI's ChatGPT, a large language model designed to support developers in coding, debugging, and explaining complex concepts. ChatGPT was used to help with tasks such as generating code snippets, providing algorithmic insights, refining documentation, and ensuring proper project organization. While the model provided suggestions, all code has been thoroughly reviewed, tested, and modified by the project maintainers to ensure accuracy, efficiency, and relevance to the project’s objectives.
+
