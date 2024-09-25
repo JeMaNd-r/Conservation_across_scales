@@ -157,11 +157,6 @@ f_colinearity <- function(data, col_lon, col_lat, vars_env){
               "corMatPearson" = corMatPearson))
 }
 
-
-#- - - - - - - - - - - - - - - - - - - - - -
-## PAIRING ####
-#- - - - - - - - - - - - - - - - - - - - - -
-
 ### Scale variables for mahalanobis distance ####
 f_scale_vars <- function(data, vars){
   
@@ -180,6 +175,10 @@ f_scale_vars <- function(data, vars){
     return(data)
   }
 }
+
+#- - - - - - - - - - - - - - - - - - - - - -
+## PAIRING ####
+#- - - - - - - - - - - - - - - - - - - - - -
 
 #- - - - - - - - - - - - - - - - - - - - - -
 ### Check for pairing ####

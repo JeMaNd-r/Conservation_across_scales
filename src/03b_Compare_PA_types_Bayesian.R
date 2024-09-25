@@ -14,6 +14,9 @@ library(rstan)
 options(mc.cores = 4) # number of CPU cores
 
 library(emmeans) # to estimate contrast i.e. EM means
+library(brms)
+library(modelr)
+library(tidybayes)
 
 source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
@@ -151,10 +154,6 @@ save(pars_sample, file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_"
 ## Compare difference using brms & linear regression model ####
 # random-slope model
 
-library(brms)
-library(modelr)
-library(tidybayes)
-
 for(temp_scale in c("global")){ #, "continental", "regional"
   source(paste0(here::here(), "/src/00_Parameters.R")) 
 
@@ -243,88 +242,3 @@ for(temp_scale in c("global")){ #, "continental", "regional"
   emtrends <- do.call(rbind, emtrends)
   write_csv(emtrends, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_emtrends.csv"))
 }
-
-# #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# ## Compare difference between PA and nonPA (Bayesian) ####
-# # random intercept model but with 2 groups only
-# # similar to effect size approach
-# # requires emmeans analysis to compare PA and nonPA estimates
-# 
-# for(temp_scale in c("global", "continental", "regional")){ 
-#   source(paste0(here::here(), "/src/00_Parameters.R")) 
-#   
-#   # set date of latest analysis
-#   if(temp_scale == "global") temp_date <- "2024-09-12"
-#   if(temp_scale == "continental") temp_date <- "2024-08-01"
-#   if(temp_scale == "regional") temp_date <- "2024-08-01"
-#   
-#   if(temp_scale == "global"){
-#     lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
-#     min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
-#   } 
-#   if(temp_scale == "continental"){
-#     lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
-#     min_size <- 10 # number of samples/ sites that should be paired per LC type
-#     fns <- fns[fns != "Water_regulation_service"]
-#   }
-#   if(temp_scale == "regional"){
-#     lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
-#     min_size <- 7 # number of samples/ sites that should be paired per LC type
-#     fns <- fns[fns != "Water_regulation_service"]
-#   }
-#   
-#   # define stan code for linear model
-#   stan_code = '
-#     data {
-#       int n;
-#       int n_group;
-#       real y[n];
-#       int group[n];
-#     }
-#     parameters {
-#       real a[n_group];
-#       real<lower=0> sigma;
-#       real mu_a;
-#       real<lower=0> sigma_a;
-#     }
-#     model {
-#       // priors
-#       mu_a ~ normal(0,10);
-#       sigma_a ~ normal(0,10);
-#       
-#       for (j in 1:n_group){
-#        a[j] ~ normal(mu_a,sigma_a);
-#       }
-#       
-#       sigma ~ normal(0,10);
-#       
-#       // likelihood
-#       for(i in 1:n){
-#         y[i] ~ normal(a[ group[i] ], sigma);
-#       }
-#     }
-#   '
-#   
-#   stan_model <- stan_model(model_code = stan_code)
-#   
-#   pars_dummy_list <- f_compare_pa_dummy(data = data_clean, 
-#                                   col_fns = fns)
-#   # 2 levels (0 = nonPA = coded as 1 and PA = 1 = coded as 2)
-#   
-#   save(pars_dummy_list, file=paste0(here::here(), "/intermediates/pars_PAdummy_Bayesian_", temp_scale, ".RData"))
-#   
-#   #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#   # combine individual list elements (c) per fns & lc into one vector
-#   # that is, we have one list element per fns and lc containing the values
-#   
-#   load(file=paste0(here::here(), "/intermediates/pars_PAdummy_Bayesian_", temp_scale, ".RData")) #pars_dummy_list
-#   
-#   pars_dummy_sample <- f_combine_pars_list(pars_list = pars_dummy_list)
-#   str(pars_dummy_sample)
-#   
-#   rm(pars_dummy_list)
-#   gc()
-#   
-#   ### Save total list with p tables & effect sizes ####
-#   save(pars_dummy_sample, file=paste0(here::here(), "/results/pars_PAdummy_Bayesian_df_", temp_scale, ".RData"))
-# }
