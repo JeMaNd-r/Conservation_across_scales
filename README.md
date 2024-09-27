@@ -39,9 +39,9 @@ This project is divided in 5 folders:
 
 * :open_file_folder:	`data_raw` folder contains input 11 datasets, 3 metadata files and one reference table (see part _2.2 Datasets description_).
 * :open_file_folder:	`src` folder contains X _src_ codes and a `functions` folder (see part _2.3 Code description_).
-* :open_file_folder:	`intermediates` folder serves as temporary storage place for intermediate results.
-* :open_file_folder:	`results` folder contains output files (csv, RData, txt). It also contains intermediate results, figures and final results for the sensitivity analysis.
-* :open_file_folder: `figures` folder contains figures and their underlying data.
+* :open_file_folder:	`intermediates` folder serves as temporary storage place for intermediate results (see part _2.2 Datasets description_).
+* :open_file_folder:	`results` folder contains output files (csv, RData, txt). It also contains intermediate results, figures and final results for the sensitivity analysis (see part _2.2 Datasets description_).
+* :open_file_folder: `figures` folder contains figures and their underlying data (see part _2.3 Code description_).
 
 
 ### 2.2 Datasets description
@@ -257,8 +257,25 @@ loaded via a namespace (and not attached):
 
 ## 5. Contributing
 
+Contributors names and contact info:
+
+Romy Zeiss  
+[@RomyZeiss](https://twitter.com/romyzeiss)
+
+Calderón-Sanou
+Concha Cano-Díaz
+Manuel Delgado-Baquerizo
+Paulo Fernandes
+Fernando T. Maestre
+Susana Mendes
+Bala Singavarapu
+Brajesh K. Singh
+Carlos A. Guerra
+
 
 ## 6. License
+
+This project is licensed under the MIT License - see the LICENSE.md file for details.
 
 
 ## 7. Use of ChatGPT in Project Development
