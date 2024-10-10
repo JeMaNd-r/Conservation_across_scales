@@ -112,16 +112,16 @@ if(temp_scale == "regional") temp_limits <- c(-9, -6, 40.5, 42.5)
 ggplot()+
   geom_map(data = world.inp, map = world.inp, 
            aes(map_id = region),  show.legend = FALSE, 
-           fill="white", color = "grey90", linewidth = 0.15) + #fill = "grey80", color="grey75"
+           fill="white", color = "grey80", linewidth = 0.15) + #G:0.15, C+R:
   xlim(temp_limits[1], temp_limits[2])+
   ylim(temp_limits[3], temp_limits[4])+
   
   geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
                                       shape = as.character(PA), color=LC, 
                                       size = as.character(PA)),
-             stroke = 2)+ #increase circle line width; G: 2, C+R:3
+             stroke = 0.6)+ #increase circle line width; G: 2 (1.4), C+R:3
   scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
-  scale_size_manual(values = c("0" =1.5, "1" = 4.5))+ #G: 1.4,4.5, C+R:3,8
+  scale_size_manual(values = c("0" = 1, "1" = 2.5))+ #G: 1.4,4.5/0.3, 1, C+R:3,8/ 0.6,2
   scale_color_manual(values = c("Cropland" = "#4A2040",
                                 "Grassland" = "#E69F00",
                                 "Shrubland" = "#0072B2", 
@@ -186,6 +186,68 @@ ggplot()+
         panel.border = element_blank(),
         panel.background = element_rect(fill= "grey80"))
 ggsave(filename=paste0(here::here(), "/figures/Data_locations_PAranks_", temp_scale,".png"),
+       plot = last_plot())
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Locations per habitat type ####
+data_locations_all <- data.frame()
+
+for(temp_scale in c("global", "continental", "regional")){
+  # load locations
+  temp_data <- read_csv(file = paste0(here::here(), "/results/Locations_", temp_scale, ".csv"))
+
+  # add scale
+  temp_data$scale <- temp_scale 
+  
+  # add to full dataframe
+  data_locations_all <- rbind(data_locations_all, temp_data)  
+}
+
+data_locations_all
+
+# plot
+ggplot()+
+  xlab("")+
+  ylab("Number of sampling sites")+
+  scale_fill_manual(values = c("Cropland" = "#4A2040",
+                                "Grassland" = "#E69F00",
+                                "Shrubland" = "#0072B2", 
+                                "Woodland" = "#009E73", 
+                                "Other" = "#000000"))+ 
+  
+  geom_bar(data = data_locations_all %>%
+             mutate(scale = factor(scale, levels = c("global", "continental", "regional"))), 
+           aes(x = LC, fill = LC, alpha = "Unprotected"),
+           position = "dodge",
+           na.rm=TRUE)+
+  geom_bar(data = data_locations_all %>%
+             filter(PA == 1) %>%
+             mutate(scale = factor(scale, levels = c("regional", "continental", "global"))), 
+           aes(x = LC, alpha = "Protected"), fill = "white", 
+           position = "dodge",
+           na.rm=TRUE)+
+  scale_alpha_manual(values = c("Protected" = 0.5, "Unprotected" = 1))+
+  guides(alpha = guide_legend(override.aes = list(fill = "black",
+                                                  alpha = c(0.1, 1))))+
+  scale_x_discrete(expand = c(0,0.7),
+                   drop = TRUE)+
+  scale_y_continuous(expand = c(0,0), limits = c(0, 126))+
+  facet_grid(cols = vars(scale), drop = TRUE, scales = "free_x")+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(color = "grey60"),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.border = element_blank(),
+        panel.spacing = unit(1, "cm"),
+        axis.text.y = element_text(size = 19.5, vjust = 0.5),
+        axis.title.y = element_text(size = 25.5),
+        axis.text.x = element_blank())
+        #axis.text.x = ggtext::element_markdown(vjust = 0))
+ggsave(paste0(here::here(), "/figures/Data_habitats_allScales.png"),
+       width = 10, height = 5,
        plot = last_plot())
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
