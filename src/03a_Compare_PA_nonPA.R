@@ -17,21 +17,21 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
  temp_scale <- "global"
-# temp_scale <- "continental"
+#temp_scale <- "continental"
 # temp_scale <- "regional"
 
 # set date of latest analysis
-if(temp_scale == "global") temp_date <- "2024-09-12"
-if(temp_scale == "continental") temp_date <- "2024-08-01"
+if(temp_scale == "global") temp_date <- "2025-01-03"
+if(temp_scale == "continental") temp_date <- "2025-01-02"
 if(temp_scale == "regional") temp_date <- "2024-08-01"
 
 if(temp_scale == "global"){
-  lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
-  min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+  lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
+  min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
 } 
 if(temp_scale == "continental"){
   lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
-  min_size <- 10 # number of samples/ sites that should be paired per LC type
+  min_size <- 14 # number of samples/ sites that should be paired per LC type
   fns <- fns[fns != "Water_regulation_service"]
 }
 if(temp_scale == "regional"){

@@ -1,9 +1,9 @@
-PA,PA_type,Grassland,Shrubland,Woodland
-1,Ia,2,1,NA
-1,II,11,8,NA
-1,IV,2,4,2
-1,V,2,4,6
-0,Not Reported,1,8,19
-0,Not Assigned,NA,1,NA
-0,Not Applicable,3,5,4
-0,NA,44,83,38
+PA,PA_type,Dryland
+1,Ia,3
+1,II,19
+1,IV,8
+1,V,12
+0,Not Reported,28
+0,Not Assigned,1
+0,Not Applicable,12
+0,NA,165

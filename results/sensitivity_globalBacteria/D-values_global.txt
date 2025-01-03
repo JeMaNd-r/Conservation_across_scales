@@ -1,13 +1,7 @@
 #################################################
 ##  Significant d-values from global analysis  ##
-##  Sys.Date() 2024-09-16  ##
+##  Sys.Date() 2025-01-02  ##
 #################################################
-         lc             fns effect_mean effect_SD effect_median effect_ci_2.5 effect_ci_17 effect_ci_83 effect_ci_97.5
-1  Woodland    Bac_richness  -1.9553154 1.2324807    -1.7895480   -4.52421300  -2.58315429   -0.9584706     -0.3081761
-2  Woodland  Bac_shannonDiv  -1.8271655 0.8339558    -1.7296982   -3.46904864  -2.40446789   -1.1318180     -0.5841754
-3 Grassland    Bac_richness   1.7225391 0.9928991     1.6672057    0.50455961   0.81982168    2.4389209      3.7614282
-4  Woodland Bac_JaccDist_av   1.2648540 0.7317428     1.1579954    0.39921424   0.71401890    1.7048814      2.7672384
-5 Grassland  Bac_shannonDiv   1.1898193 0.8268429     1.0481214    0.06949054   0.45176145    1.9695872      2.9283919
-6 Shrubland Bac_JaccDist_av  -1.0088952 1.0111593    -0.8575923   -3.05233691  -1.70554702   -0.1789720      0.3953470
-7 Shrubland    Bac_richness   1.0106999 0.9993473     0.8464318   -0.12798791   0.29344762    1.6225118      3.3713860
-8 Shrubland  Bac_shannonDiv   0.6662431 0.9154086     0.5200900   -0.41932066  -0.01547028    1.2637142      3.2112166
+         lc            fns effect_mean effect_SD effect_median effect_ci_2.5 effect_ci_17 effect_ci_83 effect_ci_97.5
+1 Grassland   Bac_richness   0.7854513 0.1559076     0.7673774     0.5606068    0.6402098    0.9309307       1.130709
+2 Grassland Bac_shannonDiv   0.3487300 0.1389721     0.3327322     0.1579975    0.2195165    0.4718475       0.667512

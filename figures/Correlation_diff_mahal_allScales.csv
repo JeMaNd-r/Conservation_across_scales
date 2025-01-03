@@ -1,64 +1,64 @@
-Group,Variable,Scale,Cropland,Grassland,Shrubland,Woodland
-Dissimilarity,Bacterial D,global,NA,-0.143 [<0.002] *,-0.047 [<0.002] *,0.147 [<0.002] *
-Dissimilarity,Bacterial D,continental,-0.138 [<0.002] *,-0.106 [<0.002] *,NA,0.14 [<0.002] *
-Dissimilarity,Bacterial D,regional,0.1 [<0.002] *,0.069 [<0.002] *,NA,0.014 [0.256] ns
-Dissimilarity,Fungal D,global,NA,-0.208 [<0.002] *,0.178 [<0.002] *,0.021 [0.136] ns
-Dissimilarity,Fungal D,continental,-0.117 [<0.002] *,-0.036 [<0.002] *,NA,0.113 [<0.002] *
-Dissimilarity,Fungal D,regional,0.064 [<0.002] *,-0.074 [<0.002] *,NA,0.03 [0.013] *
-Dissimilarity,Invertebrate D,global,NA,0.148 [<0.002] *,0.044 [0.002] *,-0.174 [<0.002] *
-Dissimilarity,Invertebrate D,continental,-0.045 [<0.002] *,-0.107 [<0.002] *,NA,-0.017 [0.081] ns
-Dissimilarity,Invertebrate D,regional,0.032 [0.007] *,0.094 [<0.002] *,NA,0.067 [<0.002] *
-Dissimilarity,Protist D,global,NA,-0.192 [<0.002] *,0.021 [0.143] ns,-0.189 [<0.002] *
-Dissimilarity,Protist D,continental,-0.132 [<0.002] *,-0.068 [<0.002] *,NA,0.11 [<0.002] *
-Dissimilarity,Protist D,regional,0.018 [0.127] ns,-0.008 [0.487] ns,NA,-0.002 [0.835] ns
-Function,Decomposition (OM),global,NA,-0.034 [0.017] *,0.204 [<0.002] *,-0.699 [<0.002] *
-Function,Decomposition (OM),continental,0.205 [<0.002] *,0.024 [0.018] *,NA,-0.167 [<0.002] *
-Function,Decomposition (OM),regional,-0.02 [0.087] ns,-0.097 [<0.002] *,NA,0.01 [0.386] ns
-Function,Nutrient cycling,global,NA,-0.062 [<0.002] *,-0.007 [0.609] ns,-0.395 [<0.002] *
-Function,Nutrient cycling,continental,-0.041 [<0.002] *,0.139 [<0.002] *,NA,-0.159 [<0.002] *
-Function,Nutrient cycling,regional,-0.058 [<0.002] *,-0.217 [<0.002] *,NA,0.062 [<0.002] *
-Function,Pathogen control,global,NA,-0.235 [<0.002] *,-0.097 [<0.002] *,0.285 [<0.002] *
-Function,Pathogen control,continental,-0.017 [0.097] ns,-0.013 [0.197] ns,NA,-0.011 [0.274] ns
-Function,Pathogen control,regional,0.079 [<0.002] *,0.059 [<0.002] *,NA,-0.112 [<0.002] *
-Function,Soil carbon,global,NA,-0.173 [<0.002] *,0.172 [<0.002] *,-0.343 [<0.002] *
-Function,Soil carbon,continental,0.118 [<0.002] *,0.1 [<0.002] *,NA,-0.097 [<0.002] *
-Function,Soil carbon,regional,-0.139 [<0.002] *,0.019 [0.105] ns,NA,-0.029 [0.016] *
-Function,Soil stability,global,NA,-0.122 [<0.002] *,-0.154 [<0.002] *,0.039 [0.006] *
-Function,Soil stability,continental,0.206 [<0.002] *,0.155 [<0.002] *,NA,-0.136 [<0.002] *
-Function,Soil stability,regional,-0.143 [<0.002] *,-0.149 [<0.002] *,NA,-0.113 [<0.002] *
-Richness,AM fungi R,global,NA,-0.102 [<0.002] *,0.304 [<0.002] *,-0.351 [<0.002] *
-Richness,AM fungi R,continental,0.029 [0.004] *,-0.104 [<0.002] *,NA,-0.006 [0.557] ns
-Richness,AM fungi R,regional,-0.105 [<0.002] *,-0.103 [<0.002] *,NA,-0.098 [<0.002] *
-Richness,Bacterial R,global,NA,-0.159 [<0.002] *,0.092 [<0.002] *,-0.332 [<0.002] *
-Richness,Bacterial R,continental,0.07 [<0.002] *,-0.019 [0.059] ns,NA,-0.177 [<0.002] *
-Richness,Bacterial R,regional,-0.163 [<0.002] *,-0.084 [<0.002] *,NA,-0.03 [0.011] *
-Richness,Decomposer R,global,NA,-0.153 [<0.002] *,-0.053 [<0.002] *,-0.385 [<0.002] *
-Richness,Decomposer R,continental,0.208 [<0.002] *,0.045 [<0.002] *,NA,-0.084 [<0.002] *
-Richness,Decomposer R,regional,-0.007 [0.549] ns,0.049 [<0.002] *,NA,-0.037 [0.002] *
-Richness,EM fungi R,global,NA,0.028 [0.052] ns,0.022 [0.116] ns,0.082 [<0.002] *
-Richness,EM fungi R,continental,-0.016 [0.105] ns,-0.066 [<0.002] *,NA,0.131 [<0.002] *
-Richness,EM fungi R,regional,-0.021 [0.072] ns,0 [0.967] ns,NA,0.027 [0.025] *
-Richness,Fungal R,global,NA,-0.004 [0.795] ns,-0.037 [0.01] *,-0.306 [<0.002] *
-Richness,Fungal R,continental,0.105 [<0.002] *,-0.045 [<0.002] *,NA,-0.03 [0.003] *
-Richness,Fungal R,regional,0.02 [0.095] ns,-0.132 [<0.002] *,NA,-0.029 [0.014] *
-Richness,Invertebrate R,global,NA,-0.132 [<0.002] *,-0.001 [0.944] ns,-0.41 [<0.002] *
-Richness,Invertebrate R,continental,0.172 [<0.002] *,0.027 [0.007] *,NA,-0.009 [0.39] ns
-Richness,Invertebrate R,regional,0.069 [<0.002] *,-0.083 [<0.002] *,NA,-0.055 [<0.002] *
-Richness,Nematode R,global,NA,-0.244 [<0.002] *,0.107 [<0.002] *,-0.06 [<0.002] *
-Richness,Nematode R,continental,0.094 [<0.002] *,0.066 [<0.002] *,NA,-0.104 [<0.002] *
-Richness,Nematode R,regional,0.083 [<0.002] *,-0.106 [<0.002] *,NA,-0.081 [<0.002] *
-Richness,Protist R,global,NA,0.023 [0.105] ns,-0.067 [<0.002] *,0.153 [<0.002] *
-Richness,Protist R,continental,0.041 [<0.002] *,0.065 [<0.002] *,NA,-0.099 [<0.002] *
-Richness,Protist R,regional,-0.014 [0.246] ns,-0.025 [0.038] *,NA,-0.013 [0.293] ns
-Shannon,Bacterial S,global,NA,-0.094 [<0.002] *,0.012 [0.387] ns,-0.33 [<0.002] *
-Shannon,Bacterial S,continental,0.075 [<0.002] *,-0.046 [<0.002] *,NA,-0.19 [<0.002] *
-Shannon,Bacterial S,regional,-0.117 [<0.002] *,-0.102 [<0.002] *,NA,-0.037 [0.002] *
-Shannon,Fungal S,global,NA,-0.051 [<0.002] *,0.007 [0.638] ns,-0.242 [<0.002] *
-Shannon,Fungal S,continental,0.11 [<0.002] *,0.043 [<0.002] *,NA,-0.161 [<0.002] *
-Shannon,Fungal S,regional,0.028 [0.019] *,-0.021 [0.082] ns,NA,-0.05 [<0.002] *
-Shannon,Invertebrate S,global,NA,-0.081 [<0.002] *,-0.013 [0.356] ns,-0.149 [<0.002] *
-Shannon,Invertebrate S,continental,0.011 [0.284] ns,-0.033 [<0.002] *,NA,0.043 [<0.002] *
-Shannon,Invertebrate S,regional,-0.065 [<0.002] *,-0.116 [<0.002] *,NA,-0.105 [<0.002] *
-Shannon,Protist S,global,NA,-0.035 [0.013] *,0.006 [0.656] ns,0.312 [<0.002] *
-Shannon,Protist S,continental,0.161 [<0.002] *,0.053 [<0.002] *,NA,-0.047 [<0.002] *
-Shannon,Protist S,regional,-0.068 [<0.002] *,-0.084 [<0.002] *,NA,0.023 [0.054] ns
+Group,Variable,Scale,Dryland,Cropland,Grassland,Woodland
+Dissimilarity,Bacterial D,global,,,,
+Dissimilarity,Bacterial D,continental,,,,
+Dissimilarity,Bacterial D,regional,,,,
+Dissimilarity,Fungal D,global,,,,
+Dissimilarity,Fungal D,continental,,,,
+Dissimilarity,Fungal D,regional,,,,
+Dissimilarity,Invertebrate D,global,,,,
+Dissimilarity,Invertebrate D,continental,,,,
+Dissimilarity,Invertebrate D,regional,,,,
+Dissimilarity,Protist D,global,,,,
+Dissimilarity,Protist D,continental,,,,
+Dissimilarity,Protist D,regional,,,,
+Function,Decomposition (OM),global,,,,
+Function,Decomposition (OM),continental,,,,
+Function,Decomposition (OM),regional,,,,
+Function,Nutrient cycling,global,,,,
+Function,Nutrient cycling,continental,,,,
+Function,Nutrient cycling,regional,,,,
+Function,Pathogen control,global,,,,
+Function,Pathogen control,continental,,,,
+Function,Pathogen control,regional,,,,
+Function,Soil carbon,global,,,,
+Function,Soil carbon,continental,,,,
+Function,Soil carbon,regional,,,,
+Function,Soil stability,global,,,,
+Function,Soil stability,continental,,,,
+Function,Soil stability,regional,,,,
+Richness,AM fungi R,global,,,,
+Richness,AM fungi R,continental,,,,
+Richness,AM fungi R,regional,,,,
+Richness,Bacterial R,global,,,,
+Richness,Bacterial R,continental,,,,
+Richness,Bacterial R,regional,,,,
+Richness,Decomposer R,global,,,,
+Richness,Decomposer R,continental,,,,
+Richness,Decomposer R,regional,,,,
+Richness,EM fungi R,global,,,,
+Richness,EM fungi R,continental,,,,
+Richness,EM fungi R,regional,,,,
+Richness,Fungal R,global,,,,
+Richness,Fungal R,continental,,,,
+Richness,Fungal R,regional,,,,
+Richness,Invertebrate R,global,,,,
+Richness,Invertebrate R,continental,,,,
+Richness,Invertebrate R,regional,,,,
+Richness,Nematode R,global,,,,
+Richness,Nematode R,continental,,,,
+Richness,Nematode R,regional,,,,
+Richness,Protist R,global,,,,
+Richness,Protist R,continental,,,,
+Richness,Protist R,regional,,,,
+Shannon,Bacterial S,global,,,,
+Shannon,Bacterial S,continental,,,,
+Shannon,Bacterial S,regional,,,,
+Shannon,Fungal S,global,,,,
+Shannon,Fungal S,continental,,,,
+Shannon,Fungal S,regional,,,,
+Shannon,Invertebrate S,global,,,,
+Shannon,Invertebrate S,continental,,,,
+Shannon,Invertebrate S,regional,,,,
+Shannon,Protist S,global,,,,
+Shannon,Protist S,continental,,,,
+Shannon,Protist S,regional,,,,

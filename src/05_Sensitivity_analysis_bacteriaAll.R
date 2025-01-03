@@ -108,9 +108,11 @@ nrow(data_glob %>% filter(PA==0)) #285
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Rename land cover types in data ####
-data_glob$LC <- data_glob$Vegetation
-unique(data_glob$LC)
-data_glob[data_glob$LC=="Forest" & !is.na(data_glob$LC), "LC"] <- "Woodland"
+# data_glob$LC <- data_glob$Vegetation
+# unique(data_glob$LC)
+# data_glob[data_glob$LC=="Forest" & !is.na(data_glob$LC), "LC"] <- "Woodland"
+# group all into 1 LC type
+data_glob$LC <- "Grassland"
 unique(data_glob$LC)
 
 table(data_glob$LC)
@@ -265,7 +267,7 @@ count_nonPA <- f_check_pairs(data = data_clean,
                              col_id = "SampleID", col_lc = "LC", 
                              vars_z = mahal_vars_z)
 all_nonPA <- count_nonPA[[2]]
-count_nonPA <- count_nonPA[[1]] #G: 7 <5, 7 <7, 14 <10; C: 16 without enough (10) nonPAs for pairing
+count_nonPA <- count_nonPA[[1]] #G: 7 <5, 7 <7, 14 <10; G-together: 5 >41; C: 16 without enough (10) nonPAs for pairing
 #head(count_nonPA)
 
 #View(all_nonPA %>% dplyr::select(SampleID, count_nonPA[count_nonPA$n<10 & !is.na(count_nonPA$SampleID), "SampleID"]))
@@ -295,9 +297,9 @@ nrow(data_clean); nrow(data_clean[data_clean$PA,]) #G: nrow=330 with 53 PAs, C: 
 
 # Remove sites that can only be paired less than min_nonPA times
 # start with something small, then check how many possible;
-if(temp_scale == "global") min_nonPA <- 5
+#if(temp_scale == "global") min_nonPA <- 5 #not needed when considering all drylands together
 data_clean <- data_clean[!(data_clean$SampleID %in% count_nonPA[count_nonPA$No_nonPA < min_nonPA, "SampleID"]),]
-nrow(data_clean); nrow(data_clean[data_clean$PA,]) #nrow=323 with 46 PAs; C: 791 vs. 48; R: 318 with 43
+nrow(data_clean); nrow(data_clean[data_clean$PA,]) #nrow=323 with 46 PAs; G-together: 325 with 48; C: 791 with 48; R: 318 with 43
 data_clean %>% group_by(LC, PA) %>% count()
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -311,8 +313,8 @@ table(data_clean$LC, data_clean$PA)
 # continental: no Shrubland protected, 28 unprotected; and 0 PA in Other
 # regional: PA only min. 7 -> decrease minimum size number to 7, 
 #           exclude Shrublands & Others to get it running (otherwise no complete pairing achieved) 
-lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
-min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+lc_names <- "Grassland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
+min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
 # Note: could be 10 as minimum number of samples per LC = 10
 
 # The following function will print the number of times it successfully 
@@ -351,9 +353,9 @@ write_csv(pa_pairs, file=paste0(here::here(), "/results/sensitivity_globalBacter
 temp_scale <- "global"
 
 # set date of latest analysis
-temp_date <- "2024-09-12"
-lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
-min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+temp_date <- "2025-01-02"
+lc_names <- "Grassland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
+min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
 
 data_clean <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_clean_", temp_scale, ".csv"))
 data_clean
@@ -383,9 +385,9 @@ save(d_list,  file=paste0(here::here(), "/results/sensitivity_globalBacteria/d_1
 temp_scale <- "global"
 
 # set date of latest analysis
-temp_date <- "2024-09-12"
-lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
-min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+temp_date <- "2025-01-02"
+lc_names <- "Grassland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
+min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
 
 data_clean <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_clean_", temp_scale, ".csv"))
 data_clean
@@ -504,9 +506,9 @@ fns <- c("Bac_richness", "Bac_shannonDiv", "Bac_JaccDist_av")
 
 # set date of latest analysis
 temp_scale <- "global"
-temp_date <- "2024-09-12"
-lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
-min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+temp_date <- "2025-01-02"
+lc_names <- "Grassland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
+min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
 
 data_clean <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_clean_", temp_scale, ".csv"))
 data_clean
@@ -523,7 +525,7 @@ pred_list <- vector("list")
 for(temp_fns in fns){
   
   data_temp <- data_clean %>% dplyr::select(all_of(c("LC", temp_fns, "PA_rank_rev")))
-  model_output <- brm(brmsformula(paste(temp_fns, "~ LC * PA_rank_rev")), data = data_temp,
+  model_output <- brm(brmsformula(paste(temp_fns, "~ PA_rank_rev")), data = data_temp,
                       chains = 4, iter = 10000, warmup = 2000)
   
   # sink(paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_", temp_fns, ".txt"))
@@ -535,8 +537,8 @@ for(temp_fns in fns){
   
   fixed_effects[[temp_fns]] <- vector("list")
   fixed_effects[[temp_fns]][["fixef"]] <- brms::fixef(model_output)
-  fixed_effects[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(model_output, specs = "LC", var = "PA_rank_rev"))
-  fixed_effects[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(model_output, specs = c("PA_rank_rev", "LC")))
+  fixed_effects[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(model_output,  var = "PA_rank_rev"))
+  fixed_effects[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(model_output, specs = c("PA_rank_rev")))
   
   # Extract estimates and credible intervals for PA_rank_rev
   pred_list[[temp_fns]] <- data_temp %>%
@@ -610,10 +612,9 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 fns <- c("Bac_richness", "Bac_shannonDiv", "Bac_JaccDist_av")
 
 # set date of latest analysis
-temp_date <- "2024-09-12"
-
-lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
-min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+temp_date <- "2025-01-02"
+lc_names <- "Grassland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
+min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
  
 # define each land cover type
 lc_names_all <- c( "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
@@ -652,10 +653,10 @@ data_locations <- data_clean %>%
   filter(SampleID %in% unique(pa_pairs$ID) | 
            SampleID %in% unique(pa_pairs$nonPA)) %>%
   dplyr::select(Longitude,Latitude,SampleID, PA, LC)
-data_locations #G: nrow=190, C: 316, R: 161
+data_locations #139
 write_csv(data_locations, file = paste0(here::here(), "/results/sensitivity_globalBacteria/Locations_", temp_scale, ".csv"))
-nrow(data_locations %>% filter(PA==1)) #G: 46 PAs, C: 48, R: 36
-nrow(data_locations %>% filter(PA==0)) #G: 144 PAs, C: 268, R: 125
+nrow(data_locations %>% filter(PA==1)) #48
+nrow(data_locations %>% filter(PA==0)) #91
 
 # set limits for point maps
 if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
@@ -671,16 +672,16 @@ ggplot()+
   ylim(temp_limits[3], temp_limits[4])+
   
   geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
-                                      shape = as.character(PA), color=LC, 
+                                      shape = as.character(PA), # color=LC, 
                                       size = as.character(PA)),
-             stroke = 1)+ #increase circle line width; G: 0.9, C+R:3
+             stroke = 1, color="#000000")+ #increase circle line width; G: 0.9, C+R:3
   scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
   scale_size_manual(values = c("0" =1.5, "1" = 4.5))+ #G: 0.4,1.2, C+R:3,8
-  scale_color_manual(values = c("Cropland" = "#4A2040",
-                                "Grassland" = "#E69F00",
-                                "Shrubland" = "#0072B2", 
-                                "Woodland" = "#009E73", 
-                                "Other" = "#000000"))+ 
+  # scale_color_manual(values = c("Cropland" = "#4A2040",
+  #                               "Grassland" = "#E69F00",
+  #                               "Shrubland" = "#0072B2", 
+  #                               "Woodland" = "#009E73", 
+  #                               "Other" = "#000000"))+ 
   coord_map()+
   theme_bw()+
   theme(axis.title = element_blank(), legend.title = element_blank(),
@@ -699,15 +700,13 @@ ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_l
 # extract list of sampling locations actually used in comparison
 data_locations <- data_clean %>%
   filter(LC %in% lc_names)
-data_locations #G: nrow=248, C: 745, R: 270
+data_locations #330
 write_csv(data_locations, file = paste0(here::here(), "/results/Locations_PAranks_", temp_scale, ".csv"))
-nrow(data_locations %>% filter(PA==1)) #G: 42 PAs, C: 61, R: 40
-nrow(data_locations %>% filter(PA==0)) #G: 206 PAs, C: 684, R: 230
+nrow(data_locations %>% filter(PA==1)) #53
+nrow(data_locations %>% filter(PA==0)) #277
 
 # set limits for point maps
 if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
-if(temp_scale == "continental") temp_limits <- c(-10, 35, 35, 70)
-if(temp_scale == "regional") temp_limits <- c(-9, -6, 40.5, 42.5)
 
 ggplot()+
   geom_map(data = world.inp, map = world.inp, 
@@ -720,16 +719,16 @@ ggplot()+
   ylim(temp_limits[3], temp_limits[4])+
   
   geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
-                                      shape = as.character(PA), color=LC, 
+                                      shape = as.character(PA), #color=LC, 
                                       size = as.character(PA)),
-             stroke = 2)+ #increase circle line width; G+C: 2; R:3
+             stroke = 2, color = "#000000")+ #increase circle line width; G+C: 2; R:3
   scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
   scale_size_manual(values = c("0" =1.5, "1" = 4.5))+ #G:+C: 2,4; ,R:3,8 
-  scale_color_manual(values = c("Cropland" = "#4A2040",
-                                "Grassland" = "#E69F00",
-                                "Shrubland" = "#0072B2", 
-                                "Woodland" = "#009E73", 
-                                "Other" = "#000000"))+ 
+  # scale_color_manual(values = c("Cropland" = "#4A2040",
+  #                               "Grassland" = "#E69F00",
+  #                               "Shrubland" = "#0072B2", 
+  #                               "Woodland" = "#009E73", 
+  #                               "Other" = "#000000"))+ 
   coord_map()+
   theme_bw()+
   theme(axis.title = element_blank(), legend.title = element_blank(),
@@ -824,18 +823,14 @@ ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Locati
 ### Boxplot mahalanobis distance ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-ggplot(pa_pairs, aes(x = LC, y = mahal.min, fill = LC))+
+ggplot(pa_pairs %>% mutate(LC = "Drylands"), aes(x = LC, y = mahal.min, fill = LC))+ #fill = LC
   geom_boxplot()+
   geom_violin(alpha = 0.3, adjust = 0.3)+
   theme_bw() +
   labs(x="Land-cover type",y="Mahalanobis distance") +
   theme(axis.text.x=element_text(size=15),text = element_text(size=20),  
         legend.position = "none", axis.text.y = element_text(size=15), legend.title = element_blank())+
-  scale_fill_manual(values=c("Cropland" = "#4A2040",
-                             "Grassland" = "#E69F00",
-                             "Shrubland" = "#0072B2", 
-                             "Woodland" = "#009E73", 
-                             "Other" = "#000000")) #"gold3", "limegreen", "forestgreen"
+  scale_fill_manual(values=c("Drylands" = "grey"))
 ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_boxplot_mahal.distance_", temp_scale, ".png"),
        plot = last_plot())
 
@@ -937,7 +932,8 @@ sink()
 # with confidence intervals 
 ggplot(data = d_df %>% 
          filter(lc %in% lc_names) %>%
-         mutate(Label=factor(Label, levels = rev(fns_labels$Label))), 
+         mutate(Label=factor(Label, levels = rev(fns_labels$Label)),
+                lc = "Drylands"), 
        aes(y = effect, x = Label))+
   
   geom_hline(aes(yintercept=0.8, linetype = "-0.8 / 0.8"), color="grey60")+
@@ -979,7 +975,8 @@ ggplot(data = d_summary %>%
          filter(lc %in% lc_names) %>%
          mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
                                          abs(effect_ci_17), 
-                                         abs(effect_ci_83))),
+                                         abs(effect_ci_83)),
+                lc = "Drylands"),
        aes(y = abs(effect_ci_min66), x = abs(effect_median),
            color=as.factor(sign(effect_median))
        ))+
@@ -1032,7 +1029,8 @@ ggplot(data = d_summary %>%
          filter(lc %in% lc_names) %>%
          mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
                                          abs(effect_ci_17), 
-                                         abs(effect_ci_83))) %>%
+                                         abs(effect_ci_83)),
+                lc = "Drylands") %>%
          mutate(effect_ci_min66f = cut(effect_ci_min66,
                                        breaks=c(0, 0.2, 0.5, 0.8, Inf),
                                        labels=c("ns", "small", "medium", "large"))) %>%

@@ -23,22 +23,22 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
- temp_scale <- "global"
-# temp_scale <- "continental"
+# temp_scale <- "global"
+ temp_scale <- "continental"
 # temp_scale <- "regional"
 
 # set date of latest analysis
-if(temp_scale == "global") temp_date <- "2024-09-12"
-if(temp_scale == "continental") temp_date <- "2024-08-01"
+if(temp_scale == "global") temp_date <- "2025-01-03"
+if(temp_scale == "continental") temp_date <- "2025-01-02"
 if(temp_scale == "regional") temp_date <- "2024-08-01"
 
 if(temp_scale == "global"){
-  lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
-  min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+  lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
+  min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
 } 
 if(temp_scale == "continental"){
   lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
-  min_size <- 10 # number of samples/ sites that should be paired per LC type
+  min_size <- 14 # number of samples/ sites that should be paired per LC type
   fns <- fns[fns != "Water_regulation_service"]
 }
 if(temp_scale == "regional"){
@@ -154,91 +154,102 @@ save(pars_sample, file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_"
 ## Compare difference using brms & linear regression model ####
 # random-slope model
 
-for(temp_scale in c("global")){ #, "continental", "regional"
-  source(paste0(here::here(), "/src/00_Parameters.R")) 
+source(paste0(here::here(), "/src/00_Parameters.R")) 
 
-  # set date of latest analysis
-  if(temp_scale == "global") temp_date <- "2024-09-12"
-  if(temp_scale == "continental") temp_date <- "2024-08-01"
-  if(temp_scale == "regional") temp_date <- "2024-08-01"
+# set date of latest analysis
+if(temp_scale == "global") temp_date <- "2025-01-03"
+if(temp_scale == "continental") temp_date <- "2025-01-02"
+if(temp_scale == "regional") temp_date <- "2024-08-01"
+
+if(temp_scale == "global"){
+  lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
+  min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+} 
+if(temp_scale == "continental"){
+  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
+  min_size <- 14 # number of samples/ sites that should be paired per LC type
+  fns <- fns[fns != "Water_regulation_service"]
+}
+if(temp_scale == "regional"){
+  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
+  min_size <- 7 # number of samples/ sites that should be paired per LC type
+  fns <- fns[fns != "Water_regulation_service"]
+}
+
+data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+data_clean
+
+data_clean <- data_clean %>% 
+  mutate("PA_rank_rev" = ifelse(is.na(PA_rank), 1, 11-PA_rank+1)) %>%
+  filter(LC %in% lc_names) %>%
+  arrange(LC, PA_rank_rev)
+
+# store results
+fixed_effects <- vector("list")
+pred_list <- vector("list")
+
+for(temp_fns in fns){
+  
+  data_temp <- data_clean %>% dplyr::select(all_of(c("LC", temp_fns, "PA_rank_rev")))
   
   if(temp_scale == "global"){
-    lc_names <- lc_names[lc_names != "Other" & lc_names != "Cropland"]
-    min_size <- 5 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
-  } 
-  if(temp_scale == "continental"){
-    lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
-    min_size <- 10 # number of samples/ sites that should be paired per LC type
-    fns <- fns[fns != "Water_regulation_service"]
-  }
-  if(temp_scale == "regional"){
-    lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
-    min_size <- 7 # number of samples/ sites that should be paired per LC type
-    fns <- fns[fns != "Water_regulation_service"]
-  }
-  
-  data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
-  data_clean
-  
-  data_clean <- data_clean %>% 
-    mutate("PA_rank_rev" = ifelse(is.na(PA_rank), 1, 11-PA_rank+1)) %>%
-    filter(LC %in% lc_names) %>%
-    arrange(LC, PA_rank_rev)
-  
-  # store results
-  fixed_effects <- vector("list")
-  pred_list <- vector("list")
-  
-  for(temp_fns in fns){
-    
-    data_temp <- data_clean %>% dplyr::select(all_of(c("LC", temp_fns, "PA_rank_rev")))
+    model_output <- brm(brmsformula(paste(temp_fns, "~ PA_rank_rev")), data = data_temp,
+                        chains = 4, iter = 10000, warmup = 2000)
+  }else{
     model_output <- brm(brmsformula(paste(temp_fns, "~ LC * PA_rank_rev")), data = data_temp,
                         chains = 4, iter = 10000, warmup = 2000)
-    
-    # sink(paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_", temp_fns, ".txt"))
-    # model_output
-    # model_output$fit
-    # hypothesis(model_output, "PA_rank_rev<0")
-    # hypothesis(model_output, "PA_rank_rev>0")
-    # sink()
-    
-    fixed_effects[[temp_fns]] <- vector("list")
-    fixed_effects[[temp_fns]][["fixef"]] <- brms::fixef(model_output)
+  }
+  
+  # sink(paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_", temp_fns, ".txt"))
+  # model_output
+  # model_output$fit
+  # hypothesis(model_output, "PA_rank_rev<0")
+  # hypothesis(model_output, "PA_rank_rev>0")
+  # sink()
+  
+  fixed_effects[[temp_fns]] <- vector("list")
+  fixed_effects[[temp_fns]][["fixef"]] <- brms::fixef(model_output)
+  
+  if(temp_scale == "global"){
+    fixed_effects[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(model_output, var = "PA_rank_rev"))
+    fixed_effects[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(model_output, specs = c("PA_rank_rev")))
+  }else{
     fixed_effects[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(model_output, specs = "LC", var = "PA_rank_rev"))
     fixed_effects[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(model_output, specs = c("PA_rank_rev", "LC")))
-    
-    # Extract estimates and credible intervals for PA_rank_rev
-    pred_list[[temp_fns]] <- data_temp %>%
-      group_by(LC) %>%
-      modelr::data_grid(PA_rank_rev = modelr::seq_range(PA_rank_rev, n = 51)) %>%
-      tidybayes::add_epred_draws(model_output) %>%
-      mutate(scale = temp_scale,
-             fns = temp_fns)
-  
   }
-  
-  pred_list <- do.call(rbind, pred_list)
-  
-  save(pred_list, file=paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, ".RData"))
-  pred_sample <- pred_list %>% group_by(LC) %>% slice_sample(n = 10000)
-  
-  save(pred_sample, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_sample10k.RData"))
-  
-  save(fixed_effects, file=paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, "_summary.RData"))
-  sink(paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, ".txt"))
-  fixed_effects
-  sink()
+  # Extract estimates and credible intervals for PA_rank_rev
+  pred_list[[temp_fns]] <- data_temp %>%
+    group_by(LC) %>%
+    modelr::data_grid(PA_rank_rev = modelr::seq_range(PA_rank_rev, n = 51)) %>%
+    tidybayes::add_epred_draws(model_output) %>%
+    mutate(scale = temp_scale,
+           fns = temp_fns)
+
 }
 
+pred_list <- do.call(rbind, pred_list)
+
+save(pred_list, file=paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, ".RData"))
+pred_sample <- pred_list %>% group_by(LC) %>% slice_sample(n = 10000)
+
+save(pred_sample, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_sample10k.RData"))
+
+save(fixed_effects, file=paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, "_summary.RData"))
+sink(paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, ".txt"))
+fixed_effects
+sink()
+
 # extract emtrends
-for(temp_scale in c("global")){ #, "continental", "regional"
-  load(file=paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, "_summary.RData")) #fixed_effects
-  emtrends <- sapply(fixed_effects,function(x) x[2])
-  for(i in 1:length(emtrends)){
-    emtrends[[i]] <- emtrends[[i]] %>% 
-      mutate("fns" = gsub(".emtrends", "", names(emtrends)[i]),
-             "scale" = temp_scale)
-  }
-  emtrends <- do.call(rbind, emtrends)
-  write_csv(emtrends, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_emtrends.csv"))
+load(file=paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, "_summary.RData")) #fixed_effects
+emtrends <- sapply(fixed_effects,function(x) x[2])
+for(i in 1:length(emtrends)){
+  emtrends[[i]] <- emtrends[[i]] %>% 
+    mutate("fns" = gsub(".emtrends", "", names(emtrends)[i]),
+           "scale" = temp_scale)
 }
+emtrends <- do.call(rbind, emtrends)
+
+if(temp_scale == "global") emtrends <- emtrends %>% mutate(LC = "Dryland", .before = 1) %>% dplyr::select(-PA_rank_rev)
+
+write_csv(emtrends, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_emtrends.csv"))
+

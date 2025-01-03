@@ -86,9 +86,11 @@ nrow(data_glob %>% filter(PA==0)) #285
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Rename land cover types in data ####
-data_glob$LC <- data_glob$Vegetation
-unique(data_glob$LC)
-data_glob[data_glob$LC=="Forest" & !is.na(data_glob$LC), "LC"] <- "Woodland"
+# treat all global data as Drylands 
+data_glob$LC <- "Dryland"
+# data_glob$LC <- data_glob$Vegetation
+# unique(data_glob$LC)
+# data_glob[data_glob$LC=="Forest" & !is.na(data_glob$LC), "LC"] <- "Woodland"
 unique(data_glob$LC)
 
 table(data_glob$LC)
