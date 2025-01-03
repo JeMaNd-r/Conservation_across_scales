@@ -249,7 +249,7 @@ f_check_pairs <- function(data, col_id, col_lc, vars_z){
   print("Number of nonPA sites per PA (col_ID)")
   print(head(count_nonPA))
   
-  rm(temp_PA, temp_nonPA, temp_column, unpaired_pa, pa_noPair, min_mahal, nonpa, pa)
+  rm(temp_PA, temp_nonPA, unpaired_pa, pa_noPair, min_mahal, nonpa, pa)
   
   return(list(count_nonPA, all_nonPA)) #number of nonPA sites per PA (Order_ID)
 }
