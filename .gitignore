@@ -62,3 +62,4 @@ figures/Data_distr_delta1000_global.csv
 *.Rproj
 *.html
 /docs/Appendix_files
+*.bib
