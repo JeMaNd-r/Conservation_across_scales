@@ -61,3 +61,4 @@ figures/Data_distr_delta1000_global.csv
 /figures/seed_random
 *.Rproj
 *.html
+/docs/Appendix_files
