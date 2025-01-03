@@ -1,0 +1,23 @@
+﻿Type of variable,Variable,Alternative dataset ,Drylands dataset (used in Main Text)
+Diversity,Bacterial richness,Number of bacterial zOTUs,Number of bacterial zOTUs
+Diversity,Fungal richness,Number of fungal zOTUs,Number of fungal zOTUs
+Diversity,Arbuscular mycorrhizal fungi richness,Number of arbuscular mycorrhizal fungi zOTUs,Number of arbuscular mycorrhizal fungi zOTUs
+Diversity,Ectomycorrhizal fungi richness,Number of ectomycorrhizal fungi zOTUs,Number of ectomycorrhizal fungi zOTUs
+Diversity,Protist richness,Number of protist zOTUs,Number of protist zOTUs
+Diversity,Nematode richness,Number of nematode zOTUs,Number of nematode zOTUs
+Diversity,Invertebrate richness,Number of invertebrate zOTUs,Number of invertebrate zOTUs
+Diversity,Decomposer richness,Number of fungal zOTUs,Number of fungal zOTUs
+Diversity,Bacterial Shannon index,Shannon index,Shannon index
+Diversity,Fungal Shannon index,Shannon index,Shannon index
+Diversity,Protist Shannon index,Shannon index,Shannon index
+Diversity,Invertebrate Shannon index,Shannon index,Shannon index
+Diversity,Bacterial dissimilarity,Jaccard distance based on presence-absence matrix,Jaccard distance based on presence-absence matrix
+Diversity,Fungal dissimilarity,Jaccard distance based on presence-absence matrix,Jaccard distance based on presence-absence matrix
+Diversity,Protist dissimilarity,Jaccard distance based on presence-absence matrix,Jaccard distance based on presence-absence matrix
+Diversity,Invertebrate dissimilarity,Jaccard distance based on presence-absence matrix,Jaccard distance based on presence-absence matrix
+Function,Soil carbon,Soil organic carbon content,Soil organic carbon content
+Function,Organic matter decomposition,Average of standardized activity of N-Acetylglucosaminidase and soil microbial basal respiration,Average of standardized activity of beta-Glucosidase and Phosphatase enzyme and net potential mineralization rate
+Function,Water regulation,Water holding capacity,[not available]
+Function,Nutrient cycling,"Average of standardized content of ammonium, nitrate and phosphate in soil; root simulator method","Average of standardized content of dissolved organic and inorganic nitrogen, phosphate and total phosphorus in soil"
+Function,Pathogen control,Inverse proportion of soil-borne potential fungal plant pathogens,Inverse proportion of soil-borne potential fungal plant pathogens
+Function,Soil stability,Standardized plant cover (field data),Standardized plant cover (field data)

@@ -1,0 +1,507 @@
+---
+title: "Cons across scales - Appendix"
+format: 
+  html:
+    toc: true
+editor: visual
+bibliography: references.bib
+---
+
+## Appendix
+
+```{r packages, echo=FALSE, warning=FALSE, message=FALSE}
+library(here)
+library(tidyverse)
+library(terra)
+library(ggdist) #to plot distributions (Bayesian)
+library(gridExtra) #to add table in plot
+library(ggrepel) #to add text not overlapping (geom_text_repel)
+library(ggtext) #to add icons as axis labels
+library(ggh4x) # for free axes in facet_grid
+library(corrplot)
+library(magick) # to create plot from multiple pngs
+library(knitr) #for tables in Quarto
+```
+
+```{r load_data, echo=FALSE, warning=FALSE, message=FALSE}
+source(paste0(here::here("src", "00_Parameters.R")))
+source(paste0(here::here("src", "00_Functions.R")))
+
+# define each land cover type
+lc_names_all <- c( "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
+
+# define order of functions
+labels_order <- c(
+  "Decomposition (OM)", "Nutrient cycling", "Pathogen control", "Soil carbon", "Soil stability", "Water regulation",
+  "Bacterial Richness", "Fungal Richness", "Invertebrate Richness", "Protist Richness",
+  "AM fungi Richness", "EM fungi Richness",
+  "Bacterial Shannon", "Fungal Shannon", "Invertebrate Shannon", "Protist Shannon",
+  "Nematode Richness", "Decomposer Richness",
+  "Bacterial Dissimilarity", "Fungal Dissimilarity", "Invertebrate Dissimilarity", "Protist Dissimilarity"
+)
+
+# clean data
+clean_glob <- read_csv(here::here("intermediates", "Data_clean_global.csv"))
+clean_cont <- read_csv(here::here("intermediates", "Data_clean_continental.csv"))
+clean_regi <- read_csv(here::here("intermediates", "Data_clean_regional.csv"))
+```
+
+## Appendix 1: Sampling protocols
+
+```{r table_protocols, echo=FALSE, warning=FALSE, message=FALSE}
+protocols <- read_csv(here::here("docs", "Sampling_protocols.csv"))
+
+knitr::kable(protocols,
+             caption = "Appendix Table 1.1: Description of methodology for the three datasets and variables used in the present study.")
+```
+
+\*Samples from habitat types written in italics were excluded in the analysis because of their low frequency (n\<10) or unsuccessful pairing.
+
+#### References
+
+-   ISO, REF LUCAS
+
+-   ISO 11263:1994
+
+-   USDA−NRCS (2004)
+
+-   Duarte AC, Guerra CA, Cano-Díaz C, Zeiss R, Carvalho-Santos C, Carvalho RP, et al. (2023) Effects of protected areas on soil nematode communities in forests of the North of Portugal. Biodiversity and Conservation(epub ahead of print) doi: 10.1007/s10531-023-02732-6.
+
+-   Fick SE, Hijmans RJ (2017) WorldClim 2: new 1‐km spatial resolution climate surfaces for global land areas. International Journal of Climatology 37: 4302–4315.
+
+-   Guerra CA, Bardgett RD, Caon L, Crowther TW, Delgado-Baquerizo M, Montanarella L, et al. (2021) Tracking, targeting, and conserving soil biodiversity. Science 371: 239–241.
+
+-   Hiederer R (2018) Data Evaluation of LUCAS Soil Component Laboratory Data for Soil Organic Carbon. JRC Technical Reports: 73.
+
+-   Hijmans RJ, Bivand R, Forner K, Ooms J, Pebesma E, Sumner MD (2022) terra: Spatial Data Analysis.
+
+-   Karger DN, Dabaghchian B, Lange S, Thuiller W, Zimmermann E, Graham CH (2020) High resolution climate data for Europe.
+
+-   Orgiazzi A, Ballabio C, Panagos P, Jones A, Fernández‐Ugalde O (2018) LUCAS Soil, the largest expandable soil dataset for Europe: a review. European Journal of Soil Science 69: 140–153.
+
+-   Orgiazzi A, Panagos P, Fernández-Ugalde O, Wojda P, Labouyrie M, Ballabio C, et al. (2022) LUCAS Soil Biodiversity and LUCAS Soil Pesticides, new tools for research and policy development. European Journal of Soil Science 73: e13299.
+
+-   Zeiss R, Eisenhauer N, Orgiazzi A, Rillig M, Buscot F, Jones A, et al. (2022) Challenges of and opportunities for protecting European soil biodiversity. Conservation Biology: cobi.13930.
+
+## Appendix 2: Supplementary figures and tables
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 2.1
+#| fig-cap: "Appendix Figure 2.1: Workflow to assess the effect of conservation measures on soil biodiversity and functioning across three spatial scales. Analysis steps of estimation of effect size (1) and random-slope models (2). Results for the random-slope models are given in Appendix 3. Icons: PowerPoint."
+
+knitr::include_graphics(here::here("docs", "Fig_1_Workflow_only.png"))
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 2.2
+#| fig-cap: "Appendix Figure 2.2: Mahalanobis distance between protected and unprotected sites without (bottom) and with proper pairing (top) of environmentally similar sites (i.e. pairing based on Mahalanobis threshold)."
+
+knitr::include_graphics(here::here("figures", "Data_boxplot_mahal.distance_all_allScales.png"))
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 2.3
+#| fig-cap: "Appendix Figure 2.3: Correlation of the Mahalanobis distance between paired protected and unprotected sites and individual difference in their soil biodiversity and functioning attributes (y-axis) averaged across habitats (x-axis) and spatial scales (columns). Habitat types are from left to right: cropland, grassland, shrubland, woodland. Correlation was calculated as Spearman correlation coefficient using cor.test() function. Negative correlation coefficients show the correlation between the always non-negative Mahalanobis distance between paired sites and lower attributes in protected sites than in unprotected ones, that is the larger the Mahalanobis distance, the lower the soil biodiversity and functioning attributes in protected sites compared with unprotected sites. Positive correlation coefficients show vice versa higher attributes in protected sites with increasing Mahalanobis distance. X indicates p-value of correlation test ≥ 0.05; p-values for the correlation test are approximate because of the natural presence of tied values in the data, which result from the randomization process. Boxes represent significant effects of protection status on soil biodiversity and functioning attributes as shown in Figure 2 (effect size analysis). Underlying data can be found in Appendix Table 2.1 (correlation coefficients and p-values) and Appendix Table 2.2 (effect sizes). Icons: “Grass”, “Globe” and “Flag” created by Freepik, “Europe” modified after icon by amoghdesign, “Forest” by Vitaly Gorbachev, “Bush” by Buandesign, and “Agriculture” by Vectors Tank - Flaticon. Legends of the R plot were modified in Inkscape v1.0.1."
+
+knitr::include_graphics(here::here("figures", "Correlation_diff_mahal_allScales.png"))
+```
+
+```{r table_corr_mahal, echo=FALSE, warning=FALSE, message=FALSE}
+corr_mahal <- read_csv(here::here("figures", "Correlation_diff_mahal_allScales.csv"))
+
+knitr::kable(corr_mahal,
+             caption = "Appendix Table 2.1: Correlation of the Mahalanobis distance between paired protected and unprotected sites and individual difference in their soil biodiversity and functioning attributes averaged across habitats and spatial scales. Correlation was calculated as Spearman correlation coefficient using cor.test() function. Negative correlation coefficients show the correlation between the always non-negative Mahalanobis distance between paired sites and lower attributes in protected sites than in unprotected ones, that is the larger the Mahalanobis distance, the lower the soil biodiversity and functioning attributes in protected sites compared with unprotected sites. Positive correlation coefficients show vice versa higher attributes in protected sites with increasing Mahalanobis distance. Asterisks highlight significant correlations, that is p-values ≤ 0.05; p-values for the correlation test are approximate because of the natural presence of tied values in the data, which result from the randomization process. ns - not significant.")
+```
+
+```{r table_d-values, echo=FALSE, warning=FALSE, message=FALSE}
+d_value <- read_csv(here::here("figures", "Results_d-value_meanCI_allScales_fns.csv"))
+
+d_value <- d_value %>%
+  mutate(Scale = ifelse(Scale == "glob", "global",
+                        ifelse(Scale == "cont", "continental",
+                               ifelse(Scale == "regi", "regional", Scale))))
+
+knitr::kable(d_value,
+             caption = "Appendix Table 2.2: Effect size estimates for soil biodiversity and functioning attributes averaged across 1000 randomizations for each of the three spatial scales and four habitat types. Effect size magnitudes were calculated as Cohen’s D. Statistically not significant effect sizes are defined as 95% confidence intervals (CI) crossing 0. Number of samples was 5 for each habitat type and attribute.")
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 2.4
+#| fig-cap: "Appendix Figure 2.4: Grouped effect sizes for soil biodiversity and functionality attributes of 1000 randomizations across three land-use types (x-axis) and spatial scales (y-axis). Colors represent habitat types. Points represent median effect size, bars represent 66% (thick) and 95% confidence intervals (thin). Effect size magnitudes are regarded as marginal (≤0.2), small (>0.2), medium (>0.5) and large (>0.8) indicated by horizontal gray lines. Statistically not significant effect sizes are defined as 95% confidence intervals (CI) crossing 0. Number of samples was 10 for each land cover type and attribute for each spatial scale. Icons: “Globe” and  “Flag” created by Freepik, “Europe” modified after icon by amoghdesign."
+
+knitr::include_graphics(here::here("figures", "Results_d-value_medianCI_allScales_grouped.png"))
+```
+
+```{r table_d-values_grouped, echo=FALSE, warning=FALSE, message=FALSE}
+d_value_grouped <- read_csv(here::here("figures", "Results_d-value_medianCI_allScales_grouped.csv"))
+
+knitr::kable(d_value_grouped,
+             col.names = c("Grouped attribute", "Spatial scale", "Habitat type", "Median effect", "95% CI"),
+             caption = "Appendix Table 2.3: Grouped effect sizes for soil biodiversity and functionality attributes of 1000 randomizations across three land-use types and spatial scales. Statistically not significant effect sizes are defined as 95% confidence intervals (CI) crossing 0. Number of samples was 10 for each land cover type and attribute for each spatial scale.")
+
+```
+
+## Appendix 3: Effect of protection types
+
+To account for differences in protected area types, we performed random-intercept and random-slope models for each habitat type and soil biodiversity and functioning attribute. Protection status was considered as a factor (random intercept) and continuous variable (random slope) respectively. Protected areas are classified into one of seven IUCN categories [@unep-wcmc2021; @dudley2008]. The Protected Area dataset contains three additional categories (not reported, not assigned and not applicable) that were included. Sampling sites outside of any protected area were classified as “unprotected”. It is important to note that sample size for some protection types is rather low and results for the random intercept and random slope model are thus less meaningful than effect size estimates for protected-unprotected pairs. For both random intercept and random slope models, we run 10,000 iterations, including 2,000 warm-up iterations, and 4 chains with the R package rstan [@standevelopmentteam2024]. Priors of soil biodiversity and functioning attributes were defined as normal distribution for both protected and unprotected sites with normally distributed mean and standard deviation (both with a mean of 0 and standard deviation of 10).
+
+In comparison to the effect size estimation, we did not build pairs of protected and unprotected sites but rather included all data available (except for bacteria, see Appendix 4). Final datasets included `{r} nrow(clean_glob)` sites at global scale (protected=`{r} table(clean_glob$PA)[2]` \| unprotected=`{r} table(clean_glob$PA)[1]`), `{r} nrow(clean_cont)` sites at continental scale (`{r} table(clean_cont$PA)[2]` \| `{r} table(clean_cont$PA)[1]`), and `{r} nrow(clean_regi)` sites at regional scale (`{r} table(clean_regi$PA)[2]` \| `{r} table(clean_regi$PA)[1]`). It is important to note that the inclusion of more sampling sites in the random-intercept and random-slope models compared to the effect size calculations lead to a broader spatial distribution of points, especially at continental scale (Appendix Figure 3.1).
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 3.1
+#| fig-cap: "Appendix Figure 3.1: Locations of sampling sites investigates in the effect size estimation (top), and random intercept and random slope model (bottom). Numbers in the boxes represent the number of sites per spatial scale and protection status respectively. Icons: “Grass”, “Globe” and “Flag” created by Freepik, “Europe” modified after icon by amoghdesign, “Forest” by Vitaly Gorbachev, “Bush” by Buandesign, and “Agriculture” by Vectors Tank - Flaticon."
+
+knitr::include_graphics(here::here("docs", "Appendix_maps.png"))
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+n_significant <- 
+  sum(str_detect(d_value$Dryland, "[*]"), na.rm=TRUE)+
+  sum(str_detect(d_value$Cropland, "[*]"), na.rm=TRUE)+
+  sum(str_detect(d_value$Grassland, "[*]"), na.rm=TRUE)+
+  sum(str_detect(d_value$Shrubland, "[*]"), na.rm=TRUE)+
+  sum(str_detect(d_value$Woodland, "[*]"), na.rm=TRUE)
+
+n_total <- 
+  sum(!is.na(d_value$Dryland))+
+  sum(!is.na(d_value$Cropland))+
+  sum(!is.na(d_value$Grassland))+
+  sum(!is.na(d_value$Shrubland))+
+  sum(!is.na(d_value$Woodland))
+
+n_sign_global <- 
+  sum(str_detect(d_value %>% filter(Scale == "global") %>% pull(Dryland), "[*]"), na.rm=TRUE)
+```
+
+The analysis of protected area types revealed mixed patterns, but attributes of soil biodiversity and functioning were mostly similar across protection levels and did not differ in or across protected and unprotected sites (e.g. 95% CI of intercept and slope estimates largely overlapping with each other and 0 respectively). In the random-slope models, we found a similar number of tested trends to be significant as we found for the effect size estimation (`{r} n_significant` out of `{r} n_total`; Appendix Figure 3.2), but biodiversity and functioning attributes or habitat types or scales slightly differed for them and did not coincide. Random slopes were significant mostly at global scale (n = `{r} n_sign_global`), for protected woodlands (**12**) and for richness (**14**), but only once for their combination (Figure 3, Appendix Table 3.1 and 3.2), namely a negative effect on bacterial richness in global woodlands. Most global effects were in shrublands (9), the only significant continental effects in woodlands (5) with none of them on functions, and regional mostly in both croplands and grasslands (4 each).
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 3.2
+#| fig-cap: "Appendix Figure 3.2: Slope estimates from effect of protection level on soil biodiversity and functioning attributes across four habitat types (x-axis) and spatial scales (y-axis) in comparison to effect size estimates (transparent layer/ shadows). The four habitat types on the x-axis are cropland, grassland, shrubland and woodland. Spatial scales on the y-axis are global, continental and regional. Colors represent direction of estimated median marginal trends, circle size represents values of estimated median marginal trends. Black crosses indicate missing data. Statistically not significant effect sizes (ns, unfilled circles) are defined as high posterior density interval crossing 0. Icons: “Grass”, “Globe” and “Flag” created by Freepik, “Europe” modified after icon by amoghdesign, “Forest” by Vitaly Gorbachev, “Bush” by Buandesign, and “Agriculture” by Vectors Tank - Flaticon. "
+
+knitr::include_graphics(here::here("docs", "Appendix_bayesian_trends.png"))
+
+```
+
+### Detailed description of differences to effect size estimates
+
+Overall, random-slope model and effect size estimates revealed very similar results for soil biodiversity and functioning attributes. In contrast to the effect sizes, we found more significant trends for biodiversity (27 out of 144 = 18.8%) than for functioning attributes (6 out of 44 = 13.6%). We also found a significant effect of protection level on soil carbon, namely a medium and negative trend in global woodlands, that was not present in the effect size estimation.
+
+Organism diversity showed no consistent trends but the ones that we also found in the effect size analysis were mostly consistent with them. Bacterial richness trends were complementary to effect size estimates, as we found positive trends in global shrublands and continental woodlands, but a negative slope in global woodlands. Bacterial Shannon index showed similar and dissimilarity exactly opposing patterns, but all smaller than for richness. In comparison to the effect size estimates, we only found one of the 4 significant trends for bacteria at regional scale, namely a large and negative trend of bacterial Shannon index in grasslands. Only in the random slope model, we found fungal communities to be more diverse and similar in global protected shrublands, and less diverse and similar in global protected grasslands. Dissimilarity of fungi also showed negative trends in regional croplands and continental woodlands that were both not found in the effects size analysis. Mean effect size for fungal Shannon index and richness were negative in global grasslands and woodlands respectively, but we found a positive slope for fungal Shannon index in global shrublands. Looking at arbuscular and ectomycorrhizal richness individually, trends for AM and EM fungi richness slightly differed in spatial scale or habitat type from effect size estimates, but both showed one consistent each and no opposing patterns. Invertebrate diversity showed no significant trends along the protection levels, except for a negative one in regional croplands that was also found for effect size. Similarly, we found the exact same pattern for nematode richness trends in effect size and slope estimates. Protists showed only one negative trend in global grasslands that was also found in effect sizes, and an additional positive one in continental woodlands. The remaining significant effects on protists found in effect size estimates could not be detected in the random slope model. Patterns for decomposer richness were similarly negative for global grasslands, but we found a positive trend in global shrublands instead of continental croplands.
+
+Results for the predicted intercepts and slopes per spatial scale and habitat type can be found in Appendix Figure 3.3 to 3.8. It is again important to note that sample size for some protection types is rather low and results especially for the random-intercept but also random-slope model are less meaningful than effect size estimates for protected-unprotected pairs.
+
+```{r table_slopes_grouped, echo=FALSE, warning=FALSE, message=FALSE}
+slope_grouped <- read_csv(here::here("figures", "Results_slope_BayesianTrends_allScales_grouped.csv"))
+
+knitr::kable(slope_grouped,
+             col.names = c("Variable", "Scale", "Habitat", "Slope", "SE", "95% CI"),
+             caption = "Appendix Table 3.1: Averaged slope estimates from effect of protection level on soil biodiversity and functioning attributes. Averaged values represent mean, SE and 95% CI of median marginal trends and have to be interpreted with caution as these are averaged after(!) modeling and calculating the estimated marginal trends of each individual soil biodiversity and functioning attribute.")
+
+```
+
+```{r table_slopes, echo=FALSE, warning=FALSE, message=FALSE}
+slope <- read_csv(here::here("figures", "Results_slope_BayesianTrends_allScales.csv"))
+
+slope <- slope %>%
+  dplyr::select(Group, Variable, Scale, Cropland, Grassland, Shrubland, Woodland)
+
+knitr::kable(slope,
+             caption = "Appendix Table 3.2: Slope estimates from effect of protection level on soil biodiversity and functioning attributes. Estimated median marginal trends [high posterior density interval] significance. NA - missing data.")
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 3.3
+#| fig-cap: "Appendix Figure 3.3: Global comparison of soil biodiversity and functioning attributes in differently protected (Ia-V) and unprotected grasslands, shrublands and woodlands. Results from the random intercept model. Bars represent 66% and 95% quantile (percentage) intervals, vertical bars indicate medians of the estimated group means. Dark gray rectangles represent unprotected sites, light gray areas represent sites that are protected but cannot be grouped into one of the 7 IUCN protection categories (Ia, Ib, II, III, IV, V, VI). Number of sites is given in the last panel (bottom right)."
+
+knitr::include_graphics(here::here("figures", "Results_intercept_parsBayesian_global.png"))
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 3.4
+#| fig-cap: "Appendix Figure 3.4: Global comparison of soil biodiversity and functioning attributes across the protection level gradient. Results from the random slope model. Gray shades represent highest posterior density intervals (HPDI) with probability being 50%, 80% and 95%, respectively. Colored lines indicate medians of the estimated group means for each habitat type. Protection level 1 to 10 represent IUCN categories \"Not Applicable\",  \"Not Assigned\", \"Not Reported\", VI, V, IV, III, II, Ib and Ia. Soil biodiversity and functioning attributes (y-axis) were not scaled."
+
+knitr::include_graphics(here::here("figures", "Results_slope_parsBayesian_global.png"))
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 3.5
+#| fig-cap: "Appendix Figure 3.5: Continental comparison of soil biodiversity and functioning attributes in differently protected (Ia-V) and unprotected cropland, grasslands, shrublands and woodlands. Results from the random intercept model. Bars represent 66% and 95% quantile (percentage) intervals, vertical bars indicate medians of the estimated group means. Dark gray rectangles represent unprotected sites, light gray areas represent sites that are protected but cannot be grouped into one of the 7 IUCN protection categories (Ia, Ib, II, III, IV, V, VI). Number of sites is given in the last panel (bottom right). Note: Our dataset at continental scale included 1 protected sampling site only. We therefore excluded shrublands in all analysis."
+
+knitr::include_graphics(here::here("figures", "Results_intercept_parsBayesian_continental.png"))
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 3.6
+#| fig-cap: "Appendix Figure 3.6: Continental comparison of soil biodiversity and functioning attributes across the protection level gradient. Results from the random slope model. Gray shades represent highest posterior density intervals (HPDI) with probability being 50%, 80% and 95%, respectively. Colored lines indicate medians of the estimated group means for each habitat type. Protection level 1 to 10 represent IUCN categories \"Not Applicable\",  \"Not Assigned\", \"Not Reported\", VI, V, IV, III, II, Ib and Ia. Soil biodiversity and functioning attributes (y-axis) were not scaled. "
+
+knitr::include_graphics(here::here("figures", "Results_slope_parsBayesian_continental.png"))
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 3.7
+#| fig-cap: "Appendix Figure 3.7: Regional comparison of soil biodiversity and functioning attributes in differently protected (Ia-V) and unprotected cropland, grasslands and woodlands. Results from the  random-intercept model. Bars represent 66% and 95% quantile (percentage) intervals, vertical bars indicate medians of the estimated group means. Dark gray rectangles represent unprotected sites, light gray areas represent sites that are protected but cannot be grouped into one of the 7 IUCN protection categories (Ia, Ib, II, III, IV, V, VI). Number of sites is given in the last panel (bottom right)."
+
+knitr::include_graphics(here::here("figures", "Results_intercept_parsBayesian_regional.png"))
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 3.8
+#| fig-cap: "Appendix Figure 3.8: Regional comparison of soil biodiversity and functioning attributes across the protection level gradient. Results from the random-slope model. Gray shades represent highest posterior density intervals (HPDI) with probability being 50%, 80% and 95%, respectively. Colored lines indicate medians of the estimated group means for each habitat type. Protection level 1 to 10 represent IUCN categories \"Not Applicable\",  \"Not Assigned\", \"Not Reported\", VI, V, IV, III, II, Ib and Ia. Soil biodiversity and functioning attributes (y-axis) were not scaled."
+
+knitr::include_graphics(here::here("figures", "Results_slope_parsBayesian_regional.png"))
+
+```
+
+## Appendix 4: Sensitivity analysis for global bacterial data
+
+At global scale, the dataset from **XXX** contained 330 sites with complete bacteria diversity data (hereafter bacteria-complete) but only 248 sites with complete biodiversity data of all taxonomic groups investigated (hereafter all-complete). We therefore decided to run two analyses for bacteria: one with all 330 sites and one with only 248 sites. We did not keep the sites with missing data in the complete dataset (248 sites), as we wanted to simplify the coding steps by first subsetting the data (i.e. complete rows only) and then building the pairs for further analysis. This way, we were also comparing the same sites for different biodiversity and functioning attributes measures instead of having results from different pairs for each measure.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 4.1
+#| fig-cap: "Appendix Figure 4.1: Locations of sampling sites investigated in the effect size estimation (top), and random intercept and random slope model (bottom) compared between the all-complete (left) and bacteria-complete dataset (right). Numbers in the boxes represent the number of sites per spatial scale and protection status respectively. Icons: “Globe” created by Freepik - Flaticon."
+
+knitr::include_graphics(here::here("docs", "Appendix_maps_globalBacteria.png"))
+
+```
+
+Similarly to the main analysis, we excluded sites with pairing possibilities below 10 at global scale. We limited the number of sites that should be paired to the minimum number of protected sites from the all-complete dataset for better comparability, that is 39 at global scale. Final sampling sites considered in the effect size analysis were 194 for the bacteria-complete dataset (Grassland protected=15 \| unprotected=39, Shrubland 21 \| 59, Woodland 10 \| 48) and 137 for the all-complete dataset (Grassland 14 \| 28, Shrubland 16 \| 52, Woodland 8 \| 19). In the random-intercept and random-slope model, final sampling sites considered were 330 for the bacteria-complete dataset (Grassland protected=20 \| unprotected=80, Shrubland 23 \| 131, Woodland 10 \| 66) and 248 for the all-complete dataset (Grassland protected=17 \| unprotected=48, Shrubland 17 \| 97, Woodland 8 \| 61). Remarkable changes in the geographical distribution of sampling sites used in the effect size analysis are more shrublands in North America and Central Chile, added grasslands around the Mediterranean Sea that are missing in the all-complete dataset, and added woodlands in Australia (Appendix Figure 4.1). Regarding protected area categories, the bacteria-complete dataset contains sites in category Ib (2 shrublands) and VI (1 grassland and 1 shrubland) as well as 1 woodland site in category Ia that were not present in the all-complete dataset. Results of the random slope model have therefore to be interpreted with caution, as trends may result from the addition of levels in the independent variable.
+
+### Effect sizes
+
+During randomization, sites were more repeatedly used in the all-complete rather than in the bacteria-complete dataset, which can partly be explained by the lower number of total sites investigated of the all-complete dataset. On average, each protected and unprotected site of the bacteria-complete dataset was used in 326 (SD=103, min=217, max=518) and 103 (SD=72, min=1, max=269) of the 1000 randomizations, respectively. In comparison, for the all-complete dataset, each protected and unprotected site was on average used in 536 (SD=279, min=283, max=1000) and 161 (SD=115, min=1, max=401) randomizations, respectively.
+
+```{r table_d-values_bact, echo=FALSE, warning=FALSE, message=FALSE}
+# load data
+d_value_bacteria <- read_csv(here::here("results", "sensitivity_globalBacteria", "Results_d-value_summary_global.csv"))
+
+d_value_global <- read_csv(here::here("figures", "Results_d-value_summary_global.csv"))
+
+# merge data
+d_value_bacteria <- d_value_bacteria %>%
+  filter(str_detect(Label, "Bact")) %>%
+  mutate("Dataset" = "bacteria-complete") %>%
+  full_join(d_value_global %>% 
+              filter(str_detect(Label, "Bact"))%>%
+              mutate("Dataset" = "all-complete")) %>%
+  dplyr::select(-1, -fns, -Group_function, -Organism) %>%
+  dplyr::select(Dataset, everything())
+
+rm(d_value_global)
+
+# table
+knitr::kable(d_value_bacteria,
+             digits = 2,
+             col.names = c("Dataset", "Habitat", "Variable", "Mean", "SD", "Median", "2.5% CI", "17% CI", "83% CI", "97.2% CI"),
+             caption = "Appendix Table 4.1: Effect size estimates for bacterial diversity and functioning attributes of 1000 randomizations across three habitat types. Effect size magnitudes were calculated as Cohen’s D. Statistically not significant effect sizes are defined as 95% confidence intervals (CI) crossing 0. Number of samples was 5 for each habitat type and attribute.")
+
+```
+
+Consistent with the patterns from the all-complete dataset, we found a negative effect of protection on bacterial diversity in woodlands, while dissimilarity was higher there (Appendix Table 4.1). Shannon index and dissimilarity of bacteria were significantly lower and higher in protected woodlands, respectively. In addition, using the bacteria-complete dataset, we found lower richness in protected woodlands, but higher richness and Shannon index in protected grasslands. Higher richness and Shannon index in protected areas are exactly opposite to the pattern we found at regional scale for croplands and grasslands, indicating that effects are not consistent across scales.
+
+### Random-intercept model
+
+Random-intercept models did not differ for the bacteria-complete and all-complete dataset regarding the protected area categories that are present in both (Appendix Table 4.2; Appendix Figure 4.2). In addition to the results of the all-complete dataset described in the main text and Appendix 2-3, we found similarly low bacterial richness and Shannon index as well as similarly high dissimilarity in woodlands of category Ia comapred to shrublands of the same category. Protected sites of IUCN category Ib (shrubland) and VI (grassland and shrubland) showed high and low bacterial richness, respectively. Shannon index and dissimilarity in these sites were similar to the sites assigned to other IUCN categories.
+
+###Random-slope model
+
+Using the bacteria-complete dataset resulted in similar patterns for all slope estimates of bacterial diversity (Appendix Figure 4.2; Appendix Table 4.3). We found significant slopes for diversity in woodlands (negative) and shrublands (positive) and the opposite for dissimilarity with the all-complete dataset. With the bacteria-complete dataset, we found the same pattern for woodlands, but we did not find the significant estimates for shrublands, except for a negative slope for dissimilarity.
+
+```{r table_intercepts_bact, echo=FALSE, warning=FALSE, message=FALSE}
+intercepts_bacteria <- read_csv(here::here("results", "sensitivity_globalBacteria", "Results_intercept_parsBayesian_summary_global.csv"))
+
+intercepts_global <- read_csv(here::here("figures", "Results_intercept_parsBayesian_summary_global.csv"))
+
+# get labels
+fns_labels <- read_csv(here::here("data_raw", "LABELS_functions.csv"))
+
+# merge data
+intercepts_bacteria <- intercepts_bacteria %>%
+  filter(str_detect(fns, "Bac")) %>%
+  mutate("Dataset" = "bacteria-complete") %>%
+  full_join(intercepts_global %>% 
+              filter(str_detect(fns, "Bac"))%>%
+              mutate("Dataset" = "all-complete")) %>%
+  full_join(fns_labels %>% dplyr::select(Function, Label), by = c("fns" = "Function")) %>%
+  dplyr::select(-fns) %>%
+  dplyr::select(Dataset, everything())
+
+rm(intercepts_global)
+
+knitr::kable(intercepts_bacteria,
+             digits = 2,
+             col.names = c("Dataset", "Habitat", "Variable", "Mean", "Median", "2.5% CI", "17% CI", "83% CI", "97.2% CI"),
+             caption = "Appendix Table 4.2: Random-intercept model estimates for bacterial diversity and functioning attributes of 1000 randomizations summarized across the three habitat types and variables.")
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 4.2
+#| fig-cap: "Appendix Figure 4.2: Global comparison of soil biodiversity and functioning attributes in differently protected (Ia-VI) and unprotected grasslands, shrublands and woodlands. Results for the all-complete (left) and bacteria-complete dataset (right) from the random-intercept (left panel, pointrange plot) and random-slope model (right panel, line plot). Pointrange plots: Results from the random-intercept model. Bars represent 66% and 95% quantile (percentage) intervals, vertical bars indicate medians of the estimated group means. Dark gray rectangles represent unprotected sites, light gray areas represent sites that are protected but cannot be grouped into one of the 7 IUCN protection categories (Ia, Ib, II, III, IV, V, VI). Line plots: Results from the random-slope model. Gray shades represent highest posterior density intervals (HPDI) with probability being 50%, 80% and 95%, respectively. Colored lines indicate medians of the estimated group means for each habitat type. Protection level 1 to 10 represent IUCN categories \"Not Applicable\",  \"Not Assigned\", \"Not Reported\", VI, V, IV, III, II, Ib and Ia. Soil biodiversity and functioning attributes (y-axis) were not scaled."
+
+knitr::include_graphics(here::here("docs", "Appendix_bayesian_globalBacteria.png"))
+
+```
+
+```{r table_slopes_bact, echo=FALSE, warning=FALSE, message=FALSE}
+slope_bacteria <- read_csv(here::here("results", "sensitivity_globalBacteria", "Results_slope_BayesianTrends_allScales.csv"))
+
+slope_global <- read_csv(here::here("figures", "Results_slope_BayesianTrends_allScales.csv"))
+
+# merge data
+slope_bacteria <- slope_bacteria %>%
+  filter(str_detect(Variable, "Bact"),
+         Scale == "glob") %>%
+  mutate("Dataset" = "bacteria-complete") %>%
+  full_join(slope_global %>% 
+              filter(str_detect(Variable, "Bact"),
+         Scale == "glob")%>%
+              mutate("Dataset" = "all-complete")) %>%
+  dplyr::select(-Group) %>%
+  dplyr::select(Dataset, Variable, Dryland)
+
+rm(slope_global)
+
+knitr::kable(slope_bacteria,
+             digits = 2,
+             caption = "Appendix Table 4.3: Slope estimates from effect of protection level on bacterial diversity and functioning attributes. Slope estimates were calculated as estimated marginal trends of individual estimates, that is different functions or organism groups respectively; values give medians, brackets contain high posterior density intervals. Values in bold highlight significant estimates, that is high posterior density intervals that don’t cross 0. Values in italics highlight significant estimates that were not found in the other dataset.")
+
+```
+
+## Appendix 5: Sensitivity analysis for alternative global dataset
+
+At global scale, we retrieved data from **XXX**. To our knowledge, this is the best available dataset at time that covers one type of ecosystem very well to compare soil biodiversity globally. The limitation to one biome type, namely drylands, allows for meaningful comparisons of similar ecosystems.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, }
+data_glob_other <- read_csv(here::here("results", "sensitivity_globalAlternativeDataset", "Data_clean_global.csv"))
+```
+
+We additionally performed our analysis with another dataset (hereafter “alternative dataset”) that covered all ecosystems, not only drylands, from Zhang et al. [-@zhang2023]. The dataset includes `{r} nrow(data_glob_other)` locations collected across all continents and biomes covering polar regions, deserts, tropical and temperate ecosystems. This dataset brings together a combination of site-level data previously published in Maestre et al. [-@maestre2022], Delgado-Baquerizo et al. [-@delgado-baquerizo2019; -@delgado-baquerito2020] and Guerra et al. [-@guerra2022] and contains an additional soil functioning estimate, namely water regulation service. Even though this dataset covers very diverse habitats worldwide that are not necessarily comparable (which is why we decided to focus in the main text on the results from the dryland dataset only), we report the results from analyzing this comprehensive dataset here. Sequence data were processed the same way as all other datasets. Soil biodiversity and functioning attributes and variables to account for environmental similarity of pairs were selected to align as much as possible with the variables selected in the drylands dataset (Appendix Table 5.1 and 5.2).
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 5.1
+#| fig-cap: "Appendix Figure 5.1: Sampling locations of the alternative global dataset. "
+
+knitr::include_graphics(here::here("results", "sensitivity_globalAlternativeDataset", "Data_locations_globalAlternative.png"))
+
+```
+
+Similarly to the main analysis, we excluded sites with pairing possibilities below 10 at global scale. We limited the number of sites that should be paired to the minimum number of protected sites from the all-complete dataset for better comparability, that is 39 at global scale. Final sampling sites considered in the effect size analysis were **245** for the alternative dataset (Grassland protected=19 \| unprotected=50, Shrubland 17 \| 52, Woodland 27 \| 80) and 137 for the drylands dataset (Grassland protected=14 \| unprotected=28, Shrubland 16 \| 52, Woodland 8 \| 19). In the random-intercept and random-slope model, final sampling sites considered were 374 for the alternative dataset (Grassland protected=29 \| unprotected=67, Shrubland 20\| 120, Woodland 31 \| 107) and 248 for the drylands dataset (Grassland protected=17 \| unprotected=48, Shrubland 17 \| 97, Woodland 8 \| 61). Sampling locations of the alternative dataset cover a larger spatial range across both latitude and longitude than the drylands dataset (Appendix Figure 5.1); this can be explained by the distribution of drylands worldwide. Remarkable changes in the geographical distribution of sampling sites used in the effect size analysis are more woodlands in Europe, Eastern Asia and Australia, and in the US.
+
+```{r table_protocols_globOther, echo=FALSE, warning=FALSE, message=FALSE}
+protocols_glob_other <- read_csv(here::here("docs", "Sampling_protocols_globalAlternativeDataset.csv"))
+
+knitr::kable(protocols_glob_other,
+             caption = "Appendix Table 5.1: Soil biodiversity and functioning attributes measured at global scale in two different datasets.")
+
+```
+
+| Variable | Alternative dataset | Drylands dataset (used in Main Text) |
+|------------------------|------------------------|------------------------|
+| Geographic location | Latitude, Longitude | Latitude, Longitude |
+| Habitat type | Grassland, Woodland, Shrubland, Moss heath\* | Grassland, Woodland, Shrubland |
+| Elevation | WorldClim v 2.1 | WorldClim v 2.1 |
+| Precipitation | Annual precipitation; data: CHELSA v 2.1 | Annual precipitation; data: CHELSA v 2.1 |
+| Temperature | Annual mean temperature; data: CHELSA v 2.1 | Annual mean temperature; data: CHELSA v 2.1 |
+| Soil pH | Soil pH of dried samples in water | Soil pH of dried samples in water |
+| Soil salinity | Electrical conductivity of dried samples | Electrical conductivity of dried samples |
+| Soil texture | Clay+silt content | Soil fine texture |
+
+: Appendix Table 5.2: Environmental variables used to guarantee environmental similarity at global scale in two different datasets.
+
+\*Samples from these habitat types were excluded in the analysis because of their low frequency (n\<10) or unsuccessful pairing.
+
+Regarding protected area categories, the alternative dataset contains sites in category Ib (1 woodland) and III (1 grassland) that were not present in the drylands dataset. Furthermore, there are additional sites in protected woodlands of category Ia (n=4) and II (11); in these categories, woodlands were not present in the drylands dataset. Results of the random-slope model have to be interpreted with caution, as trends may result from the addition of levels in the independent variable.
+
+### Effect sizes
+
+Similar to the analysis of the drylands dataset, we found that for most combinations of biodiversity and functional attributes, nature conservation areas play an insignificant role in protecting our soils (Appendix Figure 5.2). Only 5 out of the 63 tested effects of protection status on soil biodiversity and functioning attributes at global scale were significant; all of them positive, large (mean effect size ≥ 0.5) and found in shrublands. The insignificant role of nature conservation areas is confirmed by findings of the random-intercept and -slope models, where we found only few significant trends along the protection level gradient (see below).
+
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 5.2
+#| layout: [[1,1], [1]]
+#| fig-cap: "Appendix Figure 5.2: Effect size estimates for soil biodiversity and functioning attributes of 1000 randomizations across three habitat types (columns). Dots represent median effect size across 1000 randomizations, large and small bars show 66% and 95% confidence intervals, respectively. Effect size magnitudes were calculated as Cohen’s D and are regarded as marginal (≤0.2), small (>0.2), medium (>0.5) and large (>0.8) indicated by vertical lines. Statistically not significant effect sizes are defined as 95% confidence intervals (CI) crossing 0. Number of samples was 5 for each habitat type and attribute."
+
+knitr::include_graphics(here::here("figures", "Results_d-value_medianCI_global.png"))
+
+knitr::include_graphics(here::here("results", "sensitivity_globalAlternativeDataset", "Results_d-value_global.png"))
+
+```
+
+The alternative dataset showed even fewer significant effects of protection status on soil biodiversity and functioning attributes. This can also be seen from the grouped effect sizes, that were all not significant (Appendix Table 5.3). We did not find significant individual effects in grasslands or woodlands but instead in shrublands and for biodiversity attributes only (Appendix Table 5.4). We did not find the negative effects on soil functioning, namely on decomposition in global grasslands, pathogen control in woodlands, and soil stability in grasslands. With the alternative dataset, we were able to analyze an additional soil functioning estimate: water regulation service; however, we did not find a significant effect. Therefore, none of the investigated functioning attributes was significantly affected by protection status. For soil biodiversity attributes, we also found fewer significant effects than with the drylands dataset. We did not find an effect on protist, arbuscular or ectomycorrhizal fungi richness, nor on bacterial, protist and invertebrate Shannon index, and bacterial dissimilarity. Instead, we found additional positive effects on fungal richness and Shannon index, AM fungal richness, decomposer and invertebrate richness in shrublands that we did not find for the drylands dataset.
+
+```{r table_d_value_grouped_globOther, echo=FALSE, warning=FALSE, message=FALSE}
+d_value_grouped_glob_other <- read_csv(here::here("results", "sensitivity_globalAlternativeDataset", "Results_d-value_medianCI_allScales_grouped.csv")) 
+
+d_value_grouped_glob_other <- d_value_glob_other %>%
+  filter(scale == "global") %>%
+  dplyr::select(-scale)
+
+knitr::kable(d_value_grouped_glob_other,
+             digits = 2,
+             col.names = c("Variable", "Habitat", "Median effect size", "95% CI"),
+             caption = "Appendix Table 5.3: Effect size estimates for grouped soil diversity and functioning attributes of 1000 randomizations across three habitat types for the alternative global dataset. Effect size magnitudes were calculated as Cohen’s D. Statistically not significant effect sizes are defined as 95% confidence intervals (CI) crossing 0. Number of samples was 5 for each habitat type and attribute.")
+```
+
+```{r table_d_value_globOther, echo=FALSE, warning=FALSE, message=FALSE}
+d_value_glob_other <- read_csv(here::here("results", "sensitivity_globalAlternativeDataset", "Results_d-value_summary_global.csv")) 
+
+d_value_glob_other <- d_value_glob_other %>%
+  dplyr::select(lc, Label, effect_mean:effect_ci_97.5)
+
+knitr::kable(d_value_glob_other,
+             digits = 3,
+             col.names = c("Habitat", "Variable", "Mean", "SD", "Median", "2.5% CI", "17% CI", "83% CI", "97.5% CI"),
+             caption = "Appendix Table 5.4: Effect size estimates for bacterial diversity and functioning attributes of 1000 randomizations across three habitat types at global scale. Effect size magnitudes were calculated as Cohen’s D. Statistically not significant effect sizes are defined as 95% confidence intervals (CI) crossing 0. Number of samples was 5 for each habitat type and attribute.")
+```
+
+### Random-intercept model
+
+Results of random-intercept models did not strongly differ for the alternative and drylands dataset regarding the protected area categories that are present in both. Although individual intercepts differed, they were overall similar across habitat types and protection categories. Woodlands tended to show higher soil biodiversity and functioning attributes, for example soil carbon, decomposition, EM fungi richness, and bacterial, fungal and protist dissimilarity. In contrast, woodlands tended to show lower bacterial Shannon index than shrublands. Differences between protected and unprotected sites were mostly not significant (95 % CIs cross 0) with a slight tendency for higher values in protected areas.
+
+```{r}
+
+```
+
+Appendix Figure 5.3: Global comparison of soil biodiversity and functioning attributes in differently protected (Ia-V) and unprotected grasslands, shrublands and woodlands. Results from the random intercept model for the alternative dataset. Bars represent 66% and 95% quantile (percentage) intervals, vertical bars indicate medians of the estimated group means. Dark gray rectangles represent unprotected sites, light gray areas represent sites that are protected but cannot be grouped into one of the 7 IUCN protection categories (Ia, Ib, II, III, IV, V, VI). Number of sites is given in the last panel (bottom right).
+
+### Random-slope model
+
+Using the alternative dataset resulted in similar patterns for the slope estimates of soil biodiversity and functioning attributes (Appendix Table 5.4 and 5.5). The opposite trends for dissimilarity and Shannon index were even more pronounced in the alternative dataset, as we found in shrublands a positive trend for mean Shannon index with the respective negative one for mean dissimilarity, and in grasslands and woodlands negative trends in for Shannon index and positive ones for dissimilarity (Appendix Table 5.4). Communities in protected shrublands seem to be more diverse and even, while they are less diverse but more dissimilar in protected grasslands and woodlands. Trends for richness were significant for the same organism but differed in direction from the ones of the dryland dataset (Appendix Table 5.5). In the alternative dataset, richness increased consistently with increasing protection level in shrublands, but decreased in grasslands and woodlands. In addition, we found a negative trend for fungal richness that was not found in the drylands dataset. Regarding soil functioning attributes, we found fewer significant trends than in the analysis of the drylands dataset, namely only a positive trend of soil stability in shrublands. Based on the alternative dataset and the random-slope model, protected shrublands seemed to be beneficial for soil biodiversity and soil stability, but lead also to more homogenous communities (less dissimilar).
+
+```{r table_slope_grouped_globOther, echo=FALSE, warning=FALSE, message=FALSE}
+slope_grouped_glob_other <- read_csv(here::here("results", "sensitivity_globalAlternativeDataset", "Results_slope_BayesianTrends_allScales_grouped.csv")) 
+
+slope_grouped_glob_other <- slope_grouped_glob_other %>%
+  filter(Scale == "global") %>%
+  dplyr::select(-Scale)
+
+knitr::kable(slope_grouped_glob_other,
+             digits = 3,
+             col.names = c("Variable", "Habitat", "Slope estimate", "SE", "95% CI"),
+             caption = "Appendix Table 5.5: Averaged slope estimates from effect of protection level on soil biodiversity and functioning attributes at global scale. Averaged values represent mean, SE and 95% CI of median marginal trends and have to be interpreted with caution as these are averaged after(!) modeling and calculating the estimated marginal trends of each individual soil biodiversity and functioning attribute.")
+```
+
+
+In summary, we found mostly similar patterns for soil biodiversity and functioning attributes using the alternative dataset. We found significant effect sizes in shrublands only, but slope estimates were more consistent or pronounced within habitat types in the alternative dataset (i.e. for grouped dissimilarity and Shannon index). 
+
+```{r table_slope_globOther, echo=FALSE, warning=FALSE, message=FALSE}
+slope_glob_other <- read_csv(here::here("results", "sensitivity_globalAlternativeDataset", "Results_slope_BayesianTrends_allScales.csv")) 
+
+slope_glob_other <- slope_glob_other %>%
+  filter(Scale == "glob")
+
+knitr::kable(slope_glob_other,
+             digits = 3,
+             caption = "Appendix Table 5.6: Slope estimates from effect of protection level on soil biodiversity and functioning attributes at global scale. Estimated median marginal trends [high posterior density interval] significance. ")
+```
+
+ 
