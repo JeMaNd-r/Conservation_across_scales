@@ -41,21 +41,26 @@ source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
 
 # set date of latest analysis
-if(temp_scale == "global") temp_date <- "2025-01-03"
-if(temp_scale == "continental") temp_date <- "2025-01-02"
-if(temp_scale == "regional") temp_date <- "2024-08-01"
+if(temp_scale == "global") temp_date <- "2025-01-06"
+if(temp_scale == "continental") temp_date <- "2025-01-06"
+if(temp_scale == "regional") temp_date <- "2025-01-06"
+
+min_size <- min(table(data_clean$LC, 
+                      data_clean$PA)[table(data_clean$LC, 
+                                           data_clean$PA)
+                                     >0])
 
 if(temp_scale == "global"){
   lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
-  min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+  #min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
 } 
 if(temp_scale == "continental"){
-  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
-  min_size <- 14 # number of samples/ sites that should be paired per LC type
+  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
+  #min_size <- 14 # number of samples/ sites that should be paired per LC type
 }
 if(temp_scale == "regional"){
-  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland"]
-  min_size <- 7 # number of samples/ sites that should be paired per LC type
+  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
+  #min_size <- 7 # number of samples/ sites that should be paired per LC type
 }
 # define each land cover type
 lc_names_all <- c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
@@ -104,7 +109,7 @@ data_locations <- data_clean %>%
 data_locations #G: nrow=126, C: 316, R: 161
 write_csv(data_locations, file = paste0(here::here(), "/results/Locations_", temp_scale, ".csv"))
 nrow(data_locations %>% filter(PA==1)) #G: 28 PAs, G-together: 39; C: 48, R: 36
-nrow(data_locations %>% filter(PA==0)) #G: 93 PAs, G-together: 92; C: 268, R: 125
+nrow(data_locations %>% filter(PA==0)) #G: 93 PAs, G-together: 92; C: 269, R: 125
 
 # set limits for point maps
 if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
@@ -122,10 +127,10 @@ ggplot()+
   geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
                                       shape = as.character(PA), color=LC, 
                                       size = as.character(PA)),
-             stroke = 1.4)+
+             stroke = 3)+
              #stroke = 1.4, color = "#000000")+ #increase circle line width; G: 2 (1.4), C+R:3
   scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
-  scale_size_manual(values = c("0" = 1.4, "1" = 4.5))+ #G: 1.4,4.5/0.3, 1, C+R:3,8/ 0.6,2
+  scale_size_manual(values = c("0" = 3, "1" = 8))+ #G: 1.4,4.5/0.3, 1, C+R:3,8/ 0.6,2
   scale_color_manual(values = c("Cropland" = "#4A2040",
                                 "Grassland" = "#E69F00",
                                 "Shrubland" = "#0072B2", 
@@ -151,7 +156,7 @@ ggsave(filename=paste0(here::here(), "/figures/Data_locations_", temp_scale,".pn
 # extract list of sampling locations actually used in comparison
 data_locations <- data_clean %>%
   filter(LC %in% lc_names)
-data_locations #G: nrow=248, G-t: 65; C: 745, R: 270
+data_locations #G: nrow=248; C: 745, R: 270
 write_csv(data_locations, file = paste0(here::here(), "/results/Locations_PAranks_", temp_scale, ".csv"))
 nrow(data_locations %>% filter(PA==1)) #G: 42 PAs, C: 61, R: 40
 nrow(data_locations %>% filter(PA==0)) #G: 206 PAs, C: 684, R: 230
@@ -172,9 +177,9 @@ ggplot()+
   geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
                                       shape = as.character(PA), color=LC, 
                                       size = as.character(PA)),
-             stroke = 2)+ #increase circle line width; G+C: 2; R:3
+             stroke = 3)+ #increase circle line width; G+C: 2; R:3
   scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
-  scale_size_manual(values = c("0" =1.5, "1" = 4.5))+ #G:+C: 2,4; ,R:3,8 
+  scale_size_manual(values = c("0" =3, "1" = 8))+ #G:+C: 2,4; ,R:3,8 
   scale_color_manual(values = c("Cropland" = "#4A2040",
                                 "Grassland" = "#E69F00",
                                 "Shrubland" = "#0072B2", 

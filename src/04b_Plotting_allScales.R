@@ -114,9 +114,9 @@ ggsave(paste0(here::here(), "/figures/Data_habitats_allScales.png"),
 
 for(temp_scale in c("global", "continental", "regional")){
   # set date of latest analysis
-  if(temp_scale == "global") temp_date <- "2025-01-03"
-  if(temp_scale == "continental") temp_date <- "2025-01-02"
-  if(temp_scale == "regional") temp_date <- "2024-08-01"
+  if(temp_scale == "global") temp_date <- "2025-01-06"
+  if(temp_scale == "continental") temp_date <- "2025-01-06"
+  if(temp_scale == "regional") temp_date <- "2025-01-06"
   
   # load pairs of PA and nonPA
   pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
@@ -374,9 +374,9 @@ all_corr <- data.frame("LC" = "lc", "fns" = "fns", "correlation" = 1, "scale" = 
 
 for(temp_scale in c("global", "continental", "regional")){
   # set date of latest analysis
-  if(temp_scale == "global") temp_date <- "2025-01-03"
-  if(temp_scale == "continental") temp_date <- "2025-01-02"
-  if(temp_scale == "regional") temp_date <- "2024-08-01"
+  if(temp_scale == "global") temp_date <- "2025-01-06"
+  if(temp_scale == "continental") temp_date <- "2025-01-06"
+  if(temp_scale == "regional") temp_date <- "2025-01-06"
   
   if(temp_scale == "global"){
     lc_names <- "Dryland" #lc_names_all[lc_names_all != "Other" & lc_names_all != "Cropland"]
@@ -687,32 +687,6 @@ pars_sum <- pars_all %>%
     "PA_rank_rev.trend_CI_lower" = PA_rank_rev.trend_mean - (1.96 * PA_rank_rev.trend_SE),  # 1.96 is the Z-value for a 95% confidence interval
     "PA_rank_rev.trend_CI_upper" = PA_rank_rev.trend_mean + (1.96 * PA_rank_rev.trend_SE)
   )
-
-
-# lineribbon
-ggplot(data = pred_list %>% filter(scale == temp_scale) %>%
-         right_join(fns_labels %>% dplyr::select(Label, Label_short, Function), 
-                    by = c("fns" = "Function")) %>%
-         mutate(Label = factor(Label, levels = labels_order)), 
-       
-       aes(x = PA_rank_rev, y = .epred, color = ordered(LC))) +
-  stat_lineribbon() +
-  facet_wrap(vars(Label), scales = "free_y", ncol=6)+
-  scale_fill_brewer(palette = "Greys") +
-  scale_color_manual(values=c("Cropland" = "#4A2040",
-                              "Grassland" = "#E69F00",
-                              "Shrubland" = "#0072B2", 
-                              "Woodland" = "#009E73", 
-                              "Other" = "#000000",
-                              "Dryland" = "#000000"), name="Habitat type")+
-  scale_x_continuous(limits = c(1, 10), breaks = c(2, 10), minor_breaks = c(2,4,6,8, 10))+
-  theme_void()+
-  theme(axis.text = element_text(),
-        panel.grid.major.y = element_line(color = "grey"),
-        panel.grid.minor.x =  element_line(color = "grey"),
-        strip.text = element_text(size = 15, hjust=0),
-        legend.position = c(0.8, 0.1),
-        legend.box = "horizontal")
 
 # pointrange plot
 ggplot(pars_all %>%

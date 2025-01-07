@@ -32,7 +32,7 @@ mahal_thres <- qchisq(.975, df=length(mahal_vars)) #21.92005
 mahal_vars_z <- paste0(mahal_vars, ".z")
 
 # define each land cover type
-lc_names <- c("Cropland", "Grassland", "Shrubland", "Woodland", "Other")
+lc_names <- c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
 
 # radius for continental site pairing
 radius_thres <- 500000 #in m; 500000 for continental
