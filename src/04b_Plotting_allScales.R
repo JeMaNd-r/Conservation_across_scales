@@ -355,12 +355,14 @@ ggsave(filename=paste0(here::here(), "/figures/Results_d-value_meanCI_allScales_
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #### Summarizing stats ####
 # number significant effects
-d_plot_all %>% filter(effect_significance!="ns" & !is.na(effect_significance)) %>% nrow() #45
+d_plot_all %>% filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% nrow() #38
 # number ns
-d_plot_all %>% filter(effect_significance=="ns" & !is.na(effect_significance)) %>% nrow() #106
+d_plot_all %>% filter(effect_significance=="not significant" & !is.na(effect_significance)) %>% nrow() #109
 
 # number significant per lc
-table(d_plot_all %>% filter(effect_significance!="ns" & !is.na(effect_significance)) %>% dplyr::select(scale, lc))
+table(d_plot_all %>% filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% dplyr::select(scale, lc))
+table(d_plot_all %>% filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% dplyr::select(effect_direction_c))
+table(d_plot_all %>% filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% dplyr::select(effect_direction_c, Group_function))
 table(d_plot_all %>% filter(!is.na(effect_significance)) %>% dplyr::select(scale, lc))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -467,17 +469,17 @@ all_corr
 all_corr_plot <- all_corr %>%
   mutate(LC = factor(LC, levels = lc_names_all[lc_names_all != "Other"]),
          scale = factor(scale, levels = c("global", "continental", "regional")),
-         scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='70'>",
-                             ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='70'>",
-                                    ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>", NA)))) %>%
+         scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='35'>",
+                             ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='35'>",
+                                    ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='35'>", NA)))) %>%
   full_join(fns_labels %>% 
               filter(Function %in% fns),
             dplyr::select(Label_short, Function), 
             by = c("fns" = "Function")) %>%
   mutate(Label_short = factor(Label_short, levels = rev(fns_labels$Label_short)),
-         scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='70'>",
-                                                    "<img src='figures/icon_location-black.png' width='70'>",
-                                                    "<img src='figures/icon_flag-Portugal.png' width='70'>" )))
+         scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='35'>",
+                                                    "<img src='figures/icon_location-black.png' width='35'>",
+                                                    "<img src='figures/icon_flag-Portugal.png' width='35'>" )))
 
 # add d-values (effect size results)
 all_corr_plot <- all_corr_plot %>%
@@ -508,7 +510,7 @@ ggplot(data = all_corr_plot)+
   geom_point(data = all_corr_plot %>% filter(p_value >= 0.05),
              aes(x = LC, y = Label_short), shape = 4)+
   
-  geom_point(data = all_corr_plot %>% filter(effect_significance != "ns"),
+  geom_point(data = all_corr_plot %>% filter(effect_significance != "not significant"),
              aes(x = LC, y = Label_short), shape = 0, size = 8)+
   
   scale_shape_manual(values = c(NA, 4))+
@@ -533,7 +535,7 @@ ggplot(data = all_corr_plot)+
         axis.text.x = ggtext::element_markdown(vjust = 0))
 ggsave(paste0(here::here(), "/figures/Correlation_diff_mahal_allScales.png"),
        last_plot(),
-       height = 10, width = 8)
+       height = 10, width = 6)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### APPENDIX FIGURE 2.3 & TABLE 2.3 - Pointrange plot grouped per estimate type ####
