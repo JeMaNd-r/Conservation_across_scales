@@ -271,7 +271,7 @@ d_plot_all <- d_sum_all %>%
   mutate(effect_direction_c = ifelse(effect_direction=="-1", "negative",
                                      ifelse(effect_direction=="1", "positive", "0"))) %>%
   mutate(Label = factor(Label, levels = labels_order)) %>%
-  mutate(effect_significance = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "ns", effect_direction_c),
+  mutate(effect_significance = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "not significant", effect_direction_c),
          effect_na = ifelse(is.na(effect_mean), "not available", NA)) %>%
   mutate(effect_significance = factor(effect_significance, levels = c("negative", "positive", "not significant")))
 
@@ -303,20 +303,20 @@ ggplot(data = d_plot_all %>%
                  fill= effect_significance,
                  shape = effect_na))+
   facet_wrap(vars(Label), ncol=6, drop=FALSE)+
-  scale_fill_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb", "ns" = "white"),
+  scale_fill_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb", "not significant" = "white"),
                     name = "Direction of effect",
                     na.value = "black", drop = FALSE)+
   scale_color_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb"),
                     name = "Direction of effect",
                     na.value = "black")+
-  scale_size_manual(values = c("marginal" = 2, "ns" = 2, "small" = 5, "medium" = 10, "large" = 15),
+  scale_size_manual(values = c("marginal" = 2, "not significant" = 2, "small" = 5, "medium" = 10, "large" = 15),
                      name = "Effect size",
-                    na.value = 5)+
+                    na.value =1)+
   scale_shape_manual(values = c("not available" = 4),
                      name = "Missing data",
                      na.value = 21)+
   scale_x_discrete(labels = c(
-    "Dryland" = "<img src='figures/icon_land.png' width='17'>",
+    "Dryland" = "<img src='figures/icon_land.png' width='30'>",
     "Cropland" = "<img src='figures/icon_harvest.png' width='20'>",
     "Grassland" = "<img src='figures/icon_grass.png' width='17'>",
     #"Shrubland" = "<img src='figures/icon_shrub-crop.png' width='35'>",
@@ -331,7 +331,7 @@ ggplot(data = d_plot_all %>%
   xlab("")+ylab("")+
   theme_bw() + # use a white background
   
-  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black"), 
+  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black"),
                                                  shape = 21, size = 5)), #tell legend to use different point shape
     color = "none", #don't show legend
     shape = guide_legend(override.aes = list(size = 5)))+
@@ -738,7 +738,8 @@ ggplot(pars_all %>%
   #coord_flip()+
   coord_cartesian(clip = "off")+
   ggh4x::facet_grid2(scale_icon ~ Group_function, drop=FALSE, 
-             scales = "free", independent = "all", switch = "y",
+             scales = "free", independent = "x", switch = "y",
+             space = "free_y",
              shrink = FALSE)+
 
   #ylab("Effect size")+
@@ -794,7 +795,7 @@ ggplot(pars_all %>%
 
 ggsave(filename=paste0(here::here(), "/figures/Results_slope_BayesianTrends_allScales_grouped.png"),
        plot = last_plot(), 
-       width = 5000, height = 4000,
+       width = 5000, height = 3000,
        units = "px")
 
 # table all

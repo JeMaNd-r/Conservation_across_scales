@@ -303,8 +303,8 @@ d_summary %>% ungroup() %>% group_by(lc) %>%
 # mean per Group_function
 d_summary %>% ungroup() %>% group_by(Group_function) %>% 
   summarize(across(c(effect_median), 
-                   list(mean=function(x) mean(abs(x)),
-                        sd=function(x) sd(abs(x)))))
+                   list(mean=function(x) mean(abs(x), na.rm=TRUE),
+                        sd=function(x) sd(abs(x), na.rm=TRUE))))
 
 # check for significant mean p-values
 #d_summary %>% arrange(p_value_mean)
@@ -367,69 +367,69 @@ ggsave(filename=paste0(here::here(), "/figures/Results_d-value_medianCI_", temp_
        plot = last_plot(),
        width=5, height=4)
 
-## one-sided
-ggplot(data = d_summary %>%
-         filter(lc %in% lc_names) %>%
-         mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
-                                         abs(effect_ci_17), 
-                                         abs(effect_ci_83))),
-       aes(y = abs(effect_ci_min66), x = abs(effect_median),
-           color=as.factor(sign(effect_median))
-           ))+
-
-  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.2, fill = "grey", alpha=0.3)+
-  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.5, fill = "grey", alpha=0.3)+
-  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.8, fill = "grey", alpha=0.3)+
-
-  geom_point(aes(shape = Group_function), size = 5)+
-  ggrepel::geom_text_repel(aes(label = Label, shape = Group_function), size = 3)+
-  
-  xlab("Median effect")+ ylab("Lower CI (17%)")+
-  scale_y_continuous(breaks = c(0.2, 0.5, 0.8))+
-  scale_x_continuous(breaks = c(0.2, 0.5, 0.8))+
-  
-  facet_wrap(vars(lc), scales = "free")+
-  theme_bw() + # use a white background
-  theme(legend.position = "bottom",
-        legend.direction = "vertical",
-        axis.text.y = element_text(size=10),
-        axis.text.x = element_text(size=10),
-        panel.grid.minor = element_blank(),
-        strip.background = element_rect(fill="white"), #chocolate4
-        strip.text = element_text(color="black")) #white
-ggsave(filename=paste0(here::here(), "/figures/Results_d-value_medianSD_", temp_scale, ".png"),
-       plot = last_plot())
-
-## heatmap
-ggplot(data = d_summary %>%
-         filter(lc %in% lc_names) %>%
-         mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
-                                         abs(effect_ci_17), 
-                                         abs(effect_ci_83))) %>%
-         mutate(effect_ci_min66f = cut(effect_ci_min66,
-                                       breaks=c(0, 0.2, 0.5, 0.8, Inf),
-                                       labels=c("ns", "small", "medium", "large"))) %>%
-         filter(!is.na(effect_ci_min66)),
-       aes(x = lc, y = Label, alpha=effect_ci_min66f, 
-           fill=as.factor(sign(effect_median))))+
-
-  geom_tile()+
-  scale_fill_manual(values = c("-1" = "#fc8d59", "0" = "#ffffbf", "1" = "#91bfdb"),
-                    name = "Direction of effect")+
-  scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
-                     name = "Minimum effect size (66% CI)")+
-  theme_bw() + # use a white background
-  theme(legend.position = "bottom",
-        legend.direction = "vertical",
-        #axis.title.y =element_blank(),
-        axis.text.y = element_text(size=10),
-        axis.text.x = element_text(size=10),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        strip.background = element_rect(fill="white"), #chocolate4
-        strip.text = element_text(color="black")) #white
-ggsave(filename=paste0(here::here(), "/figures/Results_d-value_medianSD_", temp_scale, ".png"),
-       plot = last_plot())
+# ## one-sided
+# ggplot(data = d_summary %>%
+#          filter(lc %in% lc_names) %>%
+#          mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
+#                                          abs(effect_ci_17), 
+#                                          abs(effect_ci_83))),
+#        aes(y = abs(effect_ci_min66), x = abs(effect_median),
+#            color=as.factor(sign(effect_median))
+#            ))+
+# 
+#   annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.2, fill = "grey", alpha=0.3)+
+#   annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.5, fill = "grey", alpha=0.3)+
+#   annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.8, fill = "grey", alpha=0.3)+
+# 
+#   geom_point(aes(shape = Group_function), size = 5)+
+#   ggrepel::geom_text_repel(aes(label = Label, shape = Group_function), size = 3)+
+#   
+#   xlab("Median effect")+ ylab("Lower CI (17%)")+
+#   scale_y_continuous(breaks = c(0.2, 0.5, 0.8))+
+#   scale_x_continuous(breaks = c(0.2, 0.5, 0.8))+
+#   
+#   facet_wrap(vars(lc), scales = "free")+
+#   theme_bw() + # use a white background
+#   theme(legend.position = "bottom",
+#         legend.direction = "vertical",
+#         axis.text.y = element_text(size=10),
+#         axis.text.x = element_text(size=10),
+#         panel.grid.minor = element_blank(),
+#         strip.background = element_rect(fill="white"), #chocolate4
+#         strip.text = element_text(color="black")) #white
+# ggsave(filename=paste0(here::here(), "/figures/Results_d-value_medianSD_", temp_scale, ".png"),
+#        plot = last_plot())
+# 
+# ## heatmap
+# ggplot(data = d_summary %>%
+#          filter(lc %in% lc_names) %>%
+#          mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
+#                                          abs(effect_ci_17), 
+#                                          abs(effect_ci_83))) %>%
+#          mutate(effect_ci_min66f = cut(effect_ci_min66,
+#                                        breaks=c(0, 0.2, 0.5, 0.8, Inf),
+#                                        labels=c("ns", "small", "medium", "large"))) %>%
+#          filter(!is.na(effect_ci_min66)),
+#        aes(x = lc, y = Label, alpha=effect_ci_min66f, 
+#            fill=as.factor(sign(effect_median))))+
+# 
+#   geom_tile()+
+#   scale_fill_manual(values = c("-1" = "#fc8d59", "0" = "#ffffbf", "1" = "#91bfdb"),
+#                     name = "Direction of effect")+
+#   scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
+#                      name = "Minimum effect size (66% CI)")+
+#   theme_bw() + # use a white background
+#   theme(legend.position = "bottom",
+#         legend.direction = "vertical",
+#         #axis.title.y =element_blank(),
+#         axis.text.y = element_text(size=10),
+#         axis.text.x = element_text(size=10),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         strip.background = element_rect(fill="white"), #chocolate4
+#         strip.text = element_text(color="black")) #white
+# ggsave(filename=paste0(here::here(), "/figures/Results_d-value_medianSD_", temp_scale, ".png"),
+#        plot = last_plot())
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
