@@ -106,7 +106,7 @@ data_locations <- data_clean %>%
   filter(SampleID %in% unique(pa_pairs$ID) | 
          SampleID %in% unique(pa_pairs$nonPA)) %>%
   dplyr::select(Longitude,Latitude,SampleID, PA, LC)
-data_locations #G: nrow=126, C: 316, R: 161
+data_locations #G: nrow=131, C: 316, R: 161
 write_csv(data_locations, file = paste0(here::here(), "/results/Locations_", temp_scale, ".csv"))
 nrow(data_locations %>% filter(PA==1)) #G: 28 PAs, G-together: 39; C: 48, R: 36
 nrow(data_locations %>% filter(PA==0)) #G: 93 PAs, G-together: 92; C: 269, R: 125
@@ -120,17 +120,17 @@ if(temp_scale == "regional") temp_limits <- c(-9, -6, 40.5, 42.5)
 ggplot()+
   geom_map(data = world.inp, map = world.inp, 
            aes(map_id = region),  show.legend = FALSE, 
-           fill="white", color = "grey80", linewidth = 0.15) + #G:0.15, C+R:
+           fill="white", color = "grey80", linewidth = 0.25) + #G:0.15, C+R:
   xlim(temp_limits[1], temp_limits[2])+
   ylim(temp_limits[3], temp_limits[4])+
   
   geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
                                       shape = as.character(PA), color=LC, 
                                       size = as.character(PA)),
-             stroke = 3)+
+             stroke = 2)+
              #stroke = 1.4, color = "#000000")+ #increase circle line width; G: 2 (1.4), C+R:3
   scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
-  scale_size_manual(values = c("0" = 3, "1" = 8))+ #G: 1.4,4.5/0.3, 1, C+R:3,8/ 0.6,2
+  scale_size_manual(values = c("0" = 2, "1" = 6))+ #G: 1.4,4.5/0.3, 1, C+R:3,8/ 0.6,2
   scale_color_manual(values = c("Cropland" = "#4A2040",
                                 "Grassland" = "#E69F00",
                                 "Shrubland" = "#0072B2", 
