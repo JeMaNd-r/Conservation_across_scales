@@ -108,11 +108,11 @@ nrow(data_glob %>% filter(PA==0)) #285
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Rename land cover types in data ####
+# treat all global data as Drylands 
+data_glob$LC <- "Dryland"
 # data_glob$LC <- data_glob$Vegetation
 # unique(data_glob$LC)
 # data_glob[data_glob$LC=="Forest" & !is.na(data_glob$LC), "LC"] <- "Woodland"
-# group all into 1 LC type
-data_glob$LC <- "Grassland"
 unique(data_glob$LC)
 
 table(data_glob$LC)
@@ -174,6 +174,7 @@ write.csv(list_colinear$corMatPearson, paste0(here::here(), "/results/sensitivit
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Load soil biodiversity data ####
 
+temp_scale <- "global"
 data_clean <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_clean_", temp_scale, ".csv"))
 data_clean
 
@@ -286,6 +287,7 @@ count_nonPA <- count_nonPA[[1]] #G: 7 <5, 7 <7, 14 <10; G-together: 5 >41; C: 16
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Remove sites ####
+temp_date <- "2025-01-10"
 
 unpaired_pa <- read.csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Unpaired_protected_sites_", temp_date, ".csv"))
 head(unpaired_pa) 
@@ -308,14 +310,14 @@ data_clean %>% group_by(LC, PA) %>% count()
 # check LC types and number of (protected) sites
 table(data_clean$LC, data_clean$PA)
 
+lc_names <- "Dryland"
+
 # based on number of sites per LC, exclude LC
 # e.g. global: only 3 unprotected on 0 protected for Other & onyl 1 PA for Woodland & 0 for Cropland
 # continental: no Shrubland protected, 28 unprotected; and 0 PA in Other
 # regional: PA only min. 7 -> decrease minimum size number to 7, 
 #           exclude Shrublands & Others to get it running (otherwise no complete pairing achieved) 
-lc_names <- "Grassland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
-min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
-# Note: could be 10 as minimum number of samples per LC = 10
+min_size <- 39 # same as all-complete dataset
 
 # The following function will print the number of times it successfully 
 # paired sites. It will show the same number multiple times if it didn't 
@@ -353,9 +355,9 @@ write_csv(pa_pairs, file=paste0(here::here(), "/results/sensitivity_globalBacter
 temp_scale <- "global"
 
 # set date of latest analysis
-temp_date <- "2025-01-02"
-lc_names <- "Grassland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
-min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+temp_date <- "2025-01-10"
+lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
+min_size <- 39 # number of samples/ sites from all-complete dataset analysis
 
 data_clean <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_clean_", temp_scale, ".csv"))
 data_clean
@@ -385,9 +387,9 @@ save(d_list,  file=paste0(here::here(), "/results/sensitivity_globalBacteria/d_1
 temp_scale <- "global"
 
 # set date of latest analysis
-temp_date <- "2025-01-02"
-lc_names <- "Grassland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
-min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+temp_date <- "2025-01-10"
+lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
+min_size <- 39 # number of samples/ sites from all-complete dataset analysis
 
 data_clean <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_clean_", temp_scale, ".csv"))
 data_clean
@@ -506,9 +508,9 @@ fns <- c("Bac_richness", "Bac_shannonDiv", "Bac_JaccDist_av")
 
 # set date of latest analysis
 temp_scale <- "global"
-temp_date <- "2025-01-02"
-lc_names <- "Grassland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
-min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+temp_date <- "2025-01-10"
+lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
+min_size <- 39 # number of samples/ sites from all-complete dataset analysis
 
 data_clean <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_clean_", temp_scale, ".csv"))
 data_clean
@@ -612,12 +614,12 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 fns <- c("Bac_richness", "Bac_shannonDiv", "Bac_JaccDist_av")
 
 # set date of latest analysis
-temp_date <- "2025-01-02"
-lc_names <- "Grassland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
-min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+temp_date <- "2025-01-10"
+lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
+min_size <- 39 # number of samples/ sites from all-complete dataset analysis
  
 # define each land cover type
-lc_names_all <- c( "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
+lc_names_all <- c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
 
 # define order of functions
 labels_order <- c(
@@ -721,7 +723,7 @@ ggplot()+
   geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
                                       shape = as.character(PA), #color=LC, 
                                       size = as.character(PA)),
-             stroke = 2, color = "#000000")+ #increase circle line width; G+C: 2; R:3
+             stroke = 1.4, color = "#000000")+ #increase circle line width; G+C: 2; R:3
   scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
   scale_size_manual(values = c("0" =1.5, "1" = 4.5))+ #G:+C: 2,4; ,R:3,8 
   # scale_color_manual(values = c("Cropland" = "#4A2040",
@@ -823,14 +825,14 @@ ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Locati
 ### Boxplot mahalanobis distance ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-ggplot(pa_pairs %>% mutate(LC = "Drylands"), aes(x = LC, y = mahal.min, fill = LC))+ #fill = LC
+ggplot(pa_pairs, aes(x = LC, y = mahal.min, fill = LC))+ #fill = LC
   geom_boxplot()+
   geom_violin(alpha = 0.3, adjust = 0.3)+
   theme_bw() +
   labs(x="Land-cover type",y="Mahalanobis distance") +
   theme(axis.text.x=element_text(size=15),text = element_text(size=20),  
         legend.position = "none", axis.text.y = element_text(size=15), legend.title = element_blank())+
-  scale_fill_manual(values=c("Drylands" = "grey"))
+  scale_fill_manual(values=c("Dryland" = "black"))
 ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_boxplot_mahal.distance_", temp_scale, ".png"),
        plot = last_plot())
 
@@ -932,8 +934,7 @@ sink()
 # with confidence intervals 
 ggplot(data = d_df %>% 
          filter(lc %in% lc_names) %>%
-         mutate(Label=factor(Label, levels = rev(fns_labels$Label)),
-                lc = "Drylands"), 
+         mutate(Label=factor(Label, levels = rev(fns_labels$Label))), 
        aes(y = effect, x = Label))+
   
   geom_hline(aes(yintercept=0.8, linetype = "-0.8 / 0.8"), color="grey60")+
@@ -970,91 +971,89 @@ ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Result
        plot = last_plot(),
        width=5, height=4)
 
-## one-sided
-ggplot(data = d_summary %>%
-         filter(lc %in% lc_names) %>%
-         mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
-                                         abs(effect_ci_17), 
-                                         abs(effect_ci_83)),
-                lc = "Drylands"),
-       aes(y = abs(effect_ci_min66), x = abs(effect_median),
-           color=as.factor(sign(effect_median))
-       ))+
-  
-  # geom_vline(aes(xintercept=0.8, linetype = "0.8"), color="grey60")+
-  # geom_vline(aes(xintercept=0.5, linetype = "0.5"), color="grey60")+
-  # geom_vline(aes(xintercept=0.2, linetype = "0.2"), color="grey60")+
-  # scale_linetype_manual(values = c("0.8" = "dotted",
-  #                                  "0.5" = "dashed",
-  #                                  "0.2" = "solid"),
-  #                       name="Strength of effect")+
-  #annotate("rect", ymin = 0, ymax = 0.2, xmin=0, xmax=0.2, fill = "grey", alpha=0.1)+ #chocolate4
-  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.2, fill = "grey", alpha=0.3)+
-  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.5, fill = "grey", alpha=0.3)+
-  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.8, fill = "grey", alpha=0.3)+
-  
-  # geom_pointrange(aes(xmin = abs(effect_ci_2.5), xmax = abs(effect_ci_97.5),
-  #                     shape = Group_function))+
-  # geom_linerange(aes(xmin = ifelse(sign(effect_ci_17) != sign(effect_ci_83),
-  #                                  abs(effect_ci_17)), xmax = abs(effect_ci_83),
-  #                     #shape = Group_function
-  #                    ), linewidth=1, alpha = 0.2)+
-  geom_point(aes(shape = Group_function), size = 5)+
-  ggrepel::geom_text_repel(aes(label = Label, shape = Group_function), size = 3)+
-  #geom_text(aes(label = Label), size = 1.5, nudge_y = 0.005)+
-  
-  xlab("Median effect")+ ylab("Lower CI (17%)")+
-  scale_y_continuous(breaks = c(0.2, 0.5, 0.8))+
-  scale_x_continuous(breaks = c(0.2, 0.5, 0.8))+
-  # scale_y_continuous(limits = c(0, 0.7),
-  #                    expand = c(0,0), breaks = c(0, 0.25, 0.5))+
-  #scale_color_manual(c(""))+
-  
-  facet_wrap(vars(lc), scales = "free")+
-  theme_bw() + # use a white background
-  theme(legend.position = "bottom",
-        legend.direction = "vertical",
-        #axis.title.y =element_blank(),
-        axis.text.y = element_text(size=10),
-        axis.text.x = element_text(size=10),
-        #panel.grid.major.y = element_blank(),
-        panel.grid.minor = element_blank(),
-        strip.background = element_rect(fill="white"), #chocolate4
-        strip.text = element_text(color="black")) #white
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_d-value_medianSD_", temp_scale, ".png"),
-       plot = last_plot())
-
-## heatmap
-ggplot(data = d_summary %>%
-         filter(lc %in% lc_names) %>%
-         mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
-                                         abs(effect_ci_17), 
-                                         abs(effect_ci_83)),
-                lc = "Drylands") %>%
-         mutate(effect_ci_min66f = cut(effect_ci_min66,
-                                       breaks=c(0, 0.2, 0.5, 0.8, Inf),
-                                       labels=c("ns", "small", "medium", "large"))) %>%
-         filter(!is.na(effect_ci_min66)),
-       aes(x = lc, y = Label, alpha=effect_ci_min66f, 
-           fill=as.factor(sign(effect_median))))+
-  
-  geom_tile()+
-  scale_fill_manual(values = c("-1" = "#fc8d59", "0" = "#ffffbf", "1" = "#91bfdb"),
-                    name = "Direction of effect")+
-  scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
-                     name = "Minimum effect size (66% CI)")+
-  theme_bw() + # use a white background
-  theme(legend.position = "bottom",
-        legend.direction = "vertical",
-        #axis.title.y =element_blank(),
-        axis.text.y = element_text(size=10),
-        axis.text.x = element_text(size=10),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        strip.background = element_rect(fill="white"), #chocolate4
-        strip.text = element_text(color="black")) #white
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_d-value_medianSD_", temp_scale, ".png"),
-       plot = last_plot())
+# ## one-sided
+# ggplot(data = d_summary %>%
+#          filter(lc %in% lc_names) %>%
+#          mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
+#                                          abs(effect_ci_17), 
+#                                          abs(effect_ci_83))),
+#        aes(y = abs(effect_ci_min66), x = abs(effect_median),
+#            color=as.factor(sign(effect_median))
+#        ))+
+#   
+#   # geom_vline(aes(xintercept=0.8, linetype = "0.8"), color="grey60")+
+#   # geom_vline(aes(xintercept=0.5, linetype = "0.5"), color="grey60")+
+#   # geom_vline(aes(xintercept=0.2, linetype = "0.2"), color="grey60")+
+#   # scale_linetype_manual(values = c("0.8" = "dotted",
+#   #                                  "0.5" = "dashed",
+#   #                                  "0.2" = "solid"),
+#   #                       name="Strength of effect")+
+#   #annotate("rect", ymin = 0, ymax = 0.2, xmin=0, xmax=0.2, fill = "grey", alpha=0.1)+ #chocolate4
+#   annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.2, fill = "grey", alpha=0.3)+
+#   annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.5, fill = "grey", alpha=0.3)+
+#   annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.8, fill = "grey", alpha=0.3)+
+#   
+#   # geom_pointrange(aes(xmin = abs(effect_ci_2.5), xmax = abs(effect_ci_97.5),
+#   #                     shape = Group_function))+
+#   # geom_linerange(aes(xmin = ifelse(sign(effect_ci_17) != sign(effect_ci_83),
+#   #                                  abs(effect_ci_17)), xmax = abs(effect_ci_83),
+#   #                     #shape = Group_function
+#   #                    ), linewidth=1, alpha = 0.2)+
+#   geom_point(aes(shape = Group_function), size = 5)+
+#   ggrepel::geom_text_repel(aes(label = Label, shape = Group_function), size = 3)+
+#   #geom_text(aes(label = Label), size = 1.5, nudge_y = 0.005)+
+#   
+#   xlab("Median effect")+ ylab("Lower CI (17%)")+
+#   scale_y_continuous(breaks = c(0.2, 0.5, 0.8))+
+#   scale_x_continuous(breaks = c(0.2, 0.5, 0.8))+
+#   # scale_y_continuous(limits = c(0, 0.7),
+#   #                    expand = c(0,0), breaks = c(0, 0.25, 0.5))+
+#   #scale_color_manual(c(""))+
+#   
+#   facet_wrap(vars(lc), scales = "free")+
+#   theme_bw() + # use a white background
+#   theme(legend.position = "bottom",
+#         legend.direction = "vertical",
+#         #axis.title.y =element_blank(),
+#         axis.text.y = element_text(size=10),
+#         axis.text.x = element_text(size=10),
+#         #panel.grid.major.y = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         strip.background = element_rect(fill="white"), #chocolate4
+#         strip.text = element_text(color="black")) #white
+# ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_d-value_medianSD_", temp_scale, ".png"),
+#        plot = last_plot())
+# 
+# ## heatmap
+# ggplot(data = d_summary %>%
+#          filter(lc %in% lc_names) %>%
+#          mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
+#                                          abs(effect_ci_17), 
+#                                          abs(effect_ci_83))) %>%
+#          mutate(effect_ci_min66f = cut(effect_ci_min66,
+#                                        breaks=c(0, 0.2, 0.5, 0.8, Inf),
+#                                        labels=c("ns", "small", "medium", "large"))) %>%
+#          filter(!is.na(effect_ci_min66)),
+#        aes(x = lc, y = Label, alpha=effect_ci_min66f, 
+#            fill=as.factor(sign(effect_median))))+
+#   
+#   geom_tile()+
+#   scale_fill_manual(values = c("-1" = "#fc8d59", "0" = "#ffffbf", "1" = "#91bfdb"),
+#                     name = "Direction of effect")+
+#   scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
+#                      name = "Minimum effect size (66% CI)")+
+#   theme_bw() + # use a white background
+#   theme(legend.position = "bottom",
+#         legend.direction = "vertical",
+#         #axis.title.y =element_blank(),
+#         axis.text.y = element_text(size=10),
+#         axis.text.x = element_text(size=10),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         strip.background = element_rect(fill="white"), #chocolate4
+#         strip.text = element_text(color="black")) #white
+# ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_d-value_medianSD_", temp_scale, ".png"),
+#        plot = last_plot())
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Heatmap all 3 scales ####
@@ -1108,16 +1107,16 @@ d_plot_all <- d_sum_all %>%
                         Label = fns_labels$Label)) %>%
   mutate(scale = factor(scale, levels = rev(c("global", "continental", "regional"))),
          Label = factor(Label, levels = rev(fns_labels %>% arrange(Group_function, Label) %>% pull(Label))),
-         lc = factor(lc, levels = c("Cropland", "Grassland", "Shrubland", "Woodland"))) %>%
+         lc = factor(lc, levels = c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland"))) %>%
   filter(lc != "Other" & !is.na(Label)) %>% 
   mutate(effect_direction = as.factor(sign(effect_mean)))%>%
   mutate(effect_direction_c = ifelse(effect_direction=="-1", "negative",
                                      ifelse(effect_direction=="1", "positive", "0"))) %>%
-  #mutate(effect_direction_c = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "ns", effect_direction_c)) %>%
+  #mutate(effect_direction_c = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "not significant", effect_direction_c)) %>%
   mutate(Label = factor(Label, levels = labels_order)) %>%
-  mutate(effect_significance = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "ns", effect_direction_c),
+  mutate(effect_significance = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "not significant", effect_direction_c),
          effect_na = ifelse(is.na(effect_mean), "not available", NA)) %>%
-  mutate(effect_significance = factor(effect_significance, levels = c("negative", "positive", "ns")))
+  mutate(effect_significance = factor(effect_significance, levels = c("negative", "positive", "not significant")))
 
 ggplot(data = d_plot_all,
        aes(x = lc, y = scale))+
@@ -1129,18 +1128,18 @@ ggplot(data = d_plot_all,
                  fill= effect_significance,
                  shape = effect_na))+
   facet_wrap(vars(Label), ncol=6, drop=FALSE)+
-  scale_fill_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb", "ns" = "white"),
+  scale_fill_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb", "not significant" = "white"),
                     name = "Direction of effect",
                     na.value = "black", drop = FALSE)+
   scale_color_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb"),
                      name = "Direction of effect",
                      na.value = "black")+
-  # scale_color_manual(values = c("negative" = "#fc8d59", "ns" = "black", "positive" = "#91bfdb"),
+  # scale_color_manual(values = c("negative" = "#fc8d59", "not significant" = "black", "positive" = "#91bfdb"),
   #                   name = "Direction of effect",
   #                   na.value = "grey60")+
   scale_size_manual(values = c("marginal" = 2, "ns" = 5, "small" = 5, "medium" = 10, "large" = 15),
                     name = "Effect size",
-                    na.value = 5)+
+                    na.value = 1)+
   # scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
   #                    name = "Effect size")+
   scale_shape_manual(values = c("not available" = 4),
@@ -1188,12 +1187,12 @@ ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Result
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #### Summarizing stats ####
 # number significant effects
-d_plot_all %>% filter(effect_significance!="ns" & !is.na(effect_significance)) %>% nrow() #23
+d_plot_all %>% filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% nrow() #23
 # number ns
-d_plot_all %>% filter(effect_significance=="ns" & !is.na(effect_significance)) %>% nrow() #112
+d_plot_all %>% filter(effect_significance=="not significant" & !is.na(effect_significance)) %>% nrow() #106
 
 # number significant per lc
-table(d_plot_all %>% filter(effect_significance!="ns" & !is.na(effect_significance)) %>% dplyr::select(scale, lc))
+table(d_plot_all %>% filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% dplyr::select(scale, lc))
 table(d_plot_all %>% filter(!is.na(effect_significance)) %>% dplyr::select(scale, lc))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1245,11 +1244,13 @@ ggplot(data = d_df_grouped,
                              "Grassland" = "#E69F00",
                              "Shrubland" = "#0072B2", 
                              "Woodland" = "#009E73", 
+                             "Dryland" = "#000000",
                              "Other" = "#000000"))+
   scale_color_manual(values=c("Cropland" = "#4A2040",
                               "Grassland" = "#E69F00",
                               "Shrubland" = "#0072B2", 
                               "Woodland" = "#009E73", 
+                              "Dryland" = "#000000",
                               "Other" = "#000000"))+
   # scale_x_discrete(labels = c(
   #   "global" = "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>",
@@ -1306,7 +1307,7 @@ ggplot(data_values, aes(x = Label, y = value)) +
   xlab("")+ ylab("")+
   facet_wrap(vars(LC), ncol=1, nrow=4)+
   theme_bw() +
-  theme(axis.text.x=element_text(size=5, angle=45, hjust=1),
+  theme(axis.text.x=element_text(size=15, angle=45, hjust=1),
         panel.grid.minor.y = element_blank(), panel.grid.major.x = element_blank(),
         legend.position = "none", legend.text = element_text(size=15), axis.text.y = element_text(size=15))
 ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_boxplot_estimates_", temp_scale, ".png"),
@@ -1383,7 +1384,8 @@ ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
   scale_color_manual(values=c("Cropland" = "#4A2040",
                               "Grassland" = "#E69F00",
                               "Shrubland" = "#0072B2", 
-                              "Woodland" = "#009E73", 
+                              "Woodland" = "#009E73",
+                              "Dryland" = "#000000",
                               "Other" = "#000000"), name="Habitat type")+
   ylab("")+ xlab("")+
   theme_bw()+
@@ -1404,35 +1406,35 @@ pred_list <- rbind(get(load(paste0(here::here(), "/results/sensitivity_globalBac
                    get(load(paste0(here::here(), "/results/PAranks_Bayesian_continental_sample10k.RData")))) %>% 
   rbind(get(load(paste0(here::here(), "/results/PAranks_Bayesian_regional_sample10k.RData"))))
 
-for(temp_scale in c("global", "continental", "regional")){
-  ggplot(data = pred_list %>% filter(scale == temp_scale) %>%
-           right_join(fns_labels %>% dplyr::select(Label, Label_short, Function), 
-                      by = c("fns" = "Function")) %>%
-           mutate(Label = factor(Label, levels = labels_order)), 
-         
-         aes(x = PA_rank_rev, y = .epred, color = ordered(LC))) +
-    stat_lineribbon() +
-    #geom_line(aes(y = .epred, group = paste(LC, .draw)), alpha = 0.2)+
-    #geom_point(data = pred_list) +
-    facet_wrap(vars(Label), scales = "free_y", ncol=6)+
-    scale_fill_brewer(palette = "Greys") +
-    scale_color_manual(values=c("Cropland" = "#4A2040",
-                                "Grassland" = "#E69F00",
-                                "Shrubland" = "#0072B2", 
-                                "Woodland" = "#009E73", 
-                                "Other" = "#000000"), name="Habitat type")+
-    scale_x_continuous(limits = c(1, 10), breaks = c(2, 10), minor_breaks = c(2,4,6,8, 10))+
-    theme_void()+
-    theme(axis.text = element_text(),
-          panel.grid.major.y = element_line(color = "grey"),
-          panel.grid.minor.x =  element_line(color = "grey"),
-          strip.text = element_text(size = 15, hjust=0),
-          legend.position = c(0.8, 0.1),
-          legend.box = "horizontal")
-  ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_regressions_parsBayesian_", temp_scale,"Bacteria.png"),
-         plot = last_plot(),
+temp_scale <- "global"
+ggplot(data = pred_list %>% filter(scale == temp_scale) %>%
+         right_join(fns_labels %>% dplyr::select(Label, Label_short, Function), 
+                    by = c("fns" = "Function")) %>%
+         mutate(Label = factor(Label, levels = labels_order)), 
+       
+       aes(x = PA_rank_rev, y = .epred, color = ordered(LC))) +
+  stat_lineribbon() +
+  #geom_line(aes(y = .epred, group = paste(LC, .draw)), alpha = 0.2)+
+  #geom_point(data = pred_list) +
+  facet_wrap(vars(Label), scales = "free_y", ncol=6)+
+  scale_fill_brewer(palette = "Greys") +
+  scale_color_manual(values=c("Cropland" = "#4A2040",
+                              "Grassland" = "#E69F00",
+                              "Shrubland" = "#0072B2", 
+                              "Woodland" = "#009E73", 
+                              "Dryland" = "#000000",
+                              "Other" = "#000000"), name="Habitat type")+
+  scale_x_continuous(limits = c(1, 10), breaks = c(2, 10), minor_breaks = c(2,4,6,8, 10))+
+  theme_void()+
+  theme(axis.text = element_text(),
+        panel.grid.major.y = element_line(color = "grey"),
+        panel.grid.minor.x =  element_line(color = "grey"),
+        strip.text = element_text(size = 15, hjust=0),
+        legend.position = c(0.8, 0.1),
+        legend.box = "horizontal")
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_regressions_parsBayesian_", temp_scale,"Bacteria.png"),
+       plot = last_plot(),
          width=15, height=10)
-}
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Bayesian pointrange grouped per estimate type ####
@@ -1441,7 +1443,7 @@ pars_glob <- read_csv(file=paste0(here::here(), "/results/sensitivity_globalBact
 pars_cont <- read_csv(paste0(here::here(), "/results/PAranks_Bayesian_continental_emtrends.csv"))
 pars_regi <- read_csv(paste0(here::here(), "/results/PAranks_Bayesian_regional_emtrends.csv"))
 
-pars_all <- rbind(pars_glob, pars_cont) %>%
+pars_all <- rbind(pars_glob %>% mutate("LC" = "Dryland", .before=1) %>% dplyr::select(-PA_rank_rev), pars_cont) %>%
   rbind(pars_regi)  %>%
   as_tibble()
 rm(pars_glob, pars_cont, pars_regi)
@@ -1502,9 +1504,9 @@ ggplot(pars_all %>%
                                                                       "<img src='figures/icon_location-black.png' width='70'>",
                                                                       "<img src='figures/icon_flag-Portugal.png' width='70'>" ))) %>%
                     mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))) %>%
-                    mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","ns")),
-                           significance =  ifelse(sign(PA_rank_rev.trend_CI_lower)!= sign(PA_rank_rev.trend_CI_upper), "ns", as.character(as.factor(LC)))) %>%
-                    mutate(significance = factor(significance, levels = c("Cropland", "Grassland", "Shrubland", "Woodland", "ns"))),
+                    mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland", "Dryland", "not significant")),
+                           significance =  ifelse(sign(PA_rank_rev.trend_CI_lower)!= sign(PA_rank_rev.trend_CI_upper), "not significant", as.character(as.factor(LC)))) %>%
+                    mutate(significance = factor(significance, levels = c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "not significant"))),
                   
                   aes(fill = significance, color = LC,
                       y = LC, x = PA_rank_rev.trend_mean, 
@@ -1524,22 +1526,25 @@ ggplot(pars_all %>%
                              "Grassland" = "#E69F00",
                              "Shrubland" = "#0072B2", 
                              "Woodland" = "#009E73", 
+                             "Dryland" = "#000000",
                              "Other" = "#000000",
-                             "ns" = "white"),
+                             "not significant" = "white"),
                     drop = FALSE)+
   scale_linetype_manual(values=c("Cropland" = "solid",
                                  "Grassland" = "solid",
                                  "Shrubland" = "solid", 
                                  "Woodland" = "solid", 
+                                 "Dryland" = "solid",
                                  "Other" = "solid",
-                                 "ns" = "longdash"),
+                                 "not significant" = "longdash"),
                         drop = FALSE)+
   scale_color_manual(values=c("Cropland" = "#4A2040",
                               "Grassland" = "#E69F00",
                               "Shrubland" = "#0072B2", 
                               "Woodland" = "#009E73", 
+                              "Dryland" = "#000000",
                               "Other" = "#000000",
-                              "ns" = "#000000"),
+                              "not significant" = "#000000"),
                      drop = FALSE)+
   theme_void()+
   
@@ -1548,7 +1553,8 @@ ggplot(pars_all %>%
                                                                         "Grassland" = "#E69F00",
                                                                         "Shrubland" = "#0072B2", 
                                                                         "Woodland" = "#009E73", 
-                                                                        "ns" = "#000000"))), 
+                                                                        "Dryland" = "#000000",
+                                                                        "not significant" = "#000000"))), 
          color = "none")+
   theme(legend.position = "bottom", 
         axis.title.y =element_blank(),

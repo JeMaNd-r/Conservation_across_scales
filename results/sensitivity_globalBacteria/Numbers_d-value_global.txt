@@ -7,11 +7,11 @@ On average, each protected and unprotected site was used in 812 (SD=12, min=782,
  791  824  813  828  795  827  810  812  818  820  832  820  798  807  804  822  811  825  809  796  814 
 Number of sites (PA/ nonPA) per LC.# A tibble: 1 x 2
 # Groups:   LC [1]
-  LC            n
-  <chr>     <int>
-1 Grassland    48
+  LC          n
+  <chr>   <int>
+1 Dryland    48
 # A tibble: 1 x 2
 # Groups:   LC [1]
-  LC            n
-  <chr>     <int>
-1 Grassland    91
+  LC          n
+  <chr>   <int>
+1 Dryland    91

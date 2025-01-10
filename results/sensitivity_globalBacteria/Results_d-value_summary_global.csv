@@ -1,7 +1,7 @@
 "","lc","fns","Label","Group_function","Organism","effect_mean","effect_SD","effect_median","effect_ci_2.5","effect_ci_17","effect_ci_83","effect_ci_97.5"
-"1","Grassland","Bac_JaccDist_av","Bacterial Dissimilarity","Dissimilarity","Bacteria",-0.174096792777848,0.130116832518963,-0.16395767041789,-0.415133684300935,-0.289233647560047,-0.0520236098582889,0.0483136297144336
-"2","Grassland","Bac_richness","Bacterial Richness","Richness","Bacteria",0.785451305597015,0.155907630990808,0.76737741151228,0.560606840265984,0.64020978670541,0.93093073824349,1.13070879250455
-"3","Grassland","Bac_shannonDiv","Bacterial Shannon","Shannon","Bacteria",0.348730006980974,0.13897206076888,0.332732189231716,0.157997547026359,0.219516523868481,0.471847497713969,0.66751198215277
+"1","Dryland","Bac_JaccDist_av","Bacterial Dissimilarity","Dissimilarity","Bacteria",-0.174096792777848,0.130116832518963,-0.16395767041789,-0.415133684300935,-0.289233647560047,-0.0520236098582889,0.0483136297144336
+"2","Dryland","Bac_richness","Bacterial Richness","Richness","Bacteria",0.785451305597015,0.155907630990808,0.76737741151228,0.560606840265984,0.64020978670541,0.93093073824349,1.13070879250455
+"3","Dryland","Bac_shannonDiv","Bacterial Shannon","Shannon","Bacteria",0.348730006980974,0.13897206076888,0.332732189231716,0.157997547026359,0.219516523868481,0.471847497713969,0.66751198215277
 "4",NA,"Arbuscularmycorrhizal_richness","AM fungi Richness","Richness","Fungi",NA,NA,NA,NA,NA,NA,NA
 "5",NA,"Decomposer_richness","Decomposer Richness","Richness","Decomposers",NA,NA,NA,NA,NA,NA,NA
 "6",NA,"Ectomycorrhizal_richness","EM fungi Richness","Richness","Fungi",NA,NA,NA,NA,NA,NA,NA

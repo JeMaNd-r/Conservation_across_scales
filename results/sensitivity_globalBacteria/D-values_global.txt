@@ -1,7 +1,7 @@
 #################################################
 ##  Significant d-values from global analysis  ##
-##  Sys.Date() 2025-01-02  ##
+##  Sys.Date() 2025-01-10  ##
 #################################################
-         lc            fns effect_mean effect_SD effect_median effect_ci_2.5 effect_ci_17 effect_ci_83 effect_ci_97.5
-1 Grassland   Bac_richness   0.7854513 0.1559076     0.7673774     0.5606068    0.6402098    0.9309307       1.130709
-2 Grassland Bac_shannonDiv   0.3487300 0.1389721     0.3327322     0.1579975    0.2195165    0.4718475       0.667512
+       lc            fns effect_mean effect_SD effect_median effect_ci_2.5 effect_ci_17 effect_ci_83 effect_ci_97.5
+1 Dryland   Bac_richness   0.7854513 0.1559076     0.7673774     0.5606068    0.6402098    0.9309307       1.130709
+2 Dryland Bac_shannonDiv   0.3487300 0.1389721     0.3327322     0.1579975    0.2195165    0.4718475       0.667512

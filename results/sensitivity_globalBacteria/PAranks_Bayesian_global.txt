@@ -1,52 +1,52 @@
 $Bac_richness
 $Bac_richness$fixef
-               Estimate Est.Error       Q2.5      Q97.5
-Intercept   3999.815143  51.59121 3897.93767 4100.91841
-PA_rank_rev    4.195405  14.33767  -24.00738   32.01863
+               Estimate Est.Error      Q2.5      Q97.5
+Intercept   4000.404054  51.72046 3899.2264 4102.33656
+PA_rank_rev    4.115984  14.45215  -24.0349   32.46863
 
 $Bac_richness$emtrends
 # A tibble: 1 x 4
   PA_rank_rev PA_rank_rev.trend lower.HPD upper.HPD
         <dbl>             <dbl>     <dbl>     <dbl>
-1        2.44              4.28     -24.2      31.6
+1        2.44              4.10     -24.9      31.5
 
 $Bac_richness$emmeans
 # A tibble: 1 x 4
   PA_rank_rev emmean lower.HPD upper.HPD
         <dbl>  <dbl>     <dbl>     <dbl>
-1        2.44  4010.     3935.     4083.
+1        2.44  4011.     3936.     4084.
 
 
 $Bac_shannonDiv
 $Bac_shannonDiv$fixef
-                 Estimate   Est.Error        Q2.5      Q97.5
-Intercept    7.5138049793 0.026336316  7.46203057 7.56523454
-PA_rank_rev -0.0004433979 0.007336757 -0.01460057 0.01399352
+                 Estimate   Est.Error       Q2.5      Q97.5
+Intercept    7.5138142961 0.026465948  7.4614442 7.56581612
+PA_rank_rev -0.0005251042 0.007395778 -0.0149355 0.01394485
 
 $Bac_shannonDiv$emtrends
 # A tibble: 1 x 4
   PA_rank_rev PA_rank_rev.trend lower.HPD upper.HPD
         <dbl>             <dbl>     <dbl>     <dbl>
-1        2.44         -0.000455   -0.0145    0.0140
+1        2.44         -0.000569   -0.0152    0.0136
 
 $Bac_shannonDiv$emmeans
 # A tibble: 1 x 4
   PA_rank_rev emmean lower.HPD upper.HPD
         <dbl>  <dbl>     <dbl>     <dbl>
-1        2.44   7.51      7.48      7.55
+1        2.44   7.51      7.47      7.55
 
 
 $Bac_JaccDist_av
 $Bac_JaccDist_av$fixef
                 Estimate    Est.Error          Q2.5        Q97.5
-Intercept   0.8805756217 0.0011727527  0.8782830216 0.8828701815
-PA_rank_rev 0.0001304684 0.0003257122 -0.0005099442 0.0007725365
+Intercept   0.8805755450 0.0011752936  0.8782719769 0.8828749530
+PA_rank_rev 0.0001297099 0.0003254985 -0.0005043144 0.0007628638
 
 $Bac_JaccDist_av$emtrends
 # A tibble: 1 x 4
   PA_rank_rev PA_rank_rev.trend lower.HPD upper.HPD
         <dbl>             <dbl>     <dbl>     <dbl>
-1        2.44          0.000131 -0.000514  0.000767
+1        2.44          0.000130 -0.000491  0.000773
 
 $Bac_JaccDist_av$emmeans
 # A tibble: 1 x 4
