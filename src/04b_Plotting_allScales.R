@@ -868,6 +868,8 @@ write_csv(pars_all %>%
       arrange(Group, Variable, Scale),
   paste0(here::here(), "/figures/Results_slope_BayesianTrends_allScales.csv"))
 
+write_csv(pars_stats, paste0(here::here(), "/figures/Results_slope_BayesianTrends_stats_allScales.csv"))
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### APPENDIX FIGURE 3.2 - Heatmap Bayesian slopes ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -

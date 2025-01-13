@@ -1590,9 +1590,9 @@ pars_all %>%
                                                     "<img src='figures/icon_location-black.png' width='70'>",
                                                     "<img src='figures/icon_flag-Portugal.png' width='70'>" ))) %>%
   mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))) %>%
-  mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","ns")),
+  mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","Dryland", "ns")),
          significance =  ifelse(sign(lower.HPD)!= sign(upper.HPD), "ns", as.character(as.factor(LC)))) %>%
-  mutate(significance = factor(significance, levels = c("Cropland", "Grassland", "Shrubland", "Woodland", "ns")))  %>% 
+  mutate(significance = factor(significance, levels = c("Dryland","Cropland", "Grassland", "Shrubland", "Woodland", "ns")))  %>% 
   filter(!is.na(LC) & !is.na(scale)) %>%
   filter(significance != "ns") %>%
   arrange(abs(PA_rank_rev.trend)) %>%
@@ -1621,9 +1621,9 @@ write_csv(pars_all %>%
                                                               "<img src='figures/icon_location-black.png' width='70'>",
                                                               "<img src='figures/icon_flag-Portugal.png' width='70'>" ))) %>%
             mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))) %>%
-            mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","ns")),
+            mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","Dryland","ns")),
                    significance =  ifelse(sign(lower.HPD)!= sign(upper.HPD), "ns", as.character(as.factor(LC)))) %>%
-            mutate(significance = factor(significance, levels = c("Cropland", "Grassland", "Shrubland", "Woodland", "ns")))  %>% 
+            mutate(significance = factor(significance, levels = c("Dryland","Cropland", "Grassland", "Shrubland", "Woodland", "ns")))  %>% 
             filter(!is.na(LC) & !is.na(scale)) %>%
             arrange(abs(PA_rank_rev.trend)) %>%
             mutate("Habitat" = LC,
