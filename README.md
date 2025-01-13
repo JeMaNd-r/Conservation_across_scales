@@ -1,7 +1,7 @@
 # **Comparison of protected and unprotected soils across scales**
 This repository contains the scripts, input and output for the comparison of soil diversity and functioning estimates in protected and unprotected sampling sites across three spatial scales (global, continental: Europe, regional: North-Portugal). 
 
-This README.md file was written by Romy Zeiss and last updated on 2024-09-25. 
+This README.md file was written by Romy Zeiss and last updated on 2025-01-13. 
 The structure of the README file is based on [this one](https://github.com/JWicquart/fish_growth/blob/master/README.md)
 
 **The respective study is presented in the following article**:
@@ -28,20 +28,28 @@ The structure of the README file is based on [this one](https://github.com/JWicq
 ## 1. How to download this project?
 
 On the project main page on GitHub, click on the green button `Code` and then click on `Download ZIP`.
+Alternatively, you can `clone` the repository.
 
 
 ## 2. Description of the project
 
+The aim of the analysis was the comparison of soil biodiversity and functioning attributes in protected and unprotected sites at three spatial scales and different habitat types.
+
+Spatial scales are global, continental (Europe) and regional (north Portugal) and included as `temp_scale` or `scale` and with 4 letters (glob, cont, regi) or whole scale names in the scripts and output.
+Habitat types are Dryland at global scale, and Cropland, Grassland, and Woodland at continental and regional scale. They are included as `LC` or `lc` (land cover types) individually or `lc_names` and `lc_names_all` as whole in the analysis and names by their full names.
+
+At some point in the analysis, `temp_date` is used to track different versions of the intermediate datasets (mainly for randomized pairing and later comparisons based on these set of pairs).
 
 ### 2.1 Project organization
 
-This project is divided in 5 folders:
+This project is divided in 6 folders:
 
 * :open_file_folder:	`data_raw` folder contains input 11 datasets, 3 metadata files and one reference table (see part _2.2 Datasets description_).
-* :open_file_folder:	`src` folder contains X _src_ codes and a `functions` folder (see part _2.3 Code description_).
 * :open_file_folder:	`intermediates` folder serves as temporary storage place for intermediate results (see part _2.2 Datasets description_).
 * :open_file_folder:	`results` folder contains output files (csv, RData, txt). It also contains intermediate results, figures and final results for the sensitivity analysis (see part _2.2 Datasets description_).
+* :open_file_folder:	`src` folder contains X _src_ codes and a `functions` folder (see part _2.3 Code description_).
 * :open_file_folder: `figures` folder contains figures and their underlying data (see part _2.3 Code description_).
+* :open_file_folder: `docs` folder contains files to create Appendix as Quarto markdown report (*Appendix.qmd* and *Appendix.html*), including for example description of response variables. 
 
 
 ### 2.2 Datasets description
@@ -51,18 +59,20 @@ This project is divided in 5 folders:
 The spatial rasters **CHELSA_bio1_1981-2010_V.2.1.tif** and **CHELSA_bio12_1981-2010_V.2.1.tif** were downloaded from [CHELSA](https://chelsa-climate.org/downloads/) on 2022-04-10. 
 Reference: Karger, D.N., Conrad, O., Böhner, J., Kawohl, T., Kreft, H., Soria-Auza, R.W., Zimmermann, N.E., Linder, P., Kessler, M. (2017): Climatologies at high resolution for the Earth land surface areas. *Scientific Data*. 4 170122. https://doi.org/10.1038/sdata.2017.122
 
-The datasets **Diversity_[temp_scale].csv** with `temp_scale` being one of three (global, continental, regional) correspond to the pre-processed sequencing data from the three original datasets described in the associated publication. The dataset **Diversity_global_atlas.csv** corresponds to the alternative global dataset that was additionally analysed and which is also described in the associated publication.
+The datasets **Diversity_[temp_scale].csv** with `temp_scale` being one of three (global, continental, regional) correspond to the pre-processed sequencing data from the three original datasets described in the associated publication. The dataset **Diversity_global_atlas.csv** corresponds to the alternative global dataset that was analysed in a previous version of the study. This dataset covered very diverse habitats worldwide that are not necessarily comparable, which is why we decided to focus on the results from the dryland dataset only.   
 
 - `SampleID` Unique code identifying each sample
-- The remaining columns contain the richness (`richness`), Shannon index (`shannon`) and mean and standard deviation of the Jaccard Dissimilarity (`JaccDist_av` and `JaccDist_sd`) of the investigated soil taxa, namely bacteria (`Bac`), eukaryotes (`Euk`), fungi (`Fungi`), invertebrates (`Invertebrate`), protists (`Protist`), nematodes (`Nematode`), ecto- and arbuscular mycorrhizal fungi (`Ectomycorrhizal` and `Arbuscularmycorrhizal`), fungal plant pathogens (`Plant_pathogen`) and decomposers (`Decomposer`). The additional columns containing the richness other functional groups were not considered in this analysis.
+- The remaining columns contain the richness (`richness`), Shannon index (`shannon`) and mean and standard deviation of the Jaccard Dissimilarity (`JaccDist_av` and `JaccDist_sd`) of the investigated soil taxa, namely bacteria (`Bac`), eukaryotes (`Euk`), fungi (`Fungi`), invertebrates (`Invertebrate`), protists (`Protist`), nematodes (`Nematode`), ecto- and arbuscular mycorrhizal fungi (`Ectomycorrhizal` and `Arbuscularmycorrhizal`), fungal plant pathogens (`Plant_pathogen`) and decomposers (`Decomposer`). The additional columns containing the richness of other functional groups were not considered in this analysis.
 
 The spatial raster **Elevation_Worldclim_Global.tif** was downloaded from [WorldClim](https://www.worldclim.org/data/worldclim21.html) on 2022-12-21. The associated file **Elevation_Worldclim_Global_METADATA.txt** contains basic information to the raster file.
 Reference: Fick, S. E., & Hijmans, R. J. (2017). WorldClim 2: new 1‐km spatial resolution climate surfaces for global land areas. *International journal of climatology*, 37(12), 4302-4315. https://doi.org/10.1002/joc.5086"
 
 The dataset **Global_Atlas_drylands_V2.xlsx** corresponds to the global drylands dataset used for analysis.
-Reference:  
+References:  
+- Maestre FT, Delgado-Baquerizo M, Jeffries TC, Eldridge DJ, Ochoa V, Gozalo B, et al. (2015) Increasing aridity reduces soil microbial diversity and abundance in global drylands. Proceedings of the National Academy of Sciences 112: 15684–15689.
+- Maestre FT, Le Bagousse-Pinguet Y, Delgado-Baquerizo M, Eldridge DJ, Saiz H, Berdugo M, et al. (2022) Grazing and ecosystem service delivery in global drylands. Science 378: 915–920.
 
-The dataset **GlobalAtlasv2_conservation_heterogeneity_papers_v2.xlsx** corresponds to the alternative global dataset used for sensitivity analysis. 
+The dataset **GlobalAtlasv2_conservation_heterogeneity_papers_v2.xlsx** corresponds to the alternative global dataset used in a previous version of the study. 
 References: 
 - Delgado-Baquerizo M, Bardgett RD, Vitousek PM, Maestre FT, Williams MA, Eldridge DJ, et al. (2019) Changes in belowground biodiversity during ecosystem development. Proceedings of the National Academy of Sciences 116: 6891–6896.
 - Delgado-Baquerizo M, Reich PB, Bardgett RD, Eldridge DJ, Lambers H, Wardle DA, et al. (2020a) The influence of soil age on ecosystem structure and function across biomes. Nature Communications 11: 4721.
@@ -84,26 +94,28 @@ References:
 - Orgiazzi A, Ballabio C, Panagos P, Jones A, Fernández‐Ugalde O (2018) LUCAS Soil, the largest expandable soil dataset for Europe: a review. European Journal of Soil Science 69: 140–153.
 - Orgiazzi A, Panagos P, Fernández-Ugalde O, Wojda P, Labouyrie M, Ballabio C, et al. (2022) LUCAS Soil Biodiversity and LUCAS Soil Pesticides, new tools for research and policy development. European Journal of Soil Science 73: e13299.
 
-The dataset **SoilReCon_Data_211123.csv** corresponds to the regional dataset used for analysis. This data was collected in the project "Soil Ecosystems in the XXI Century: pressures, conservation and future scenarios" in the North of Portugal. The associated file **SoilReCon_MetaData_211123.csv** contains information about the columns and sampling/analysis methods.
+The dataset **SoilReCon_Data_211123.csv** corresponds to the regional dataset used for analysis. This data was collected in the project "Soil Ecosystems in the XXI Century: pressures, conservation and future scenarios" in the North of Portugal. The associated file **SoilReCon_MetaData_211123.csv** contains information about the columns and sampling/analysis methods. 
+Project number: PTDC/BIA-CBI/2340/2020 (FCT-Portugal)
 
 
 #### 2.2.2 Intermediate results
 
-For each `temp_scale`, there is one folder containing the pairs of protected and unprotected sites (`Pairs_paNonpa...csv`) and protected sites that could not been paired with environmentally similar unprotected sites(`Unpaired_protected_sites...csv`).
+For each `temp_scale`, there is one folder containing the pairs of protected and unprotected sites (`Pairs_paNonpa...csv`) and protected sites that could not been paired with environmentally similar unprotected sites(`Unpaired_protected_sites...csv`). Latter ones should be empty, as sites that cannot be paired are excluded now beforehand. Creating and saving this output is an artefact of previous code versions. The `Pairs_paNonpa...csv` instead is used to compare protected and unprotected sites by calculating effect sizes (d-values). 
+In addition, the scale-specific folders contain `Geographically_close_sites.RData` for at least continental scale, which is an R list object of unprotected sites with distances smaller or equal to the defined distance threshold for pairing.
 
-The `intermediate` folder also contains the clean datasets (`Data_clean...csv`), the assignment of protection status to the sampling locations (`PA_assignment...csv`), and intermediate results from random-slope (`PAranks_Bayesian...RData`) and random-intercept models (`pars_PAtypes_Bayesian...RData`).
+The `intermediate` folder also contains the clean datasets (`Data_clean...csv`), the sites actually used in randomized pairing for calculating effect sizes (`Data_paired...csv`, subset of `Data_clean....csv` but with scaled variables), the assignment of protection status to the sampling locations (`PA_assignment...csv`), and intermediate results from random-slope (`PAranks_Bayesian...RData`) and random-intercept models (`pars_PAtypes_Bayesian...RData` from rstan models, and `PAtypes_Bayesian...RData` from brms models).
 
 
 #### 2.2.3 Results
 
-The `results` folder contains output files of the analyses (csv, RData, txt). It also contains intermediate results, figures and final results for the sensitivity analysis, namely the analysis of the alternative dataset (`sensitivity_globalAlternativeDataset`) and the analysis of all global bacterial sites (`sensitivity_globalBacteria`). The naming conventions follow those from the `intermediate`, `results` and `figures` folders.
+The `results` folder contains output files of the analyses (csv, RData, txt). It also contains intermediate results, figures and final results for the sensitivity analysis, namely the analysis of the alternative dataset (`sensitivity_globalAlternativeDataset` [outdated version]) and the analysis of all global bacterial sites (`sensitivity_globalBacteria`). The naming conventions within the `sensitivity_` folders follow those from the `intermediate`, `results` and `figures` folders.
 
 Naming conventions in the `results` folder:
-- `corMat` Correlation matrix calculated as Pearson or Spearman rank correlation coefficient of the environmental variables considered for environmental similarity.
+- `corMat` Correlation matrix calculated as *Pearson* or *Spearman* rank correlation coefficient of the environmental variables considered for environmental similarity.
 - `d_1000_trails` Effect sizes from the 1000 randomizations.
-- `D-values` Effect sizes summarized across the 1000 randomizations and arranged by median effect size (`effect_median`).
-- `Locations` Sampling locations for effect size analysis and random-intercept and -slope models (`PAranks`).
-- `Numbers` Number of sampling sites (not) used in pairing and per land cover type.
+- `D-values` Significant effect sizes summarized across the 1000 randomited pairings and sorted by absolute median effect size (`effect_median`).
+- `Locations` Sampling locations for effect size analysis (no additional naming) and random-intercept and -slope models (`PAranks`). Sampling locations for effect size analysis are a subset of the ones from random-intercept and -slope models.
+- `Numbers` Number of sampling sites (not) used in pairing and per habitat type.
 - `PAranks_Bayesian` Results of random-slope models, either as estimated marginal means (`emtrends`) or as subset of 10,000 randomly samples slope estimates (`sample10k`).
 - `pars_PAtypes_Bayesian_df` Results of the random-intercept models
 - `VIF_envVars` Variable inflation factor of the environmental variables calculated using the *usdm* package.
