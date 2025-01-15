@@ -10,8 +10,8 @@
 library(here)
 library(tidyverse)
 
-library(rstan)
-options(mc.cores = 4) # number of CPU cores
+#library(rstan)
+#options(mc.cores = 4) # number of CPU cores
 
 library(emmeans) # to estimate contrast i.e. EM means
 library(brms)
@@ -184,7 +184,7 @@ for(temp_fns in fns){
     output_slope <- brm(brmsformula(paste(temp_fns, "~ LC * PA_rank_rev")), data = data_temp_slope,
                         chains = 4, iter = 10000, warmup = 2000)
     
-    output_intercept <- brm(brmsformula(paste(temp_fns, "~ LC * PA_rank")), data = data_temp_intercept,
+    output_intercept <- brm(brmsformula(paste(temp_fns, "~ LC + PA_rank")), data = data_temp_intercept,
                         chains = 4, iter = 10000, warmup = 2000)
   }
   
