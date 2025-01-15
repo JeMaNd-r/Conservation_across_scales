@@ -38,7 +38,7 @@ lc_names <- c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "Othe
 radius_thres <- 500000 #in m; 500000 for continental
 
 # minimum number of nonPA sites per PA that can be paired
-min_nonPA <- 10 # G:5/ together:10, C+R: 10
+min_nonPA <- 10
 
 # number of randomization = number of pairings 
 number_times <- 1000
