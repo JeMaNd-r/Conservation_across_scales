@@ -23,34 +23,9 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
-# temp_scale <- "global"
+#temp_scale <- "global"
 # temp_scale <- "continental"
  temp_scale <- "regional"
-
-# set date of latest analysis
-if(temp_scale == "global") temp_date <- "2025-01-06"
-if(temp_scale == "continental") temp_date <- "2025-01-06"
-if(temp_scale == "regional") temp_date <- "2025-01-06"
-
-min_size <- min(table(data_clean$LC, 
-                      data_clean$PA)[table(data_clean$LC, 
-                                           data_clean$PA)
-                                     >0])
-
-if(temp_scale == "global"){
-  lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
-  #min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
-} 
-if(temp_scale == "continental"){
-  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
-  #min_size <- 14 # number of samples/ sites that should be paired per LC type
-  fns <- fns[fns != "Water_regulation_service"]
-}
-if(temp_scale == "regional"){
-  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
-  #min_size <- 7 # number of samples/ sites that should be paired per LC type
-  fns <- fns[fns != "Water_regulation_service"]
-}
 
 data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
 data_clean
@@ -60,6 +35,23 @@ data_clean <- data_clean %>%
   filter(LC %in% lc_names) %>%
   arrange(LC, PA_rank)
 data_clean
+
+min_size <- min(table(data_clean$LC, 
+                      data_clean$PA)[table(data_clean$LC, 
+                                           data_clean$PA)
+                                     >0])
+
+if(temp_scale == "global"){
+  lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
+  } 
+if(temp_scale == "continental"){
+  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
+  fns <- fns[fns != "Water_regulation_service"]
+}
+if(temp_scale == "regional"){
+  lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
+  fns <- fns[fns != "Water_regulation_service"]
+}
 
 # extract sample size and number and type of PA_ranks for each LC
 protect_legend <- data_clean  %>%
@@ -75,96 +67,74 @@ protect_legend
 # Reverse the PA_rank column
 protect_legend$PA_rank_rev <- max(protect_legend$PA_rank) - protect_legend$PA_rank + 1
 
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## Compare difference between PA types (incl. nonPA) ####
-# using Bayesian model - random intercept model
-
-# define stan code for linear model
-stan_code = '
-  data {
-    int n;
-    int n_group;
-    real y[n];
-    int group[n];
-  }
-  parameters {
-    real a[n_group];
-    real<lower=0> sigma;
-    real mu_a;
-    real<lower=0> sigma_a;
-  }
-  model {
-    // priors
-    mu_a ~ normal(0,10);
-    sigma_a ~ normal(0,10);
-    
-    for (j in 1:n_group){
-     a[j] ~ normal(mu_a,sigma_a);
-    }
-    
-    sigma ~ normal(0,10);
-    
-    // likelihood
-    for(i in 1:n){
-      y[i] ~ normal(a[ group[i] ], sigma);
-    }
-  }
-'
-
-stan_model <- stan_model(model_code = stan_code)
-
-pars_list <- f_compare_pa_types(data = data_clean, 
-                                protect_levels = protect_legend,
-                                col_fns = fns)
-
-save(pars_list, file=paste0(here::here(), "/intermediates/pars_PAtypes_Bayesian_", temp_scale, ".RData"))
-
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# combine individual list elements (c) per fns & lc into one vector
-# that is, we have one list element per fns and lc containing the values
-
-load(file=paste0(here::here(), "/intermediates/pars_PAtypes_Bayesian_", temp_scale, ".RData")) #pars_list
-
-pars_sample <- f_combine_pars_list(pars_list = pars_list)
-str(pars_sample)
-
-rm(pars_list)
-gc()
-
-### Save total list with p tables & effect sizes ####
-save(pars_sample, file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_", temp_scale, ".RData"))
-
 # #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# ### Calculate contrast between protection types ####
+# ## Compare difference between PA types (incl. nonPA) ####
+# # using Bayesian model - random intercept model
 # 
-# load(file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_", temp_scale, ".RData")) #pars_sample
+# # define stan code for linear model
+# stan_code = '
+#   data {
+#     int n;
+#     int n_group;
+#     real y[n];
+#     int group[n];
+#   }
+#   parameters {
+#     real a[n_group];
+#     real<lower=0> sigma;
+#     real mu_a;
+#     real<lower=0> sigma_a;
+#   }
+#   model {
+#     // priors
+#     mu_a ~ normal(0,10);
+#     sigma_a ~ normal(0,10);
+#     
+#     for (j in 1:n_group){
+#      a[j] ~ normal(mu_a,sigma_a);
+#     }
+#     
+#     sigma ~ normal(0,10);
+#     
+#     // likelihood
+#     for(i in 1:n){
+#       y[i] ~ normal(a[ group[i] ], sigma);
+#     }
+#   }
+# '
 # 
-# # group protection type Ia-VI (1-7) together, and group Not... and Unprotected (8-11) together
-# pars_sample %>% 
-#   pivot_longer(cols="1":"2") %>%
-#   mutate("PA" = ifelse(name %in% as.character(1:7), 1, 
-#                        ifelse(name %in% as.character(8:11), 0, NA))) %>%
-#   group_by(lc, fns, PA) %>%
-#   summarize(across(value, list("mean"  = function(x) mean(x, na.rm=TRUE), 
-#                                 "median" = function(x) median(x, na.rm=TRUE), 
-#                                 "ci_2.5" = function(x) quantile(x, 0.05, na.rm=TRUE), 
-#                                 "ci_17" = function(x) quantile(x, 0.17, na.rm=TRUE), 
-#                                 "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
-#                                 "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE))))
+# stan_model <- stan_model(model_code = stan_code)
 # 
-# # Estimated marginal means
-# emmeans::emmeans()
+# pars_list <- f_compare_pa_types(data = data_clean, 
+#                                 protect_levels = protect_legend,
+#                                 col_fns = fns)
+# 
+# save(pars_list, file=paste0(here::here(), "/intermediates/pars_PAtypes_Bayesian_", temp_scale, ".RData"))
+# 
+# #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# # combine individual list elements (c) per fns & lc into one vector
+# # that is, we have one list element per fns and lc containing the values
+# 
+# load(file=paste0(here::here(), "/intermediates/pars_PAtypes_Bayesian_", temp_scale, ".RData")) #pars_list
+# 
+# pars_sample <- f_combine_pars_list(pars_list = pars_list)
+# str(pars_sample)
+# 
+# rm(pars_list)
+# gc()
+# 
+# ### Save total list with p tables & effect sizes ####
+# save(pars_sample, file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_", temp_scale, ".RData"))
+# 
+# Calculating emmeans and contrasts more complicated then in brms, therefore
+# switch to brms (2025-01-13)
+
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Compare difference using brms & linear regression model ####
-# random-slope model
+# random-slope model & random-intercept, both using brms
 
 source(paste0(here::here(), "/src/00_Parameters.R")) 
-
-# set date of latest analysis
-if(temp_scale == "global") temp_date <- "2025-01-06"
-if(temp_scale == "continental") temp_date <- "2025-01-06"
-if(temp_scale == "regional") temp_date <- "2025-01-06"
 
 min_size <- min(table(data_clean$LC, 
                       data_clean$PA)[table(data_clean$LC, 
@@ -172,17 +142,14 @@ min_size <- min(table(data_clean$LC,
                                      >0])
 
 if(temp_scale == "global"){
-  lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
-  #min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+  lc_names <- "Dryland"
 } 
 if(temp_scale == "continental"){
   lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
-  #min_size <- 14 # number of samples/ sites that should be paired per LC type
   fns <- fns[fns != "Water_regulation_service"]
 }
 if(temp_scale == "regional"){
   lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
-  #min_size <- 7 # number of samples/ sites that should be paired per LC type
   fns <- fns[fns != "Water_regulation_service"]
 }
 
@@ -195,63 +162,101 @@ data_clean <- data_clean %>%
   arrange(LC, PA_rank_rev)
 
 # store results
-fixed_effects <- vector("list")
-pred_list <- vector("list")
+fixed_effects_slope <- vector("list")
+fixed_effects_intercept <- vector("list")
+pred_list_slope <- vector("list")
+pred_list_intercept <- vector("list")
 
 for(temp_fns in fns){
   
-  data_temp <- data_clean %>% dplyr::select(all_of(c("LC", temp_fns, "PA_rank_rev")))
+  data_temp_slope <- data_clean %>% dplyr::select(all_of(c("LC", temp_fns, "PA_rank_rev")))
+  data_temp_intercept <- data_clean %>% dplyr::select(all_of(c("LC", temp_fns, "PA_rank"))) %>%
+    mutate(PA_rank = ifelse(is.na(PA_rank), "Unprotected", PA_rank))
   
   if(temp_scale == "global"){
-    model_output <- brm(brmsformula(paste(temp_fns, "~ PA_rank_rev")), data = data_temp,
+    output_slope <- brm(brmsformula(paste(temp_fns, "~ PA_rank_rev")), data = data_temp_slope,
                         chains = 4, iter = 10000, warmup = 2000)
+    
+    output_intercept <- brm(brmsformula(paste(temp_fns, "~ PA_rank")), data = data_temp_intercept,
+                        chains = 4, iter = 10000, warmup = 2000)
+    
   }else{
-    model_output <- brm(brmsformula(paste(temp_fns, "~ LC * PA_rank_rev")), data = data_temp,
+    output_slope <- brm(brmsformula(paste(temp_fns, "~ LC * PA_rank_rev")), data = data_temp_slope,
+                        chains = 4, iter = 10000, warmup = 2000)
+    
+    output_intercept <- brm(brmsformula(paste(temp_fns, "~ LC * PA_rank")), data = data_temp_intercept,
                         chains = 4, iter = 10000, warmup = 2000)
   }
   
   # sink(paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_", temp_fns, ".txt"))
-  # model_output
-  # model_output$fit
-  # hypothesis(model_output, "PA_rank_rev<0")
-  # hypothesis(model_output, "PA_rank_rev>0")
+  # output_slope
+  # output_slope$fit
+  # hypothesis(output_slope, "PA_rank_rev<0")
+  # hypothesis(output_slope, "PA_rank_rev>0")
   # sink()
   
-  fixed_effects[[temp_fns]] <- vector("list")
-  fixed_effects[[temp_fns]][["fixef"]] <- brms::fixef(model_output)
+  fixed_effects_slope[[temp_fns]] <- vector("list")
+  fixed_effects_intercept[[temp_fns]] <- vector("list")
+  fixed_effects_slope[[temp_fns]][["fixef"]] <- brms::fixef(output_slope)
+  fixed_effects_intercept[[temp_fns]][["fixef"]] <- brms::fixef(output_intercept)
   
   if(temp_scale == "global"){
-    fixed_effects[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(model_output, var = "PA_rank_rev"))
-    fixed_effects[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(model_output, specs = c("PA_rank_rev")))
+    fixed_effects_slope[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(output_slope, var = "PA_rank_rev"))
+    fixed_effects_slope[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_slope, specs = c("PA_rank_rev")))
+
+    fixed_effects_intercept[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_intercept, specs = "PA_rank"))
   }else{
-    fixed_effects[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(model_output, specs = "LC", var = "PA_rank_rev"))
-    fixed_effects[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(model_output, specs = c("PA_rank_rev", "LC")))
+    fixed_effects_slope[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(output_slope, specs = "LC", var = "PA_rank_rev"))
+    fixed_effects_slope[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_slope, specs = c("PA_rank_rev", "LC")))
+    
+    fixed_effects_intercept[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_intercept, specs = c("PA_rank", "LC")))
   }
+  
   # Extract estimates and credible intervals for PA_rank_rev
-  pred_list[[temp_fns]] <- data_temp %>%
+  pred_list_slope[[temp_fns]] <- data_temp_slope %>%
     group_by(LC) %>%
     modelr::data_grid(PA_rank_rev = modelr::seq_range(PA_rank_rev, n = 51)) %>%
-    tidybayes::add_epred_draws(model_output) %>%
+    tidybayes::add_epred_draws(output_slope) %>%
+    mutate(scale = temp_scale,
+           fns = temp_fns)
+
+  pred_list_intercept[[temp_fns]] <- data_temp_intercept %>%
+    group_by(LC) %>%
+    tidybayes::add_epred_draws(output_intercept) %>%
     mutate(scale = temp_scale,
            fns = temp_fns)
 
 }
 
-pred_list <- do.call(rbind, pred_list)
+pred_list_slope <- do.call(rbind, pred_list_slope)
+pred_list_intercept <- do.call(rbind, pred_list_intercept)
 
-save(pred_list, file=paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, ".RData"))
-pred_sample <- pred_list %>% group_by(LC) %>% slice_sample(n = 10000)
+save(pred_list_slope, file=paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, ".RData"))
+save(pred_list_intercept, file=paste0(here::here(), "/intermediates/PAtypes_Bayesian_", temp_scale, ".RData"))
 
-save(pred_sample, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_sample10k.RData"))
+# subset
+pred_sample_slope <- pred_list_slope %>% group_by(LC) %>% slice_sample(n = 10000)
+pred_sample_intercept <- pred_list_intercept %>% group_by(LC) %>% slice_sample(n = 10000)
 
-save(fixed_effects, file=paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, "_summary.RData"))
+save(pred_sample_slope, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_sample10k.RData"))
+save(pred_sample_intercept, file=paste0(here::here(), "/results/PAtypes_Bayesian_", temp_scale, "_sample10k.RData"))
+
+# save fixed effects & emmeans
+save(fixed_effects_slope, file=paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, "_summary.RData"))
+save(fixed_effects_intercept, file=paste0(here::here(), "/intermediates/PAtypes_Bayesian_", temp_scale, "_summary.RData"))
+
 sink(paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, ".txt"))
-fixed_effects
+fixed_effects_slope
 sink()
 
-# extract emtrends
-load(file=paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, "_summary.RData")) #fixed_effects
-emtrends <- sapply(fixed_effects,function(x) x[2])
+sink(paste0(here::here(), "/intermediates/PAtypes_Bayesian_", temp_scale, ".txt"))
+fixed_effects_intercept
+sink()
+
+
+# extract emtrends (slope model)
+load(file=paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, "_summary.RData")) #fixed_effects_slope
+emtrends <- sapply(fixed_effects_slope,function(x) x[2])
 for(i in 1:length(emtrends)){
   emtrends[[i]] <- emtrends[[i]] %>% 
     mutate("fns" = gsub(".emtrends", "", names(emtrends)[i]),
@@ -262,4 +267,20 @@ emtrends <- do.call(rbind, emtrends)
 if(temp_scale == "global") emtrends <- emtrends %>% mutate(LC = "Dryland", .before = 1) %>% dplyr::select(-PA_rank_rev)
 
 write_csv(emtrends, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_emtrends.csv"))
+
+
+# extract emmeans (intercept model)
+load(file=paste0(here::here(), "/intermediates/PAtypes_Bayesian_", temp_scale, "_summary.RData")) #fixed_effects_intercept
+emtrends_mean <- sapply(fixed_effects_intercept,function(x) x[2])
+for(i in 1:length(emtrends_mean)){
+  emtrends_mean[[i]] <- emtrends_mean[[i]] %>% 
+    mutate("fns" = gsub(".emmeans", "", names(emtrends_mean)[i]),
+           "scale" = temp_scale)
+}
+emtrends_mean <- do.call(rbind, emtrends_mean)
+emtrends_mean
+
+if(temp_scale == "global") emtrends_mean <- emtrends_mean %>% mutate(LC = "Dryland", .before = 1) 
+
+write_csv(emtrends_mean, file=paste0(here::here(), "/results/PAtypes_Bayesian_", temp_scale, "_emmeans.csv"))
 
