@@ -1,6 +1,6 @@
 #################################################
 ##  Significant d-values from global analysis  ##
-##  Sys.Date() 2025-01-07  ##
+##  Sys.Date() 2025-01-15  ##
 #################################################
           lc                            fns effect_mean effect_SD effect_median effect_ci_2.5  effect_ci_17 effect_ci_83 effect_ci_97.5
 1   Cropland              Nematode_richness  -2.1327474 0.7548390    -1.9634529   -3.55822907 -2.8863293461  -1.42107447    -1.01632181
