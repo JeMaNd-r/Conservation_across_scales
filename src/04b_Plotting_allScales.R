@@ -113,13 +113,9 @@ ggsave(paste0(here::here(), "/figures/Data_habitats_allScales.png"),
 ### Boxplot Mahalanobis distance ####
 
 for(temp_scale in c("global", "continental", "regional")){
-  # set date of latest analysis
-  if(temp_scale == "global") temp_date <- "2025-01-06"
-  if(temp_scale == "continental") temp_date <- "2025-01-06"
-  if(temp_scale == "regional") temp_date <- "2025-01-06"
   
   # load pairs of PA and nonPA
-  pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+  pa_pairs <- read_csv(file=sort(list.files(here::here("intermediates", temp_scale), pattern = "Pairs_paNonpa_1000trails_", full.names = TRUE), decreasing = TRUE)[1])
   
   # plot
   ggplot(pa_pairs, aes(x = LC, y = mahal.min, fill = LC))+
@@ -376,11 +372,7 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 all_corr <- data.frame("LC" = "lc", "fns" = "fns", "correlation" = 1, "scale" = "scale", "p_value" = 1)[0,]
 
 for(temp_scale in c("global", "continental", "regional")){
-  # set date of latest analysis
-  if(temp_scale == "global") temp_date <- "2025-01-06"
-  if(temp_scale == "continental") temp_date <- "2025-01-06"
-  if(temp_scale == "regional") temp_date <- "2025-01-06"
-  
+
   if(temp_scale == "global"){
     lc_names <- "Dryland" #lc_names_all[lc_names_all != "Other" & lc_names_all != "Cropland"]
   } 
@@ -394,7 +386,7 @@ for(temp_scale in c("global", "continental", "regional")){
   data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
   
   # load pairs of PA and nonPA
-  pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+  pa_pairs <- read_csv(file=sort(list.files(here::here("intermediates", temp_scale), pattern = "Pairs_paNonpa_1000trails_", full.names = TRUE), decreasing = TRUE)[1])
   
   # add data
   pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
@@ -622,43 +614,6 @@ ggsave(filename=paste0(here::here(), "/figures/Results_d-value_medianCI_allScale
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Random-slope model (PA ranks/ levels) ####
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### APPENDIX FIGURE 3.3 & 3.6 & 3.8 (PA ranks/ levels) ####
-
-pred_list <- rbind(get(load(paste0(here::here(), "/results/PAranks_Bayesian_global_sample10k.RData"))), 
-                   get(load(paste0(here::here(), "/results/PAranks_Bayesian_continental_sample10k.RData")))) %>% 
-  rbind(get(load(paste0(here::here(), "/results/PAranks_Bayesian_regional_sample10k.RData"))))
-
-for(temp_scale in c("global", "continental", "regional")){
-  ggplot(data = pred_list %>% filter(scale == temp_scale) %>%
-           right_join(fns_labels %>% dplyr::select(Label, Label_short, Function), 
-                      by = c("fns" = "Function")) %>%
-           mutate(Label = factor(Label, levels = labels_order)), 
-         
-         aes(x = PA_rank_rev, y = .epred, color = ordered(LC))) +
-    stat_lineribbon() +
-    facet_wrap(vars(Label), scales = "free_y", ncol=6)+
-    scale_fill_brewer(palette = "Greys") +
-    scale_color_manual(values=c("Cropland" = "#4A2040",
-                                "Grassland" = "#E69F00",
-                                "Shrubland" = "#0072B2", 
-                                "Woodland" = "#009E73", 
-                                "Other" = "#000000",
-                                "Dryland" = "#000000"), name="Habitat type")+
-    scale_x_continuous(limits = c(1, 10), breaks = c(2, 10), minor_breaks = c(2,4,6,8, 10))+
-    theme_void()+
-    theme(axis.text = element_text(),
-          panel.grid.major.y = element_line(color = "grey"),
-          panel.grid.minor.x =  element_line(color = "grey"),
-          strip.text = element_text(size = 15, hjust=0),
-          legend.position = c(0.8, 0.1),
-          legend.box = "horizontal")
-  ggsave(filename=paste0(here::here(), "/figures/Results_slope_parsBayesian_", temp_scale,".png"),
-         plot = last_plot(),
-         width=15, height=10)
-}
-
-
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Bayesian pointrange grouped per estimate type ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -

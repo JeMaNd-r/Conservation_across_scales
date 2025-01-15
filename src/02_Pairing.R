@@ -28,11 +28,6 @@ if(!dir.exists(paste0(here::here(), "/intermediates/", temp_scale))){
   dir.create(paste0(here::here(), "/intermediates/", temp_scale))
 }
 
-# set date of latest analysis
-if(temp_scale == "global") temp_date <- "2025-01-06"
-if(temp_scale == "continental") temp_date <- "2025-01-06"
-if(temp_scale == "regional") temp_date <- "2025-01-06"
-
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Load soil biodiversity data ####
 
@@ -77,11 +72,11 @@ if(temp_scale == "continental"){
   names(list_dist) <- temp_dist$ID
   
   # save for later
-  save(list_dist, file = paste0(here::here(), "/intermediates/", temp_scale, "/Geographically_close_sites.csv"))
+  save(list_dist, file = paste0(here::here(), "/intermediates/", temp_scale, "/Geographically_close_sites.RData"))
 }
 
 if(temp_scale == "continental"){
-  load(paste0(here::here(), "/intermediates/", temp_scale, "/Geographically_close_sites.csv")) #list_dist
+  load(paste0(here::here(), "/intermediates/", temp_scale, "/Geographically_close_sites.RData")) #list_dist
 
   # check number of sites remaining (e.g. min_size)
   do.call(rbind, lapply(list_dist, length)) %>% sort() #2 lower than min_size=10 (840 and 368), may be more when considering LC types
@@ -112,7 +107,7 @@ count_nonPA <- count_nonPA[[1]] #G: 14 <5, 19 <7, 23 <10; G-together: 3 <22; C: 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Remove sites ####
 
-unpaired_pa <- read.csv(paste0(here::here(), "/intermediates/", temp_scale, "/Unpaired_protected_sites_", temp_date, ".csv"))
+unpaired_pa <- read.csv(sort(list.files(here::here("intermediates", temp_scale), pattern = "Unpaired"), decreasing = TRUE)[1])
 head(unpaired_pa) 
 
 # Note: There were nonPA sites with mahalanobis distance below threshold

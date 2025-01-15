@@ -20,11 +20,6 @@ source(paste0(here::here(), "/src/00_Functions.R"))
  temp_scale <- "continental"
 # temp_scale <- "regional"
 
-# set date of latest analysis
-if(temp_scale == "global") temp_date <- "2025-01-06"
-if(temp_scale == "continental") temp_date <- "2025-01-06"
-if(temp_scale == "regional") temp_date <- "2025-01-06"
-
 min_size <- min(table(data_clean$LC, 
                       data_clean$PA)[table(data_clean$LC, 
                                            data_clean$PA)
@@ -49,7 +44,7 @@ data_clean
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load PA-nonPA pairs ####
-pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale, "/Pairs_paNonpa_1000trails_", temp_date,".csv"))
+pa_pairs <- read_csv(file=sort(list.files(here::here("intermediates", temp_scale), pattern = "Unpaired"), decreasing = TRUE)[1])
 head(pa_pairs)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -

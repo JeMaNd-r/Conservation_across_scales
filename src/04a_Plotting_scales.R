@@ -18,9 +18,9 @@ library(ggh4x) # for free axes in facet_grid
 library(corrplot)
 library(magick) # to create plot from multiple pngs
 
-temp_scale <- "global"
+#temp_scale <- "global"
 #temp_scale <- "continental"
-#temp_scale <- "regional"
+temp_scale <- "regional"
 
 # load background map
 world.inp <- map_data("world")
@@ -40,27 +40,14 @@ if(temp_scale != "global"){
 source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
 
-# set date of latest analysis
-if(temp_scale == "global") temp_date <- "2025-01-06"
-if(temp_scale == "continental") temp_date <- "2025-01-06"
-if(temp_scale == "regional") temp_date <- "2025-01-06"
-
-min_size <- min(table(data_clean$LC, 
-                      data_clean$PA)[table(data_clean$LC, 
-                                           data_clean$PA)
-                                     >0])
-
 if(temp_scale == "global"){
   lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
-  #min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
 } 
 if(temp_scale == "continental"){
   lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
-  #min_size <- 14 # number of samples/ sites that should be paired per LC type
 }
 if(temp_scale == "regional"){
   lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
-  #min_size <- 7 # number of samples/ sites that should be paired per LC type
 }
 # define each land cover type
 lc_names_all <- c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
@@ -82,8 +69,14 @@ data_clean
 
 if(temp_scale == "global") data_clean <- data_clean %>% mutate(LC = "Dryland")
 
+# define min_size
+min_size <- min(table(data_clean$LC, 
+                      data_clean$PA)[table(data_clean$LC, 
+                                           data_clean$PA)
+                                     >0])
+
 # load pairs of PA and nonPA
-pa_pairs <- read_csv(file=paste0(here::here(), "/intermediates/", temp_scale,"/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+pa_pairs <- read_csv(file=sort(list.files(here::here("intermediates", temp_scale), pattern = "Pairs_paNonpa_1000trails_", full.names = TRUE), decreasing = TRUE)[1])
 head(pa_pairs)
 
 # load effect sizes
@@ -92,8 +85,8 @@ load(file=paste0(here::here(), "/results/d_1000_trails_", temp_scale, ".RData"))
 # load Bayesian results from PA_type comparison
 load(file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_", temp_scale, ".RData")) #pars_sample
 
-# # load Bayesian results from PA-nonPA comparison
-# load(file=paste0(here::here(), "/results/pars_PAdummy_Bayesian_df_", temp_scale, ".RData")) #pars_dummy_sample
+# Note: other output data are used in the 04b_Plotting_allScales.R script
+
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Sampling locations ####
@@ -209,7 +202,7 @@ sink(paste0(here::here(), "/results/Numbers_d-value_", temp_scale, ".txt"))
 print(temp_scale)
 # look what non-protected sites have (not) been paired to any PA
 cat("Number of non-protected sites have never been paired to any PA:")
-hist(table(pa_pairs$nonPA))  # frequency distribution of the use of sites from all runs
+#hist(table(pa_pairs$nonPA))  # frequency distribution of the use of sites from all runs
 length(setdiff(data_clean[data_clean$PA==0,]$SampleID, pa_pairs$nonPA))  
 # nonPA sites never used: G ..., C: 475
 
@@ -437,30 +430,42 @@ ggsave(filename=paste0(here::here(), "/figures/Results_d-value_medianCI_", temp_
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### APPENDIX FIGURE 3.3 & 3.5 & 3.7 - Bayesian PA types ####
 
-# transform parameters to long format and assign labels
-pars_long <- pars_sample %>% 
-  dplyr::select(-sigma, -sigma_a, -mu_a) %>% 
-  pivot_longer(cols = colnames(.)[!(colnames(.) %in% c("lc", "fns"))])%>%
-  full_join(protect_type %>% 
-              mutate(PA_rank = as.character(PA_rank)), 
-            by=c("name" = "PA_rank"))  %>%
-  mutate("Label_pa" = ifelse(name=="11", "Unprotected", PA_type)) %>%
-  mutate("Label_pa" = factor(Label_pa, levels = rev(c(protect_type$PA_type, "Unprotected")))) %>%
-  full_join(fns_labels, by=c("fns"="Function")) %>%
-  mutate("Label_fns" = factor(Label, fns_labels$Label))
-head(pars_long)
+pars_intercept <- read_csv(file=paste0(here::here(), "/results/PAtypes_Bayesian_", temp_scale, "_emmeans.csv"))
 
-# save summary (i.e., data from figure)
-pars_summary <- pars_long %>% group_by(lc, fns) %>% 
-  summarize(across(value, list("mean"  = function(x) mean(x, na.rm=TRUE), 
-                               "median" = function(x) median(x, na.rm=TRUE), 
-                               "ci_2.5" = function(x) quantile(x, 0.05, na.rm=TRUE), 
-                               "ci_17" = function(x) quantile(x, 0.17, na.rm=TRUE), 
-                               "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
-                               "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE)))) %>%
-  arrange(lc, fns)
-pars_summary
-write_csv(pars_summary, file=paste0(here::here(), "/figures/Results_intercept_parsBayesian_summary_", temp_scale, ".csv"))
+pars_intercept <- pars_intercept %>%
+  full_join(protect_type %>% 
+                mutate(PA_rank = as.character(PA_rank)),
+            by=c("PA_rank"))  %>%
+    mutate("Label_pa" = ifelse(PA_rank=="Unprotected", "Unprotected", PA_type)) %>%
+    mutate("Label_pa" = factor(Label_pa, levels = rev(c(protect_type$PA_type, "Unprotected")))) %>%
+    full_join(fns_labels, by=c("fns"="Function")) %>%
+    mutate("Label_fns" = factor(Label, fns_labels$Label))
+  
+## OLD: Model output only, we want emmeans from model
+# # transform parameters to long format and assign labels
+# pars_long <- pars_sample %>% 
+#   dplyr::select(-sigma, -sigma_a, -mu_a) %>% 
+#   pivot_longer(cols = colnames(.)[!(colnames(.) %in% c("lc", "fns"))])%>%
+#   full_join(protect_type %>% 
+#               mutate(PA_rank = as.character(PA_rank)), 
+#             by=c("name" = "PA_rank"))  %>%
+#   mutate("Label_pa" = ifelse(name=="11", "Unprotected", PA_type)) %>%
+#   mutate("Label_pa" = factor(Label_pa, levels = rev(c(protect_type$PA_type, "Unprotected")))) %>%
+#   full_join(fns_labels, by=c("fns"="Function")) %>%
+#   mutate("Label_fns" = factor(Label, fns_labels$Label))
+# head(pars_long)
+# 
+# # save summary (i.e., data from figure)
+# pars_summary <- pars_long %>% group_by(lc, fns) %>% 
+#   summarize(across(value, list("mean"  = function(x) mean(x, na.rm=TRUE), 
+#                                "median" = function(x) median(x, na.rm=TRUE), 
+#                                "ci_2.5" = function(x) quantile(x, 0.05, na.rm=TRUE), 
+#                                "ci_17" = function(x) quantile(x, 0.17, na.rm=TRUE), 
+#                                "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
+#                                "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE)))) %>%
+#   arrange(lc, fns)
+# pars_summary
+# write_csv(pars_summary, file=paste0(here::here(), "/figures/Results_intercept_parsBayesian_summary_", temp_scale, ".csv"))
 
 # extract sample size
 n_table <- data_clean %>% filter(LC!="Other") %>%
@@ -472,33 +477,40 @@ n_table <- data_clean %>% filter(LC!="Other") %>%
 n_table
 write_csv(n_table, file=paste0(here::here(), "/figures/Results_intercept_parsBayesian_nTable_", temp_scale, ".csv"))
 
-ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
+ggplot(pars_intercept %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
                      # add number of sizes to plot
                      rbind(data_clean %>% filter(LC!="Other") %>%
                              group_by(LC, PA_type) %>% count() %>%
-                             rename(lc=LC, value=n) %>%
+                             rename(emmean=n) %>%
                              mutate(fns="Number of sites",
-                                    name=NA,
                                     PA_protected=NA,
+                                    PA_rank = NA,
+                                    scale = temp_scale,
                                     Label_pa=ifelse(is.na(PA_type), "Unprotected", PA_type),
                                     Label="Number of sites",
                                     Label_fns = Label,
                                     Label_short = Label,
                                     Group_function=NA,
-                                    Organism=NA) %>%
-                             dplyr::select(colnames(pars_long))) %>%
+                                    Organism=NA, 
+                                    lower.HPD = NA,
+                                    upper.HPD = NA) %>%
+                             dplyr::select(colnames(pars_intercept))) %>%
                      filter(!is.na(Label_pa)) %>%
-                     mutate(Label_fns = factor(Label_fns, levels = c(labels_order, "Number of sites"))),
-       aes(y=Label_pa, x=value, color=lc))+
+                     mutate(Label_fns = factor(Label_fns, levels = c(labels_order, "Number of sites")),
+                            Label_n = ifelse(Label_fns == "Number of sites", "Number of sites", "Other fns")),
+       aes(y=Label_pa, x=emmean, color=LC,
+           xmin = lower.HPD, xmax = upper.HPD, shape = Label_n))+
   
   ## adapt for scale
   annotate("rect", ymin = -Inf, ymax = 4+0.5, xmin=-Inf, xmax=Inf, fill = "grey90", alpha=0.5)+ #global: 4, C: 3, R: 2
   annotate("rect", ymin = -Inf, ymax = 1+0.5, xmin=-Inf, xmax=Inf, fill = "grey85", alpha=0.5)+
-  
-  ggdist::stat_pointinterval(fatten_point=1, shape=3, 
-                             position=position_dodgejust(width=0.5))+ 
+
+  geom_pointrange()+  
+  # ggdist::stat_pointinterval(fatten_point=1, shape=3, 
+  #                            position=position_dodgejust(width=0.5))+ 
   facet_wrap(vars(Label_fns), scales = "free_x", ncol=6, drop=FALSE)+
   
+  scale_shape_manual(values=c("Number of sites" = 3, "Other fns" = 19))+
   scale_color_manual(values=c("Cropland" = "#4A2040",
                               "Grassland" = "#E69F00",
                               "Shrubland" = "#0072B2", 
@@ -514,6 +526,42 @@ ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
 ggsave(filename=paste0(here::here(), "/figures/Results_intercept_parsBayesian_", temp_scale, ".png"),
        plot = last_plot(),
        width=12, height=10)
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Random-slope model (PA ranks/ levels) ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### APPENDIX FIGURE 3.3 & 3.6 & 3.8 (PA ranks/ levels) ####
+
+pred_list <- get(load(paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_sample10k.RData")))
+
+ggplot(data = pred_list %>%
+         right_join(fns_labels %>% dplyr::select(Label, Label_short, Function), 
+                    by = c("fns" = "Function")) %>%
+         mutate(Label = factor(Label, levels = labels_order)), 
+       
+       aes(x = PA_rank_rev, y = .epred, color = ordered(LC))) +
+  stat_lineribbon() +
+  facet_wrap(vars(Label), scales = "free_y", ncol=6)+
+  scale_fill_brewer(palette = "Greys") +
+  scale_color_manual(values=c("Cropland" = "#4A2040",
+                              "Grassland" = "#E69F00",
+                              "Shrubland" = "#0072B2", 
+                              "Woodland" = "#009E73", 
+                              "Other" = "#000000",
+                              "Dryland" = "#000000"), name="Habitat type")+
+  scale_x_continuous(limits = c(1, 10), breaks = c(2, 10), minor_breaks = c(2,4,6,8, 10))+
+  theme_void()+
+  theme(axis.text = element_text(),
+        panel.grid.major.y = element_line(color = "grey"),
+        panel.grid.minor.x =  element_line(color = "grey"),
+        strip.text = element_text(size = 15, hjust=0),
+        legend.position = c(0.8, 0.1),
+        legend.box = "horizontal")
+ggsave(filename=paste0(here::here(), "/figures/Results_slope_parsBayesian_", temp_scale,".png"),
+       plot = last_plot(),
+         width=15, height=10)
+
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Raw data plot ####
