@@ -19,8 +19,8 @@ library(corrplot)
 library(magick) # to create plot from multiple pngs
 
 #temp_scale <- "global"
-#temp_scale <- "continental"
-temp_scale <- "regional"
+temp_scale <- "continental"
+#temp_scale <- "regional"
 
 # load background map
 world.inp <- map_data("world")
@@ -505,7 +505,7 @@ ggplot(pars_intercept %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
   annotate("rect", ymin = -Inf, ymax = 4+0.5, xmin=-Inf, xmax=Inf, fill = "grey90", alpha=0.5)+ #global: 4, C: 3, R: 2
   annotate("rect", ymin = -Inf, ymax = 1+0.5, xmin=-Inf, xmax=Inf, fill = "grey85", alpha=0.5)+
 
-  geom_pointrange()+  
+  geom_pointrange(position=position_dodgejust(width=0.5))+  
   # ggdist::stat_pointinterval(fatten_point=1, shape=3, 
   #                            position=position_dodgejust(width=0.5))+ 
   facet_wrap(vars(Label_fns), scales = "free_x", ncol=6, drop=FALSE)+
