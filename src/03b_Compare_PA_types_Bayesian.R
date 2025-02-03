@@ -24,9 +24,9 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
-temp_scale <- "global"
+#temp_scale <- "global"
 # temp_scale <- "continental"
-# temp_scale <- "regional"
+ temp_scale <- "regional"
 
 data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
 data_clean
@@ -223,7 +223,8 @@ for(temp_fns in fns){
     fixed_effects_slope[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(output_slope, var = "PA_rank_rev"))
     fixed_effects_slope[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_slope, specs = c("PA_rank_rev")))
   }else{
-    fixed_effects_intercept[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_intercept, ~ PA_rank | LC))
+    fixed_effects_intercept[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_intercept, specs = "PA_rank"))
+    fixed_effects_intercept[[temp_fns]][["emmeans_lc"]] <- as_tibble(emmeans::emmeans(output_intercept, ~ PA_rank | LC))
     
     fixed_effects_slope[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(output_slope, specs = "LC", var = "PA_rank_rev"))
     fixed_effects_slope[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_slope, specs = c("PA_rank_rev", "LC")))
