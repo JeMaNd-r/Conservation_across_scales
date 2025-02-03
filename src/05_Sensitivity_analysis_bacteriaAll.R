@@ -19,6 +19,7 @@ library(tidyverse)
 
 library(rstan)
 options(mc.cores = 4) # number of CPU cores
+library(brms)
 
 library(emmeans) # to estimate contrast i.e. EM means
 
@@ -287,9 +288,7 @@ count_nonPA <- count_nonPA[[1]] #G: 7 <5, 7 <7, 14 <10; G-together: 5 >41; C: 16
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Remove sites ####
-temp_date <- "2025-01-10"
-
-unpaired_pa <- read.csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Unpaired_protected_sites_", temp_date, ".csv"))
+unpaired_pa <- read.csv(sort(list.files(here::here("results", "sensitivity_globalBacteria"), pattern = "Unpaired_protected_sites_", full.names = TRUE), decreasing = TRUE)[1])
 head(unpaired_pa) 
 
 # Note: There were nonPA sites with mahalanobis distance below threshold
@@ -354,8 +353,6 @@ write_csv(pa_pairs, file=paste0(here::here(), "/results/sensitivity_globalBacter
 ### Load soil biodiversity data ####
 temp_scale <- "global"
 
-# set date of latest analysis
-temp_date <- "2025-01-10"
 lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
 min_size <- 39 # number of samples/ sites from all-complete dataset analysis
 
@@ -364,7 +361,7 @@ data_clean
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Load PA-nonPA pairs ####
-pa_pairs <- read_csv(file=paste0(here::here(), "/results/sensitivity_globalBacteria/Pairs_paNonpa_1000trails_", temp_date,".csv"))
+pa_pairs <- read_csv(file=sort(list.files(here::here("results", "sensitivity_globalBacteria"), pattern = "Pairs_paNonpa_1000trails_", full.names = TRUE), decreasing = TRUE)[1])
 head(pa_pairs)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -386,8 +383,6 @@ save(d_list,  file=paste0(here::here(), "/results/sensitivity_globalBacteria/d_1
 ### Load soil biodiversity data ####
 temp_scale <- "global"
 
-# set date of latest analysis
-temp_date <- "2025-01-10"
 lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
 min_size <- 39 # number of samples/ sites from all-complete dataset analysis
 
@@ -415,105 +410,24 @@ protect_legend
 protect_legend$PA_rank_rev <- max(protect_legend$PA_rank) - protect_legend$PA_rank + 1
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Compare difference between PA types (incl. nonPA) ####
-# using Bayesian model
-
-# define stan code for linear model
-stan_code = '
-  data {
-    int n;
-    int n_group;
-    real y[n];
-    int group[n];
-  }
-  parameters {
-    real a[n_group];
-    real<lower=0> sigma;
-    real mu_a;
-    real<lower=0> sigma_a;
-  }
-  model {
-    // priors
-    mu_a ~ normal(0,10);
-    sigma_a ~ normal(0,10);
-    
-    for (j in 1:n_group){
-     a[j] ~ normal(mu_a,sigma_a);
-    }
-    
-    sigma ~ normal(0,10);
-    
-    // likelihood
-    for(i in 1:n){
-      y[i] ~ normal(a[ group[i] ], sigma);
-    }
-  }
-'
-
-stan_model <- stan_model(model_code = stan_code)
-
-pars_list <- f_compare_pa_types(data = data_clean, 
-                                protect_levels = protect_legend,
-                                col_fns = fns)
-
-save(pars_list, file=paste0(here::here(), "/results/sensitivity_globalBacteria/pars_PAtypes_Bayesian_", temp_scale, ".RData"))
-
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# combine individual list elements (c) per fns & lc into one vector
-# that is, we have one list element per fns and lc containing the values
-
-load(file=paste0(here::here(), "/results/sensitivity_globalBacteria/pars_PAtypes_Bayesian_", temp_scale, ".RData")) #pars_list
-
-pars_sample <- f_combine_pars_list(pars_list = pars_list)
-str(pars_sample)
-
-rm(pars_list)
-gc()
-
-#### Save total list with p tables & effect sizes ####
-save(pars_sample, file=paste0(here::here(), "/results/sensitivity_globalBacteria/pars_PAtypes_Bayesian_df_", temp_scale, ".RData"))
-
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Calculate contrast between protection types ####
-# 
-# load(file=paste0(here::here(), "/results/sensitivity_globalBacteria/pars_PAtypes_Bayesian_df_", temp_scale, ".RData")) #pars_sample
-# 
-# # group protection type Ia-VI (1-7) together, and group Not... and Unprotected (8-11) together
-# pars_sample %>% 
-#   pivot_longer(cols="1":"2") %>%
-#   mutate("PA" = ifelse(name %in% as.character(1:7), 1, 
-#                        ifelse(name %in% as.character(8:11), 0, NA))) %>%
-#   group_by(lc, fns, PA) %>%
-#   summarize(across(value, list("mean"  = function(x) mean(x, na.rm=TRUE), 
-#                                 "median" = function(x) median(x, na.rm=TRUE), 
-#                                 "ci_2.5" = function(x) quantile(x, 0.05, na.rm=TRUE), 
-#                                 "ci_17" = function(x) quantile(x, 0.17, na.rm=TRUE), 
-#                                 "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
-#                                 "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE))))
-# 
-# # Estimated marginal means
-# emmeans::emmeans()
-
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Compare difference using brms & linear regression model ####
-
-library(brms)
-library(modelr)
-library(tidybayes)
+## Compare difference using brms & linear regression model ####
+# random-slope model & random-intercept, both using brms
 
 source(paste0(here::here(), "/src/00_Parameters.R")) 
 
 # subset functions
 fns <- c("Bac_richness", "Bac_shannonDiv", "Bac_JaccDist_av")
 
-# set date of latest analysis
-temp_scale <- "global"
-temp_date <- "2025-01-10"
-lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
-min_size <- 39 # number of samples/ sites from all-complete dataset analysis
+min_size <- min(table(data_clean$LC, 
+                      data_clean$PA)[table(data_clean$LC, 
+                                           data_clean$PA)
+                                     >0])
+
+lc_names <- "Dryland"
 
 data_clean <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_clean_", temp_scale, ".csv"))
 data_clean
+
 
 data_clean <- data_clean %>% 
   mutate("PA_rank_rev" = ifelse(is.na(PA_rank), 1, 11-PA_rank+1)) %>%
@@ -521,63 +435,149 @@ data_clean <- data_clean %>%
   arrange(LC, PA_rank_rev)
 
 # store results
-fixed_effects <- vector("list")
-pred_list <- vector("list")
+fixed_effects_intercept <- vector("list")
+fixed_effects_slope <- vector("list")
+model_comparison <- vector("list")
+pred_list_intercept <- vector("list")
+pred_list_slope <- vector("list")
 
 for(temp_fns in fns){
   
-  data_temp <- data_clean %>% dplyr::select(all_of(c("LC", temp_fns, "PA_rank_rev")))
-  model_output <- brm(brmsformula(paste(temp_fns, "~ PA_rank_rev")), data = data_temp,
-                      chains = 4, iter = 10000, warmup = 2000)
+  data_temp_intercept <- data_clean %>% dplyr::select(all_of(c("LC", temp_fns, "PA_rank"))) %>%
+    mutate(PA_rank = ifelse(is.na(PA_rank), "Unprotected", PA_rank))
+  data_temp_slope <- data_clean %>% dplyr::select(all_of(c("LC", temp_fns, "PA_rank_rev")))
   
-  # sink(paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_", temp_fns, ".txt"))
-  # model_output
-  # model_output$fit
-  # hypothesis(model_output, "PA_rank_rev<0")
-  # hypothesis(model_output, "PA_rank_rev>0")
+  if(temp_scale == "global"){
+    output_intercept <- brm(brmsformula(paste(temp_fns, "~ PA_rank")), data = data_temp_intercept,
+                            chains = 4, iter = 10000, warmup = 2000)
+    
+    output_slope <- brm(brmsformula(paste(temp_fns, "~ PA_rank_rev")), data = data_temp_slope,
+                        chains = 4, iter = 10000, warmup = 2000)
+    
+  }else{
+    output_intercept <- brm(brmsformula(paste(temp_fns, "~ PA_rank + LC + (1 | LC)")), data = data_temp_intercept,
+                            chains = 4, iter = 10000, warmup = 2000)
+    
+    output_slope <- brm(brmsformula(paste(temp_fns, "~ PA_rank_rev * LC + (PA_rank_rev | LC)")), data = data_temp_slope,
+                        chains = 4, iter = 10000, warmup = 2000)
+    
+  }
+  
+  # sink(paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, "_", temp_fns, ".txt"))
+  # output_slope
+  # output_slope$fit
+  # hypothesis(output_slope, "PA_rank_rev<0")
+  # hypothesis(output_slope, "PA_rank_rev>0")
   # sink()
   
-  fixed_effects[[temp_fns]] <- vector("list")
-  fixed_effects[[temp_fns]][["fixef"]] <- brms::fixef(model_output)
-  fixed_effects[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(model_output,  var = "PA_rank_rev"))
-  fixed_effects[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(model_output, specs = c("PA_rank_rev")))
+  fixed_effects_intercept[[temp_fns]] <- vector("list")
+  fixed_effects_slope[[temp_fns]] <- vector("list")
+  fixed_effects_intercept[[temp_fns]][["fixef"]] <- brms::fixef(output_intercept)
+  fixed_effects_slope[[temp_fns]][["fixef"]] <- brms::fixef(output_slope)
+  
+  # model comparison: Leave-One-Out Cross Validation (LOO)
+  model_comparison[[temp_fns]][["loo"]][["intercept"]] <- loo::loo(output_intercept)
+  model_comparison[[temp_fns]][["loo"]][["slope"]] <- loo::loo(output_slope)
+  model_comparison[[temp_fns]][["loo"]][["comparison"]] <- loo::loo_compare(model_comparison[[temp_fns]][["loo"]][["intercept"]],
+                                                                            model_comparison[[temp_fns]][["loo"]][["slope"]])
+  
+  # WAIC (alternative comparison metric)
+  model_comparison[[temp_fns]][["waic"]][["intercept"]] <- loo::waic(output_intercept)
+  model_comparison[[temp_fns]][["waic"]][["slope"]] <- loo::waic(output_slope)
+  
+  # R2
+  model_comparison[[temp_fns]][["r2"]][["intercept"]] <- brms::bayes_R2(output_intercept)
+  model_comparison[[temp_fns]][["r2"]][["slope"]] <- brms::bayes_R2(output_slope)
+  
+  if(temp_scale == "global"){
+    fixed_effects_intercept[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_intercept, specs = "PA_rank"))
+    
+    fixed_effects_slope[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(output_slope, var = "PA_rank_rev"))
+    fixed_effects_slope[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_slope, specs = c("PA_rank_rev")))
+  }else{
+    fixed_effects_intercept[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_intercept, specs = "PA_rank"))
+    fixed_effects_intercept[[temp_fns]][["emmeans_lc"]] <- as_tibble(emmeans::emmeans(output_intercept, ~ PA_rank | LC))
+    
+    fixed_effects_slope[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(output_slope, specs = "LC", var = "PA_rank_rev"))
+    fixed_effects_slope[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_slope, specs = c("PA_rank_rev", "LC")))
+  }
   
   # Extract estimates and credible intervals for PA_rank_rev
-  pred_list[[temp_fns]] <- data_temp %>%
+  pred_list_intercept[[temp_fns]] <- data_temp_intercept %>%
     group_by(LC) %>%
-    modelr::data_grid(PA_rank_rev = modelr::seq_range(PA_rank_rev, n = 51)) %>%
-    tidybayes::add_epred_draws(model_output) %>%
+    tidybayes::add_epred_draws(output_intercept) %>%
     mutate(scale = temp_scale,
            fns = temp_fns)
   
+  pred_list_slope[[temp_fns]] <- data_temp_slope %>%
+    group_by(LC) %>%
+    modelr::data_grid(PA_rank_rev = modelr::seq_range(PA_rank_rev, n = 51)) %>%
+    tidybayes::add_epred_draws(output_slope) %>%
+    mutate(scale = temp_scale,
+           fns = temp_fns)
 }
 
-pred_list <- do.call(rbind, pred_list)
 
-save(pred_list, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, ".RData"))
-pred_sample <- pred_list %>% group_by(LC) %>% slice_sample(n = 10000)
+pred_list_intercept <- do.call(rbind, pred_list_intercept)
+pred_list_slope <- do.call(rbind, pred_list_slope)
 
-save(pred_sample, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, "_sample10k.RData"))
+save(pred_list_intercept, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAtypes_Bayesian_", temp_scale, ".RData"))
+save(pred_list_slope, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, ".RData"))
 
-save(fixed_effects, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, "_summary.RData"))
-sink(paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, ".txt"))
-fixed_effects
+# subset
+pred_sample_intercept <- pred_list_intercept %>% group_by(LC) %>% slice_sample(n = 10000)
+pred_sample_slope <- pred_list_slope %>% group_by(LC) %>% slice_sample(n = 10000)
+
+save(pred_sample_intercept, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAtypes_Bayesian_", temp_scale, "_sample10k.RData"))
+save(pred_sample_slope, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, "_sample10k.RData"))
+
+# save fixed effects & emmeans
+save(fixed_effects_intercept, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAtypes_Bayesian_", temp_scale, "_summary.RData"))
+save(fixed_effects_slope, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, "_summary.RData"))
+
+sink(paste0(here::here(), "/results/sensitivity_globalBacteria/PAtypes_Bayesian_", temp_scale, ".txt"))
+fixed_effects_intercept
 sink()
 
-# extract emtrends
-load(file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, "_summary.RData")) #fixed_effects
-emtrends <- sapply(fixed_effects,function(x) x[2])
+sink(paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, ".txt"))
+fixed_effects_slope
+sink()
+
+
+# extract emmeans (intercept model)
+load(file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAtypes_Bayesian_", temp_scale, "_summary.RData")) #fixed_effects_intercept
+emtrends_mean <- sapply(fixed_effects_intercept,function(x) x[2])
+for(i in 1:length(emtrends_mean)){
+  emtrends_mean[[i]] <- emtrends_mean[[i]] %>% 
+    mutate("fns" = gsub(".emmeans", "", names(emtrends_mean)[i]),
+           "scale" = temp_scale)
+}
+emtrends_mean <- do.call(rbind, emtrends_mean)
+emtrends_mean
+
+if(temp_scale == "global") emtrends_mean <- emtrends_mean %>% mutate(LC = "Dryland", .before = 1) 
+
+write_csv(emtrends_mean, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAtypes_Bayesian_", temp_scale, "_emmeans.csv"))
+
+
+# extract emtrends (slope model)
+load(file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, "_summary.RData")) #fixed_effects_slope
+emtrends <- sapply(fixed_effects_slope,function(x) x[2])
 for(i in 1:length(emtrends)){
   emtrends[[i]] <- emtrends[[i]] %>% 
     mutate("fns" = gsub(".emtrends", "", names(emtrends)[i]),
            "scale" = temp_scale)
 }
 emtrends <- do.call(rbind, emtrends)
+
+if(temp_scale == "global") emtrends <- emtrends %>% mutate(LC = "Dryland", .before = 1) %>% dplyr::select(-PA_rank_rev)
+
 write_csv(emtrends, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, "_emtrends.csv"))
 
 
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## 04_Plotting.R ####
+## 04a_Plotting_scales.R ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 library(here)
@@ -589,6 +589,7 @@ library(ggrepel) #to add text not overlapping (geom_text_repel)
 library(ggtext) #to add icons as axis labels
 library(ggh4x) # for free axes in facet_grid
 library(corrplot)
+library(magick) # to create plot from multiple pngs
 
 temp_scale <- "global"
 
@@ -610,14 +611,8 @@ if(temp_scale != "global"){
 source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
 
-# subset functions
-fns <- c("Bac_richness", "Bac_shannonDiv", "Bac_JaccDist_av")
+lc_names <- "Dryland" 
 
-# set date of latest analysis
-temp_date <- "2025-01-10"
-lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
-min_size <- 39 # number of samples/ sites from all-complete dataset analysis
- 
 # define each land cover type
 lc_names_all <- c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
 
@@ -631,11 +626,21 @@ labels_order <- c(
   "Bacterial Dissimilarity", "Fungal Dissimilarity", "Invertebrate Dissimilarity", "Protist Dissimilarity"
 )
 
-data_clean <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_clean_", temp_scale, ".csv"))
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Load soil biodiversity data ####
+data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
 data_clean
 
+if(temp_scale == "global") data_clean <- data_clean %>% mutate(LC = "Dryland")
+
+# define min_size
+min_size <- min(table(data_clean$LC, 
+                      data_clean$PA)[table(data_clean$LC, 
+                                           data_clean$PA)
+                                     >0])
+
 # load pairs of PA and nonPA
-pa_pairs <- read_csv(file=paste0(here::here(), "/results/sensitivity_globalBacteria/Pairs_paNonpa_1000trails_", temp_date, ".csv"))
+pa_pairs <- read_csv(file=sort(list.files(here::here("results", "sensitivity_globalBacteria"), pattern = "Pairs_paNonpa_1000trails_", full.names = TRUE), decreasing = TRUE)[1])
 head(pa_pairs)
 
 # load effect sizes
@@ -644,46 +649,51 @@ load(file=paste0(here::here(), "/results/sensitivity_globalBacteria/d_1000_trail
 # load Bayesian results from PA_type comparison
 load(file=paste0(here::here(), "/results/sensitivity_globalBacteria/pars_PAtypes_Bayesian_df_", temp_scale, ".RData")) #pars_sample
 
+# Note: other output data are used in the 04b_Plotting_allScales.R script
+
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Sampling locations ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### FIGURE 1 - Maps ####
+#### FIGURE 1 - Maps ####
 # extract list of sampling locations actually used in comparison
 data_locations <- data_clean %>% 
   filter(SampleID %in% unique(pa_pairs$ID) | 
            SampleID %in% unique(pa_pairs$nonPA)) %>%
   dplyr::select(Longitude,Latitude,SampleID, PA, LC)
-data_locations #139
+data_locations #63
 write_csv(data_locations, file = paste0(here::here(), "/results/sensitivity_globalBacteria/Locations_", temp_scale, ".csv"))
-nrow(data_locations %>% filter(PA==1)) #48
-nrow(data_locations %>% filter(PA==0)) #91
+nrow(data_locations %>% filter(PA==1)) #G: 39
+nrow(data_locations %>% filter(PA==0)) #G: 24
 
 # set limits for point maps
 if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
+if(temp_scale == "continental") temp_limits <- c(-10, 35, 35, 70)
+if(temp_scale == "regional") temp_limits <- c(-9, -6, 40.5, 42.5)
 
+# plot - FIGURE 1
 ggplot()+
   geom_map(data = world.inp, map = world.inp, 
            aes(map_id = region),  show.legend = FALSE, 
-           fill="white", color = "grey90", linewidth = 0.15) + #fill = "grey80", color="grey75"
-  #xlim(-180, 180) +  ylim(-180, 180) + #global
-  #xlim(-10, 35) +  ylim(35, 70) + #continental
-  #xlim(-9.5, -6) +  ylim(40.5, 42.5) + #regional
+           fill="white", color = "grey80", linewidth = 0.25) + #G:0.15, C+R:
   xlim(temp_limits[1], temp_limits[2])+
   ylim(temp_limits[3], temp_limits[4])+
   
   geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
-                                      shape = as.character(PA), # color=LC, 
+                                      shape = as.character(PA), color=LC, 
                                       size = as.character(PA)),
-             stroke = 1, color="#000000")+ #increase circle line width; G: 0.9, C+R:3
+             stroke = 2)+
+  #stroke = 1.4, color = "#000000")+ #increase circle line width; G: 2 (1.4), C+R:3
   scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
-  scale_size_manual(values = c("0" =1.5, "1" = 4.5))+ #G: 0.4,1.2, C+R:3,8
-  # scale_color_manual(values = c("Cropland" = "#4A2040",
-  #                               "Grassland" = "#E69F00",
-  #                               "Shrubland" = "#0072B2", 
-  #                               "Woodland" = "#009E73", 
-  #                               "Other" = "#000000"))+ 
+  scale_size_manual(values = c("0" = 2, "1" = 6))+ #G: 1.4,4.5/0.3, 1, C+R:3,8/ 0.6,2
+  scale_color_manual(values = c("Cropland" = "#4A2040",
+                                "Grassland" = "#E69F00",
+                                "Shrubland" = "#0072B2", 
+                                "Woodland" = "#009E73", 
+                                "Other" = "#000000",
+                                "Dryland" = "#000000"))+ 
   coord_map()+
   theme_bw()+
   theme(axis.title = element_blank(), legend.title = element_blank(),
@@ -694,43 +704,43 @@ ggplot()+
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
         panel.background = element_rect(fill= "grey80"))
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_locations_", temp_scale,"Bacteria.png"),
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_locations_", temp_scale,".png"),
        plot = last_plot())
 
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### APPENDIX SX - Maps for random-slope model ####
+#### APPENDIX FIGURE 3.1 - Maps for random-slope model ####
 # extract list of sampling locations actually used in comparison
 data_locations <- data_clean %>%
   filter(LC %in% lc_names)
-data_locations #330
-write_csv(data_locations, file = paste0(here::here(), "/results/Locations_PAranks_", temp_scale, ".csv"))
-nrow(data_locations %>% filter(PA==1)) #53
-nrow(data_locations %>% filter(PA==0)) #277
+data_locations #248
+write_csv(data_locations, file = paste0(here::here(), "/results/sensitivity_globalBacteria/Locations_PAranks_", temp_scale, ".csv"))
+nrow(data_locations %>% filter(PA==1)) #42
+nrow(data_locations %>% filter(PA==0)) #206
 
 # set limits for point maps
 if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
 
+# plot - APPENDIX FIGURE 3.1
 ggplot()+
   geom_map(data = world.inp, map = world.inp, 
            aes(map_id = region),  show.legend = FALSE, 
            fill="white", color = "grey90", linewidth = 0.15) + #fill = "grey80", color="grey75"
-  #xlim(-180, 180) +  ylim(-180, 180) + #global
-  #xlim(-10, 35) +  ylim(35, 70) + #continental
-  #xlim(-9.5, -6) +  ylim(40.5, 42.5) + #regional
   xlim(temp_limits[1], temp_limits[2])+
   ylim(temp_limits[3], temp_limits[4])+
   
   geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
-                                      shape = as.character(PA), #color=LC, 
+                                      shape = as.character(PA), color=LC, 
                                       size = as.character(PA)),
-             stroke = 1.4, color = "#000000")+ #increase circle line width; G+C: 2; R:3
+             stroke = 2)+ #increase circle line width; G+C: 2; R:3
   scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
-  scale_size_manual(values = c("0" =1.5, "1" = 4.5))+ #G:+C: 2,4; ,R:3,8 
-  # scale_color_manual(values = c("Cropland" = "#4A2040",
-  #                               "Grassland" = "#E69F00",
-  #                               "Shrubland" = "#0072B2", 
-  #                               "Woodland" = "#009E73", 
-  #                               "Other" = "#000000"))+ 
+  scale_size_manual(values = c("0" =2, "1" = 4))+ #G:+C: 2,4; ,R:3,8 
+  scale_color_manual(values = c("Cropland" = "#4A2040",
+                                "Grassland" = "#E69F00",
+                                "Shrubland" = "#0072B2", 
+                                "Woodland" = "#009E73", 
+                                "Other" = "#000000",
+                                "Dryland" = "#000000"))+ 
   coord_map()+
   theme_bw()+
   theme(axis.title = element_blank(), legend.title = element_blank(),
@@ -741,7 +751,7 @@ ggplot()+
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
         panel.background = element_rect(fill= "grey80"))
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_locations_PAranks_", temp_scale,"Bacteria.png"),
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_locations_PAranks_", temp_scale,".png"),
        plot = last_plot())
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -754,7 +764,7 @@ sink(paste0(here::here(), "/results/sensitivity_globalBacteria/Numbers_d-value_"
 print(temp_scale)
 # look what non-protected sites have (not) been paired to any PA
 cat("Number of non-protected sites have never been paired to any PA:")
-hist(table(pa_pairs$nonPA))  # frequency distribution of the use of sites from all runs
+#hist(table(pa_pairs$nonPA))  # frequency distribution of the use of sites from all runs
 length(setdiff(data_clean[data_clean$PA==0,]$SampleID, pa_pairs$nonPA))  
 # nonPA sites never used: G ..., C: 475
 
@@ -768,22 +778,6 @@ cat(paste0("On average, each protected and unprotected site was used in ",
            ", min=", round(min(table(pa_pairs$nonPA)),0),
            ", max=", round(max(table(pa_pairs$nonPA)),0), 
            ") of the 1000 randomizations, respectively."))
-
-# cat("Mean number of nonPA sites per PA.")
-# mean(table(pa_pairs$nonPA))
-# 
-# cat("SD number of nonPA sites per PA.")
-# sd(table(pa_pairs$nonPA))
-# 
-# cat("Min/max number of nonPA sites per PA.")
-# min(table(pa_pairs$nonPA))
-# max(table(pa_pairs$nonPA))
-# 
-# cat("Mean/SD/min/max number of times individual PA were used.")
-# mean(table(pa_pairs$ID))
-# sd(table(pa_pairs$ID))
-# min(table(pa_pairs$ID))
-# max(table(pa_pairs$ID))
 
 table(pa_pairs$ID)
 
@@ -821,23 +815,9 @@ ggplot() +
 ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Locations_connection_", temp_scale, ".pdf"),
        plot = last_plot())
 
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Boxplot mahalanobis distance ####
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-ggplot(pa_pairs, aes(x = LC, y = mahal.min, fill = LC))+ #fill = LC
-  geom_boxplot()+
-  geom_violin(alpha = 0.3, adjust = 0.3)+
-  theme_bw() +
-  labs(x="Land-cover type",y="Mahalanobis distance") +
-  theme(axis.text.x=element_text(size=15),text = element_text(size=20),  
-        legend.position = "none", axis.text.y = element_text(size=15), legend.title = element_blank())+
-  scale_fill_manual(values=c("Dryland" = "black"))
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_boxplot_mahal.distance_", temp_scale, ".png"),
-       plot = last_plot())
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Effect size per LC type ####
+#### APPENDIX TABLE 2.1 - Effect size per LC type ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 d_df <- do.call(rbind, d_list)
 str(d_df)
@@ -845,38 +825,6 @@ str(d_df)
 d_df <- d_df %>% full_join(fns_labels, by=c("fns"="Function")) %>%
   mutate("Label" = factor(Label, levels = rev(fns_labels$Label)),
          "Organism" = factor(Organism, levels = unique(fns_labels$Organism)))
-
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Violin plot effect size per LC type ####
-# 
-# ggplot(data=d_df, aes(x=round(effect,2), y=Label))+
-#   geom_vline(aes(xintercept=0.8, linetype = "0.8"), color="grey60")+
-#   geom_vline(aes(xintercept=-0.8, linetype = "-0.8"), color="grey60")+ #large effect
-#   geom_vline(aes(xintercept=0.5, linetype = "0.5"), color="grey60")+
-#   geom_vline(aes(xintercept=-0.5, linetype = "-0.5"), color="grey60")+ #medium effect
-#   geom_vline(aes(xintercept=0.2, linetype = "0.2"), color="grey60")+ #small effect
-#   geom_vline(aes(xintercept=-0.2, linetype = "-0.2"), color="grey60")+
-#   #geom_vline(aes(xintercept=0, linetype = "0"))+
-#   scale_linetype_manual(values = c("-0.8" = "dotted",
-#                                    "-0.5" = "dashed", "-0.2" = "solid",
-#                                    "0.2" = "solid","0.5" = "dashed",
-#                                    "0.8" = "dotted"))+
-#   
-#   geom_violin(aes(fill = Organism), scale="width", width=0.5)+ #scale by width of violin bounding box
-#   stat_summary(fun = "mean", geom = "pointrange", color = "black")+
-#   facet_wrap(vars(lc))+
-#   scale_x_continuous(labels = function(x) format(x, nsmall = 0))+#round c-value axis label
-#   scale_fill_viridis_d()+
-#   xlab("Effect size")+
-#   theme_bw() + # use a white background
-#   theme(legend.position = "right", axis.title.y =element_blank(),
-#         axis.text.y = element_text(size=10),  
-#         axis.text.x = element_text(size=7),
-#         panel.grid.minor = element_blank(),
-#         panel.grid.major.y = element_blank(),
-#         panel.spacing = unit(1, "lines"))
-# ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_violin_d-value_global.png"),
-#        plot = last_plot())
 
 # save data for plot
 write.csv(d_df, file=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_d-value_", temp_scale, ".csv"), row.names = FALSE)
@@ -925,12 +873,15 @@ print(d_summary %>% ungroup() %>%
         filter(abs(effect_mean) >= 0.2) %>%
         dplyr::select(lc, fns, starts_with("effect")) %>%
         arrange(desc(abs(effect_median))),
-      #n=nrow(d_summary %>% filter(abs(effect_mean) >= 0.2))
-) #for print() command
+)
 sink()
 
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Pointrange effect size per LC type ####
+### Effect sizes (Cohen's D) ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#### Pointrange effect size per LC type ####
+
 # with confidence intervals 
 ggplot(data = d_df %>% 
          filter(lc %in% lc_names) %>%
@@ -950,10 +901,10 @@ ggplot(data = d_df %>%
   annotate("rect", ymin = -0.2, ymax = 0.2, xmin=-Inf, xmax=Inf, fill = "grey95")+
   
   # fill background of Group_function (code order matters)
-  #annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=Inf, fill = "grey", alpha=0.1)+ #chocolate4
-  #annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=15+0.5, fill = "grey", alpha=0.1)+
-  #annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=8+0.5, fill = "grey", alpha=0.1)+
-  #annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=4+0.5, fill = "grey", alpha=0.1)+
+  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=Inf, fill = "grey", alpha=0.1)+ #chocolate4
+  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=15+0.5, fill = "grey", alpha=0.1)+
+  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=8+0.5, fill = "grey", alpha=0.1)+
+  annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=4+0.5, fill = "grey", alpha=0.1)+
   
   ggdist::stat_pointinterval(fatten_point=1.2, shape=21) +
   coord_flip()+
@@ -967,11 +918,11 @@ ggplot(data = d_df %>%
         panel.grid.major.y = element_blank(),
         strip.background = element_rect(fill="white"), #chocolate4
         strip.text = element_text(color="black")) #white
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_d-value_", temp_scale, ".png"),
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_d-value_medianCI_", temp_scale, ".png"),
        plot = last_plot(),
        width=5, height=4)
 
-# ## one-sided
+# ### one-sided
 # ggplot(data = d_summary %>%
 #          filter(lc %in% lc_names) %>%
 #          mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
@@ -979,45 +930,25 @@ ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Result
 #                                          abs(effect_ci_83))),
 #        aes(y = abs(effect_ci_min66), x = abs(effect_median),
 #            color=as.factor(sign(effect_median))
-#        ))+
-#   
-#   # geom_vline(aes(xintercept=0.8, linetype = "0.8"), color="grey60")+
-#   # geom_vline(aes(xintercept=0.5, linetype = "0.5"), color="grey60")+
-#   # geom_vline(aes(xintercept=0.2, linetype = "0.2"), color="grey60")+
-#   # scale_linetype_manual(values = c("0.8" = "dotted",
-#   #                                  "0.5" = "dashed",
-#   #                                  "0.2" = "solid"),
-#   #                       name="Strength of effect")+
-#   #annotate("rect", ymin = 0, ymax = 0.2, xmin=0, xmax=0.2, fill = "grey", alpha=0.1)+ #chocolate4
+#            ))+
+# 
 #   annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.2, fill = "grey", alpha=0.3)+
 #   annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.5, fill = "grey", alpha=0.3)+
 #   annotate("rect", ymin = -Inf, ymax = Inf, xmin=-Inf, xmax=0.8, fill = "grey", alpha=0.3)+
-#   
-#   # geom_pointrange(aes(xmin = abs(effect_ci_2.5), xmax = abs(effect_ci_97.5),
-#   #                     shape = Group_function))+
-#   # geom_linerange(aes(xmin = ifelse(sign(effect_ci_17) != sign(effect_ci_83),
-#   #                                  abs(effect_ci_17)), xmax = abs(effect_ci_83),
-#   #                     #shape = Group_function
-#   #                    ), linewidth=1, alpha = 0.2)+
+# 
 #   geom_point(aes(shape = Group_function), size = 5)+
 #   ggrepel::geom_text_repel(aes(label = Label, shape = Group_function), size = 3)+
-#   #geom_text(aes(label = Label), size = 1.5, nudge_y = 0.005)+
 #   
 #   xlab("Median effect")+ ylab("Lower CI (17%)")+
 #   scale_y_continuous(breaks = c(0.2, 0.5, 0.8))+
 #   scale_x_continuous(breaks = c(0.2, 0.5, 0.8))+
-#   # scale_y_continuous(limits = c(0, 0.7),
-#   #                    expand = c(0,0), breaks = c(0, 0.25, 0.5))+
-#   #scale_color_manual(c(""))+
 #   
 #   facet_wrap(vars(lc), scales = "free")+
 #   theme_bw() + # use a white background
 #   theme(legend.position = "bottom",
 #         legend.direction = "vertical",
-#         #axis.title.y =element_blank(),
 #         axis.text.y = element_text(size=10),
 #         axis.text.x = element_text(size=10),
-#         #panel.grid.major.y = element_blank(),
 #         panel.grid.minor = element_blank(),
 #         strip.background = element_rect(fill="white"), #chocolate4
 #         strip.text = element_text(color="black")) #white
@@ -1036,7 +967,7 @@ ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Result
 #          filter(!is.na(effect_ci_min66)),
 #        aes(x = lc, y = Label, alpha=effect_ci_min66f, 
 #            fill=as.factor(sign(effect_median))))+
-#   
+# 
 #   geom_tile()+
 #   scale_fill_manual(values = c("-1" = "#fc8d59", "0" = "#ffffbf", "1" = "#91bfdb"),
 #                     name = "Direction of effect")+
@@ -1055,11 +986,429 @@ ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Result
 # ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_d-value_medianSD_", temp_scale, ".png"),
 #        plot = last_plot())
 
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Heatmap all 3 scales ####
+### Random-intercept models (PA types) ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#### FIGURE 2 - Heatmap ####
+#### APPENDIX FIGURE 3.3 & 3.5 & 3.7 - Bayesian PA types ####
+
+pars_intercept <- read_csv(file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAtypes_Bayesian_", temp_scale, "_emmeans.csv"))
+
+pars_intercept <- pars_intercept %>%
+  full_join(protect_type %>% 
+              mutate(PA_rank = as.character(PA_rank)),
+            by=c("PA_rank"))  %>%
+  mutate("Label_pa" = ifelse(PA_rank=="Unprotected", "Unprotected", PA_type)) %>%
+  mutate("Label_pa" = factor(Label_pa, levels = rev(c(protect_type$PA_type, "Unprotected")))) %>%
+  full_join(fns_labels, by=c("fns"="Function")) %>%
+  mutate("Label_fns" = factor(Label, fns_labels$Label))
+
+## OLD: Model output only, we want emmeans from model
+# # transform parameters to long format and assign labels
+# pars_long <- pars_sample %>% 
+#   dplyr::select(-sigma, -sigma_a, -mu_a) %>% 
+#   pivot_longer(cols = colnames(.)[!(colnames(.) %in% c("lc", "fns"))])%>%
+#   full_join(protect_type %>% 
+#               mutate(PA_rank = as.character(PA_rank)), 
+#             by=c("name" = "PA_rank"))  %>%
+#   mutate("Label_pa" = ifelse(name=="11", "Unprotected", PA_type)) %>%
+#   mutate("Label_pa" = factor(Label_pa, levels = rev(c(protect_type$PA_type, "Unprotected")))) %>%
+#   full_join(fns_labels, by=c("fns"="Function")) %>%
+#   mutate("Label_fns" = factor(Label, fns_labels$Label))
+# head(pars_long)
+# 
+# # save summary (i.e., data from figure)
+# pars_summary <- pars_long %>% group_by(lc, fns) %>% 
+#   summarize(across(value, list("mean"  = function(x) mean(x, na.rm=TRUE), 
+#                                "median" = function(x) median(x, na.rm=TRUE), 
+#                                "ci_2.5" = function(x) quantile(x, 0.05, na.rm=TRUE), 
+#                                "ci_17" = function(x) quantile(x, 0.17, na.rm=TRUE), 
+#                                "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
+#                                "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE)))) %>%
+#   arrange(lc, fns)
+# pars_summary
+# write_csv(pars_summary, file=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_intercept_parsBayesian_summary_", temp_scale, ".csv"))
+
+# extract sample size
+n_table <- data_clean %>% filter(LC!="Other") %>%
+  group_by(LC, PA, PA_type, PA_rank) %>% count() %>%
+  pivot_wider(id_cols = c("PA", "PA_type", "PA_rank"), 
+              names_from = LC, values_from = n) %>% 
+  arrange(PA_rank) %>% ungroup() %>%
+  dplyr::select(-PA_rank)
+n_table
+write_csv(n_table, file=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_intercept_parsBayesian_nTable_", temp_scale, ".csv"))
+
+ggplot(pars_intercept %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
+         # add number of sizes to plot
+         rbind(data_clean %>% filter(LC!="Other") %>%
+                 group_by(LC, PA_type) %>% count() %>%
+                 rename(emmean=n) %>%
+                 mutate(fns="Number of sites",
+                        PA_protected=NA,
+                        PA_rank = NA,
+                        scale = temp_scale,
+                        Label_pa=ifelse(is.na(PA_type), "Unprotected", PA_type),
+                        Label="Number of sites",
+                        Label_fns = Label,
+                        Label_short = Label,
+                        Group_function=NA,
+                        Organism=NA, 
+                        lower.HPD = NA,
+                        upper.HPD = NA) %>%
+                 dplyr::select(colnames(pars_intercept))) %>%
+         filter(!is.na(Label_pa)) %>%
+         mutate(Label_fns = factor(Label_fns, levels = c(labels_order, "Number of sites")),
+                Label_n = ifelse(Label_fns == "Number of sites", "Number of sites", "Other fns")),
+       aes(y=Label_pa, x=emmean, #color=LC,
+           xmin = lower.HPD, xmax = upper.HPD, shape = Label_n))+
+  
+  ## adapt for scale
+  annotate("rect", ymin = -Inf, ymax = 4+0.5, xmin=-Inf, xmax=Inf, fill = "grey90", alpha=0.5)+ #global: 4, C: 3, R: 2
+  annotate("rect", ymin = -Inf, ymax = 1+0.5, xmin=-Inf, xmax=Inf, fill = "grey85", alpha=0.5)+
+  
+  geom_pointrange(position=position_dodgejust(width=0.5))+  
+  # ggdist::stat_pointinterval(fatten_point=1, shape=3, 
+  #                            position=position_dodgejust(width=0.5))+ 
+  facet_wrap(vars(Label_fns), scales = "free_x", ncol=6, drop=FALSE)+
+  
+  scale_shape_manual(values=c("Number of sites" = 3, "Other fns" = 19))+
+  scale_color_manual(values=c("Cropland" = "#4A2040",
+                              "Grassland" = "#E69F00",
+                              "Shrubland" = "#0072B2", 
+                              "Woodland" = "#009E73", 
+                              "Other" = "#000000",
+                              "Dryland" = "#000000"), name="Habitat type")+
+  ylab("")+ xlab("")+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        legend.position = "bottom",
+        text = element_text(size = 13))
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_intercept_parsBayesian_", temp_scale, ".png"),
+       plot = last_plot(),
+       width=12, height=10)
+
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Random-slope model (PA ranks/ levels) ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#### APPENDIX FIGURE 3.3 & 3.6 & 3.8 (PA ranks/ levels) ####
+
+pred_list <- get(load(paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, "_sample10k.RData")))
+
+ggplot(data = pred_list %>%
+         right_join(fns_labels %>% dplyr::select(Label, Label_short, Function), 
+                    by = c("fns" = "Function")) %>%
+         mutate(Label = factor(Label, levels = labels_order)), 
+       
+       aes(x = PA_rank_rev, y = .epred, color = ordered(LC))) +
+  stat_lineribbon() +
+  facet_wrap(vars(Label), scales = "free_y", ncol=6)+
+  scale_fill_brewer(palette = "Greys") +
+  scale_color_manual(values=c("Cropland" = "#4A2040",
+                              "Grassland" = "#E69F00",
+                              "Shrubland" = "#0072B2", 
+                              "Woodland" = "#009E73", 
+                              "Other" = "#000000",
+                              "Dryland" = "#000000"), name="Habitat type")+
+  scale_x_continuous(limits = c(1, 10), breaks = c(2, 10), minor_breaks = c(2,4,6,8, 10))+
+  theme_void()+
+  theme(axis.text = element_text(),
+        panel.grid.major.y = element_line(color = "grey"),
+        panel.grid.minor.x =  element_line(color = "grey"),
+        strip.text = element_text(size = 15, hjust=0),
+        legend.position = c(0.8, 0.1),
+        legend.box = "horizontal")
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_slope_parsBayesian_", temp_scale,".png"),
+       plot = last_plot(),
+       width=15, height=10)
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Raw data plot ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#### Boxplots values ####
+
+# extract list of sampling locations actually used in comparison
+data_values <- data_clean %>% 
+  filter(SampleID %in% unique(pa_pairs$ID) | 
+           SampleID %in% unique(pa_pairs$nonPA)) %>%
+  dplyr::select(SampleID, PA, LC, all_of(fns)) %>%
+  mutate(across(all_of(fns), .fns = function(x) { (x - mean(x)) / sd(x)})) %>%
+  
+  pivot_longer(cols = c(fns), names_to = "fns") %>%
+  full_join(fns_labels, by=c("fns"="Function")) %>%
+  mutate("Label" = factor(Label, levels = rev(fns_labels$Label)),
+         "Organism" = factor(Organism, levels = unique(fns_labels$Organism)))
+data_values
+
+data_values <- data_values %>% filter(LC %in% lc_names)
+
+ggplot(data_values, aes(x = Label, y = value)) +
+  geom_hline(yintercept = 0, lty="dashed", color="grey60") +
+  geom_boxplot(aes(fill=as.factor(PA)))+#,fatten = NULL) + # activate to remove the median lines
+  scale_fill_manual(values=c("orange","darkgreen"),name = NULL, labels = c("Non-Protected","Protected")) +
+  
+  xlab("")+ ylab("")+
+  facet_wrap(vars(LC), ncol=1, nrow=4)+
+  theme_bw() +
+  theme(axis.text.x=element_text(size=5, angle=45, hjust=1),
+        panel.grid.minor.y = element_blank(), panel.grid.major.x = element_blank(),
+        legend.position = "none", legend.text = element_text(size=15), axis.text.y = element_text(size=15))
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_boxplot_estimates_", temp_scale, ".png"),
+       plot = last_plot())
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#### Bi-plots ####
+# protected area categories against functions
+
+# prepare data
+data_long <- data_clean %>%
+  pivot_longer(cols = all_of(fns), names_to = "fns", values_to = "fns_value") %>%
+  filter(LC %in% lc_names) %>%
+  right_join(fns_labels %>% dplyr::select(Label, Label_short, Function), 
+             by = c("fns" = "Function")) %>%
+  mutate(Label = factor(Label, levels = labels_order))
+
+# plotting
+ggplot(data = data_long,
+       aes(x = as.factor(PA_rank), y = fns_value, group = LC, color = LC))+
+  xlab("Category of protected area (ranked)")+
+  ylab("")+
+  geom_jitter()+
+  geom_smooth(method = "lm", stat = "smooth")+
+  scale_color_manual(values=c("Cropland" = "#4A2040",
+                              "Grassland" = "#E69F00",
+                              "Shrubland" = "#0072B2", 
+                              "Woodland" = "#009E73", 
+                              "Other" = "#000000",
+                              "Dryland" = "#000000"), name="Habitat type")+
+  facet_wrap(vars(Label), scales = "free_y", ncol = 6)+
+  theme_bw()+
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 15),
+        axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_clean_PAranks_fns_", temp_scale, ".png"),
+       plot = last_plot(), 
+       width = 5500, height = 4000,
+       units = "px")
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## 04b_Plotting_allScales.R ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+library(here)
+library(tidyverse)
+library(terra)
+library(ggdist) #to plot distributions (Bayesian)
+library(gridExtra) #to add table in plot
+library(ggrepel) #to add text not overlapping (geom_text_repel)
+library(ggtext) #to add icons as axis labels
+library(ggh4x) # for free axes in facet_grid
+library(corrplot)
+library(magick) # to create plot from multiple pngs
+
+source(paste0(here::here(), "/src/00_Parameters.R"))
+source(paste0(here::here(), "/src/00_Functions.R"))
+
+# define each land cover type
+lc_names_all <- c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
+
+# define order of functions
+labels_order <- c(
+  "Decomposition (OM)", "Nutrient cycling", "Pathogen control", "Soil carbon", "Soil stability", "Water regulation",
+  "Bacterial Richness", "Fungal Richness", "Invertebrate Richness", "Protist Richness",
+  "AM fungi Richness", "EM fungi Richness",
+  "Bacterial Shannon", "Fungal Shannon", "Invertebrate Shannon", "Protist Shannon",
+  "Nematode Richness", "Decomposer Richness",
+  "Bacterial Dissimilarity", "Fungal Dissimilarity", "Invertebrate Dissimilarity", "Protist Dissimilarity"
+)
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Sampling locations ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#### Locations per habitat type ####
+data_locations_all <- read_csv(file = paste0(here::here(), "/results/sensitivity_globalBacteria/Locations_global.csv"))
+
+# add scale
+data_locations_all$scale <- "global" 
+
+for(temp_scale in c("continental", "regional")){
+  # load locations
+  temp_data <- read_csv(file = paste0(here::here(), "/results/Locations_", temp_scale, ".csv"))
+  
+  # add scale
+  temp_data$scale <- temp_scale 
+  
+  # add to full dataframe
+  data_locations_all <- rbind(data_locations_all, temp_data)  
+}
+
+data_locations_all
+
+data_locations_all <- data_locations_all %>%
+  mutate(LC_f = as.factor(LC)) %>%
+  mutate(LC_f = factor(LC_f, levels = c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland")))
+
+# plot
+ggplot()+
+  xlab("")+
+  ylab("Number of sampling sites")+
+  geom_bar(data = data_locations_all %>%
+             mutate(scale = factor(scale, levels = c("global", "continental", "regional"))), 
+           aes(x = LC_f, fill = LC_f, alpha = "Unprotected"),
+           position = "dodge",
+           na.rm=TRUE)+
+  scale_fill_manual(values = c("Cropland" = "#4A2040",
+                               "Grassland" = "#E69F00",
+                               "Shrubland" = "#0072B2", 
+                               "Woodland" = "#009E73", 
+                               "Other" = "#000000",
+                               "Dryland" = "#000000"))+ 
+  
+  geom_bar(data = data_locations_all %>%
+             filter(PA == 1) %>%
+             mutate(scale = factor(scale, levels = c("regional", "continental", "global"))), 
+           aes(x = LC_f, alpha = "Protected"), fill = "white", 
+           position = "dodge",
+           na.rm=TRUE)+
+  scale_alpha_manual(values = c("Protected" = 0.5, "Unprotected" = 1))+
+  guides(alpha = guide_legend(override.aes = list(fill = "black",
+                                                  alpha = c(0.1, 1))))+
+  scale_x_discrete(expand = c(0,0.7),
+                   drop = TRUE)+
+  scale_y_continuous(expand = c(0,0), limits = c(0, 160))+
+  facet_grid(cols = vars(scale), drop = TRUE, scales = "free_x", space = "free_x")+
+  theme_bw()+
+  theme(panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_line(color = "grey80"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(color = "grey60"),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.border = element_blank(),
+        panel.spacing = unit(1, "cm"),
+        axis.text.y = element_text(size = 19.5, vjust = 0.5),
+        axis.title.y = element_text(size = 25.5),
+        axis.text.x = element_blank())
+#axis.text.x = ggtext::element_markdown(vjust = 0))
+ggsave(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_habitats_allScales.png"),
+       width = 10, height = 5,
+       plot = last_plot())
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Mahalanobis distance ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#### Boxplot Mahalanobis distance ####
+
+temp_scale <- "global"
+
+# load pairs of PA and nonPA
+pa_pairs <- read_csv(file=sort(list.files(here::here("intermediates", temp_scale), pattern = "Pairs_paNonpa_1000trails_", full.names = TRUE), decreasing = TRUE)[1])
+
+# plot
+ggplot(pa_pairs, aes(x = LC, y = mahal.min, fill = LC))+
+  geom_boxplot()+
+  geom_violin(alpha = 0.3, adjust = 0.3)+
+  theme_bw() +
+  ggtitle(paste0("Paired samples - ", temp_scale))+
+  labs(x="Habitat type",y="Mahalanobis distance") +
+  theme(axis.text.x=element_text(size=15),text = element_text(size=20),  
+        legend.position = "none", axis.text.y = element_text(size=15), legend.title = element_blank())+
+  scale_fill_manual(values=c("Cropland" = "#4A2040",
+                             "Grassland" = "#E69F00",
+                             "Shrubland" = "#0072B2", 
+                             "Woodland" = "#009E73", 
+                             "Other" = "#000000",
+                             "Dryland" = "#000000")) #"gold3", "limegreen", "forestgreen"
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_boxplot_mahal.distance_", temp_scale, ".png"),
+       plot = last_plot())
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+#### APPENDIX FIGURE 2.1 - Boxplot Mahalanobis distance - all vs. pairs ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# calculate & plot Mahalanobis distance for all
+temp_scale <- "global"
+data <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+
+lc_names <- "Dryland" 
+
+# scale variables
+data <- f_scale_vars(data = data, vars = mahal_vars)
+
+nonpa <- data[data$PA==0,c("SampleID", "LC", "PA", mahal_vars_z)]
+pa <- data[data$PA==1,c("SampleID", "LC", "PA", mahal_vars_z)]
+all_nonPA <- data.frame("SampleID" = "a", "PA_ID" = 1, "LC" = "lc", "mahal_dist" = 1)[0,]
+
+# calculate mahalanobis distance per lc type
+for(i in 1:length(lc_names)){try({
+  temp_nonPA  <- nonpa[nonpa[,"LC"]==lc_names[i],]
+  temp_PA <- pa[pa[,"LC"]==lc_names[i],]
+  
+  sigma <- cov(temp_nonPA[,mahal_vars_z]) 
+  for(j in 1:nrow(temp_PA)){
+    mu <- as.numeric(temp_PA[j,mahal_vars_z])
+    temp_nonPA[,as.character(temp_PA[j,"SampleID"])] <- 
+      mahalanobis(temp_nonPA[,mahal_vars_z], mu, sigma, tol=1e-30)
+    #print(j)
+  }
+  
+  temp_nonPA <- temp_nonPA %>% pivot_longer(cols = as.character(temp_PA %>% pull("SampleID")),
+                                            names_to = "PA_ID", values_to = "mahal_dist") %>%
+    dplyr::select(SampleID, PA_ID, LC, mahal_dist) %>% unique()
+  
+  all_nonPA <- rbind(all_nonPA, temp_nonPA)
+})}
+all_nonPA
+
+write_csv(all_nonPA, paste0(here::here(), "/results/sensitivity_globalBacteria/Data_boxplot_mahal.distance_all_", temp_scale, ".csv"))
+
+ggplot(all_nonPA, aes(x = LC, y = mahal_dist, fill = LC))+
+  geom_boxplot()+
+  geom_violin(alpha = 0.3, adjust = 0.3)+
+  theme_bw() +
+  ggtitle(paste0("All samples - ", temp_scale))+
+  labs(x="Habitat type",y="Mahalanobis distance") +
+  theme(axis.text.x=element_text(size=15),text = element_text(size=20),  
+        legend.position = "none", axis.text.y = element_text(size=15), legend.title = element_blank())+
+  scale_fill_manual(values=c("Cropland" = "#4A2040",
+                             "Grassland" = "#E69F00",
+                             "Shrubland" = "#0072B2", 
+                             "Woodland" = "#009E73", 
+                             "Other" = "#000000",
+                             "Dryland" = "#000000")) #"gold3", "limegreen", "forestgreen"
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_boxplot_mahal.distance_all_", temp_scale, ".png"),
+       plot = last_plot())
+
+
+# put in 1 plot - APPENDIX FIGURE 2.1
+pairs_glob <- magick::image_read(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_boxplot_mahal.distance_global.png"))
+pairs_cont <- magick::image_read(paste0(here::here(), "/figures/Data_boxplot_mahal.distance_continental.png"))
+pairs_regi <- magick::image_read(paste0(here::here(), "/figures/Data_boxplot_mahal.distance_regional.png"))
+all_glob <- magick::image_read(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_boxplot_mahal.distance_all_global.png"))
+all_cont <- magick::image_read(paste0(here::here(), "/figures/Data_boxplot_mahal.distance_all_continental.png"))
+all_regi <- magick::image_read(paste0(here::here(), "/figures/Data_boxplot_mahal.distance_all_regional.png"))
+
+magick::image_write(magick::image_append(c(magick::image_append(c(pairs_glob, pairs_cont, pairs_regi)),
+                                           magick::image_append(c(all_glob, all_cont, all_regi))),
+                                         stack = TRUE),
+                    path=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_boxplot_mahal.distance_all_allScales.png"))
+rm(pairs_glob, pairs_cont, pairs_regi, all_glob, all_cont, all_regi)
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+#### FIGURE 2 & APPENDIX TABLE 2.2 - Heatmap of effect sizes ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # mean per lc type and all 3 scales
 d_sum_glob <- read.csv(file=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_d-value_summary_global.csv"))
 d_sum_cont <- read.csv(file=paste0(here::here(), "/figures/Results_d-value_summary_continental.csv"))
@@ -1080,7 +1429,9 @@ d_sum_all %>% ungroup() %>% group_by(lc) %>%
                         sd=function(x) sd(abs(x)))))
 
 # mean per Group_function
-d_sum_all %>% ungroup() %>% group_by(Group_function) %>% 
+d_sum_all %>% ungroup() %>% 
+  mutate("Supergroup_function" = ifelse(Group_function == "Function", "Functioning", "Diversity")) %>%
+  group_by(Supergroup_function) %>%
   summarize(across(c(effect_median), 
                    list(mean=function(x) mean(abs(x), na.rm=TRUE),
                         sd=function(x) sd(abs(x), na.rm=TRUE))))
@@ -1091,13 +1442,6 @@ d_plot_all <- d_sum_all %>%
   dplyr::select(-Label) %>%
   right_join(fns_labels %>% dplyr::select(Label, Label_short, Function), 
              by = c("fns" = "Function")) %>%
-  # mutate(effect_ci_min66 = ifelse(abs(effect_ci_17)<abs(effect_ci_83), 
-  #                                 abs(effect_ci_17), 
-  #                                 abs(effect_ci_83))) %>%
-  # mutate(effect_ci_min66 = ifelse(sign(effect_ci_17)!= sign(effect_ci_83), 0.01, effect_ci_min66)) %>%
-  # mutate(effect_ci_min66f = cut(effect_ci_min66,
-  #                               breaks=c(0, 0.2, 0.5, 0.8, Inf),
-  #                               labels=c("marginal", "small", "medium", "large"))) %>%
   mutate(effect_mean_f = cut(abs(effect_mean),
                              breaks=c(0, 0.2, 0.5, 0.8, Inf),
                              labels=c("marginal", "small", "medium", "large"))) %>%
@@ -1112,17 +1456,35 @@ d_plot_all <- d_sum_all %>%
   mutate(effect_direction = as.factor(sign(effect_mean)))%>%
   mutate(effect_direction_c = ifelse(effect_direction=="-1", "negative",
                                      ifelse(effect_direction=="1", "positive", "0"))) %>%
-  #mutate(effect_direction_c = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "not significant", effect_direction_c)) %>%
   mutate(Label = factor(Label, levels = labels_order)) %>%
   mutate(effect_significance = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "not significant", effect_direction_c),
          effect_na = ifelse(is.na(effect_mean), "not available", NA)) %>%
   mutate(effect_significance = factor(effect_significance, levels = c("negative", "positive", "not significant")))
 
-ggplot(data = d_plot_all,
+# save table - APPENDIX TABLE 2.2
+write_csv(d_plot_all %>% 
+            dplyr::select(-X) %>%
+            dplyr::select(Group_function, Label, scale, lc, effect_mean:effect_ci_97.5, effect_significance) %>%
+            arrange(Group_function, Label, scale, lc) %>%
+            mutate(effect_significance = ifelse(effect_significance=="not significant", "", "*")) %>%
+            mutate("Habitat" = lc,
+                   "Group" = Group_function,
+                   "Slope [HPD]" = paste0(round(effect_mean, 3), 
+                                          " [", round(effect_ci_2.5, 3), "; ", round(effect_ci_97.5, 3), "] ", effect_significance),
+                   "Variable" = Label,
+                   "Scale_long" = factor(scale, levels = c("global", "continental", "regional")))  %>%
+            mutate("Scale" = factor(substr(scale, 1, 4), levels = c("glob", "cont", "regi"))) %>%
+            dplyr::select(Group, Variable, Scale, Habitat, "Slope [HPD]") %>%
+            pivot_wider(names_from = "Habitat", values_from = "Slope [HPD]") %>%
+            arrange(Group, Variable, Scale) %>%
+            filter(!is.na(Group)),
+          paste0(here::here(), "/results/sensitivity_globalBacteria/Results_d-value_meanCI_allScales_fns.csv"))
+
+# plot - FIGURE 2
+ggplot(data = d_plot_all %>%
+         filter(lc != "Shrubland"),
        aes(x = lc, y = scale))+
   
-  # geom_tile(aes(alpha=effect_ci_min66f, 
-  #                fill=as.factor(sign(effect_median))))+ 
   geom_point(aes(size = effect_mean_f,
                  color = effect_direction_c, 
                  fill= effect_significance,
@@ -1134,21 +1496,17 @@ ggplot(data = d_plot_all,
   scale_color_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb"),
                      name = "Direction of effect",
                      na.value = "black")+
-  # scale_color_manual(values = c("negative" = "#fc8d59", "not significant" = "black", "positive" = "#91bfdb"),
-  #                   name = "Direction of effect",
-  #                   na.value = "grey60")+
-  scale_size_manual(values = c("marginal" = 2, "ns" = 5, "small" = 5, "medium" = 10, "large" = 15),
+  scale_size_manual(values = c("marginal" = 2, "not significant" = 2, "small" = 5, "medium" = 10, "large" = 15),
                     name = "Effect size",
-                    na.value = 1)+
-  # scale_alpha_manual(values = c("ns" = 0.05, "small" = 0.3, "medium" = 0.65, "large" = 1),
-  #                    name = "Effect size")+
+                    na.value =1)+
   scale_shape_manual(values = c("not available" = 4),
                      name = "Missing data",
                      na.value = 21)+
   scale_x_discrete(labels = c(
+    "Dryland" = "<img src='figures/icon_land.png' width='30'>",
     "Cropland" = "<img src='figures/icon_harvest.png' width='20'>",
     "Grassland" = "<img src='figures/icon_grass.png' width='17'>",
-    "Shrubland" = "<img src='figures/icon_shrub-crop.png' width='35'>",
+    #"Shrubland" = "<img src='figures/icon_shrub-crop.png' width='35'>",
     "Woodland" = "<img src='figures/icon_forest.png' width='30'>"
   ))+
   
@@ -1160,32 +1518,29 @@ ggplot(data = d_plot_all,
   xlab("")+ylab("")+
   theme_bw() + # use a white background
   
-  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black"), 
+  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black"),
                                                  shape = 21, size = 5)), #tell legend to use different point shape
          color = "none", #don't show legend
          shape = guide_legend(override.aes = list(size = 5)))+
-  theme(#legend.position = c(0.96, -0.01),
-    legend.position = "bottom", #c(0.96, -0.05),
-    legend.justification = c(1, 0),
-    legend.box = "horizontal",
-    legend.direction = "vertical",
-    #legend.key.size = unit(20, "pt"),
-    legend.title = element_text(size = 15),
-    legend.text = element_text(size = 15),
-    #axis.title.y =element_blank(),
-    axis.text.y = ggtext::element_markdown(hjust = 0),
-    axis.ticks = element_blank(),
-    axis.text.x = ggtext::element_markdown(vjust = 0),
-    panel.grid = element_blank(),
-    panel.border = element_blank(),
-    strip.background = element_rect(fill="white", color = "white"), #chocolate4
-    strip.text = element_text(color="black", size = 15, hjust = 0)) #white
+  theme(legend.position = "bottom", #c(0.96, -0.05),
+        legend.justification = c(1, 0),
+        legend.box = "horizontal",
+        legend.direction = "vertical",
+        legend.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        axis.text.y = ggtext::element_markdown(hjust = 0),
+        axis.ticks = element_blank(),
+        axis.text.x = ggtext::element_markdown(vjust = 0),
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
+        strip.background = element_rect(fill="white", color = "white"), #chocolate4
+        strip.text = element_text(color="black", size = 15, hjust = 0)) #white
 ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_d-value_meanCI_allScales_fns.png"),
        plot = last_plot(), 
        width = 4400, height = 3800, units = "px")
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#### Summarizing stats ####
+##### Summarizing stats ####
 # number significant effects
 d_plot_all %>% filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% nrow() #23
 # number ns
@@ -1193,11 +1548,189 @@ d_plot_all %>% filter(effect_significance=="not significant" & !is.na(effect_sig
 
 # number significant per lc
 table(d_plot_all %>% filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% dplyr::select(scale, lc))
+table(d_plot_all %>% filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% dplyr::select(effect_direction_c))
+table(d_plot_all %>% filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% dplyr::select(effect_direction_c, Group_function))
 table(d_plot_all %>% filter(!is.na(effect_significance)) %>% dplyr::select(scale, lc))
 
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### APPENDIX S2 Pointrange plot grouped per estimate type ####
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#### APPENDIX FIGURE 2.2 - Heatmap correlation Mahalanobis & difference ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+source(paste0(here::here(), "/src/00_Parameters.R"))
+source(paste0(here::here(), "/src/00_Functions.R"))
+
+all_corr <- data.frame("LC" = "lc", "fns" = "fns", "correlation" = 1, "scale" = "scale", "p_value" = 1)[0,]
+
+for(temp_scale in c("global", "continental", "regional")){
+  
+  if(temp_scale == "global"){
+    lc_names <- "Dryland" #lc_names_all[lc_names_all != "Other" & lc_names_all != "Cropland"]
+  } 
+  if(temp_scale == "continental"){
+    lc_names <- lc_names_all[lc_names_all != "Other" & lc_names_all != "Shrubland" & lc_names_all != "Dryland"]
+  }
+  if(temp_scale == "regional"){
+    lc_names <- lc_names_all[lc_names_all != "Other" & lc_names_all != "Shrubland" & lc_names_all != "Dryland"]
+  }
+  
+  if(temp_scale == "global"){
+    data_clean <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_clean_", temp_scale, ".csv"))
+    
+    # load pairs of PA and nonPA
+    pa_pairs <- read_csv(file=sort(list.files(here::here("results", "sensitivity_globalBacteria"), pattern = "Pairs_paNonpa_1000trails_", full.names = TRUE), decreasing = TRUE)[1])
+    
+  }else{
+    data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+    
+    # load pairs of PA and nonPA
+    pa_pairs <- read_csv(file=sort(list.files(here::here("intermediates", temp_scale), pattern = "Pairs_paNonpa_1000trails_", full.names = TRUE), decreasing = TRUE)[1])
+  }
+  
+  # add data
+  pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
+    rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
+    filter(!is.na(nonPA)) %>%
+    arrange(ID, nonPA, times) 
+  
+  # calculate difference for fns columns and mean for mahal.min column (= mahal.min because same for both) within each group
+  pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% 
+    summarize(across(all_of(fns), diff),
+              across(mahal.min, mean)) %>% 
+    dplyr::select(ID, nonPA, mahal.min, LC, all_of(fns))
+  
+  # Calculate correlations between env and fns for each site
+  correlation_matrix <- sapply(fns, function(fn) {
+    sapply(lc_names, function(lc) {
+      pa_temp <- pa_env %>% filter(LC == lc)
+      cor.test(pa_temp[["mahal.min"]], pa_temp[[fn]], 
+               use = "na.or.complete", method = "spearman")[["estimate"]][["rho"]] #cor for Pearson, rho for Spearman, tau for Kendall
+    })
+  })
+  
+  correlation_p_matrix <- sapply(fns, function(fn) {
+    sapply(lc_names, function(lc) {
+      pa_temp <- pa_env %>% filter(LC == lc)
+      round(cor.test(pa_temp[["mahal.min"]], pa_temp[[fn]], 
+                     use = "na.or.complete", method = "spearman")[["p.value"]],3)
+    })
+  })
+  
+  if(temp_scale == "global"){ #necessary probably because of only one LC...
+    correlation_matrix <- t(correlation_matrix)
+    correlation_p_matrix <- t(correlation_p_matrix)
+  } 
+  
+  
+  # Convert the correlation matrix to a data frame for easier interpretation
+  correlation_df <- as.data.frame(correlation_matrix)
+  correlation_p_df <- as.data.frame(correlation_p_matrix)
+  
+  rownames(correlation_df) <- lc_names 
+  colnames(correlation_df) <- fns 
+  
+  rownames(correlation_p_df) <- lc_names  
+  colnames(correlation_p_df) <- fns
+  
+  correlation_df <- correlation_df %>% 
+    rownames_to_column(var = "LC") %>%  # Convert row names to a column
+    pivot_longer(cols = -LC,  # Pivot to long format, excluding the env_variable column
+                 names_to = "fns",
+                 values_to = "correlation") %>%
+    mutate(fns = factor(fns, levels = unique(fns[order(correlation)])),
+           LC = factor(LC, levels = lc_names),
+           scale = temp_scale)
+  
+  correlation_p_df <- correlation_p_df %>% 
+    rownames_to_column(var = "LC") %>%  # Convert row names to a column
+    pivot_longer(cols = -LC,  # Pivot to long format, excluding the env_variable column
+                 names_to = "fns",
+                 values_to = "p_value") %>%
+    mutate(fns = factor(fns, levels = unique(fns[order(p_value)])),
+           LC = factor(LC, levels = lc_names),
+           scale = temp_scale)
+  
+  correlation_df <- correlation_df %>%
+    full_join(correlation_p_df)
+  
+  all_corr <- rbind(all_corr, correlation_df)
+}
+all_corr
+
+# long format
+all_corr_plot <- all_corr %>%
+  mutate(LC = factor(LC, levels = lc_names_all[lc_names_all != "Other"]),
+         scale = factor(scale, levels = c("global", "continental", "regional")),
+         scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='35'>",
+                             ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='35'>",
+                                    ifelse(scale == "global", "<img src='figures/icon_earth-globe-with-continents-maps.png' width='35'>", NA)))) %>%
+  full_join(fns_labels %>% 
+              filter(Function %in% fns),
+            dplyr::select(Label_short, Function), 
+            by = c("fns" = "Function")) %>%
+  mutate(Label_short = factor(Label_short, levels = rev(fns_labels$Label_short)),
+         scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_earth-globe-with-continents-maps.png' width='35'>",
+                                                    "<img src='figures/icon_location-black.png' width='35'>",
+                                                    "<img src='figures/icon_flag-Portugal.png' width='35'>" )))
+
+# add d-values (effect size results)
+all_corr_plot <- all_corr_plot %>%
+  full_join(d_plot_all %>%
+              filter(!is.na(effect_significance)) %>%
+              rename(LC = lc) %>%
+              dplyr::select(Label_short, LC, fns, Group_function, effect_significance, scale)) %>%
+  filter(!is.na(correlation))
+
+# save
+write_csv(all_corr_plot %>%
+            mutate("Correlation [p value]" = paste0(round(correlation, 3), 
+                                                    " [", ifelse(p_value<0.002, "<0.002", round(p_value, 3)), "] ", 
+                                                    ifelse(p_value < 0.05, "*", "ns"))) %>%
+            dplyr::select(Group_function, Label_short, scale, LC, `Correlation [p value]`) %>%
+            rename(Group = Group_function,
+                   Variable = Label_short, 
+                   Scale = scale) %>%
+            pivot_wider(id_cols = c(Group, Variable, Scale), names_from = LC, values_from = `Correlation [p value]`) %>%
+            dplyr::select(Group, Variable, Scale, Dryland, Cropland, Grassland, Woodland) %>%
+            arrange(Group, Variable, Scale),
+          paste0(here::here(), "/results/sensitivity_globalBacteria/Correlation_diff_mahal_allScales.csv"))
+
+# plotting
+ggplot(data = all_corr_plot)+
+  geom_tile(aes(x = LC, y = Label_short, fill = correlation))+
+  
+  geom_point(data = all_corr_plot %>% filter(p_value >= 0.05),
+             aes(x = LC, y = Label_short), shape = 4)+
+  
+  geom_point(data = all_corr_plot %>% filter(effect_significance != "not significant"),
+             aes(x = LC, y = Label_short), shape = 0, size = 8)+
+  
+  scale_shape_manual(values = c(NA, 4))+
+  scale_fill_distiller(type = "div", na.value = "white", limits = c(-0.7, 0.7),
+                       name = "Correlation")+
+  scale_x_discrete(labels = c(
+    "Dryland" = "<img src='figures/icon_land.png' width='33'>",
+    "Cropland" = "<img src='figures/icon_harvest.png' width='20'>",
+    "Grassland" = "<img src='figures/icon_grass.png' width='17'>",
+    "Shrubland" = "<img src='figures/icon_shrub-crop.png' width='35'>",
+    "Woodland" = "<img src='figures/icon_forest.png' width='30'>"
+  ))+
+  facet_grid(cols = vars(scale_icon), scales = "free_x", space = "free_x")+
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_text(size = 15),
+        strip.text.x = ggtext::element_markdown(vjust = 0.5),
+        strip.background = element_blank(),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        axis.text.x = ggtext::element_markdown(vjust = 0))
+ggsave(paste0(here::here(), "/results/sensitivity_globalBacteria/Correlation_diff_mahal_allScales.png"),
+       last_plot(),
+       height = 10, width = 6)
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#### APPENDIX FIGURE 2.3 & TABLE 2.3 - Pointrange plot grouped per estimate type ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 d_df_glob <- read_csv(file=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_d-value_global.csv"))
 d_df_cont <- read_csv(file=paste0(here::here(), "/figures/Data_d-value_continental.csv"))
@@ -1220,6 +1753,7 @@ d_df_grouped <- d_df_all %>% filter(!is.na(lc)) %>%
   mutate(Group_function = ifelse(Group_function=="Service", "Function", 
                                  ifelse(Group_function=="Diversity", "Shannon", Group_function))) %>%
   mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity")))
+
 write_csv(d_df_grouped %>%
             group_by(Group_function, scale, lc) %>%
             summarize(across(effect, list(median = median, 
@@ -1230,6 +1764,7 @@ write_csv(d_df_grouped %>%
             dplyr::select(-effect_ci2.5, -effect_ci92.5), 
           paste0(here::here(), "/results/sensitivity_globalBacteria/Results_d-value_medianCI_allScales_grouped.csv"))
 
+# plot
 ggplot(data = d_df_grouped,
        aes(fill = lc, color = lc, 
            y = scale_icon, x = effect))+
@@ -1239,24 +1774,18 @@ ggplot(data = d_df_grouped,
                              position=position_dodgejust(width=0.5)) +
   coord_flip()+
   facet_wrap(vars(Group_function), drop=FALSE)+
-  #ylab("Effect size")+
   scale_fill_manual(values=c("Cropland" = "#4A2040",
                              "Grassland" = "#E69F00",
                              "Shrubland" = "#0072B2", 
                              "Woodland" = "#009E73", 
-                             "Dryland" = "#000000",
-                             "Other" = "#000000"))+
+                             "Other" = "#000000",
+                             "Dryland" = "#000000"))+
   scale_color_manual(values=c("Cropland" = "#4A2040",
                               "Grassland" = "#E69F00",
                               "Shrubland" = "#0072B2", 
                               "Woodland" = "#009E73", 
-                              "Dryland" = "#000000",
-                              "Other" = "#000000"))+
-  # scale_x_discrete(labels = c(
-  #   "global" = "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>",
-  #   "continental" = "<img src='figures/icon_location-black.png' width='30'>",
-  #   "regional" = "<img src='figures/icon_flag-Portugal.png' width='30'>"
-  # ))+
+                              "Other" = "#000000",
+                              "Dryland" = "#000000"))+
   scale_x_continuous(breaks = c(-2, -0.8, -0.5, -0.2, 0, 0.2, 0.5, 0.8, 2))+
   theme_void()+
   theme(legend.position = "bottom", 
@@ -1274,176 +1803,23 @@ ggplot(data = d_df_grouped,
         strip.text = element_text(size = 20, hjust = 0),
         plot.background = element_rect(fill = "white", color = "white"))
 
+#ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_d-value_medianCI_allScales_groupedOrganisms.png"), #switch facet_wrap to Organism
 ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_d-value_medianCI_allScales_grouped.png"),
        plot = last_plot(), 
        width = 2700, height = 2200,
        units = "px")
 
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Boxplots values ####
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-# extract list of sampling locations actually used in comparison
-data_values <- data_clean %>% 
-  filter(SampleID %in% unique(pa_pairs$ID) | 
-           SampleID %in% unique(pa_pairs$nonPA)) %>%
-  dplyr::select(SampleID, PA, LC, all_of(fns)) %>%
-  mutate(across(all_of(fns), .fns = function(x) { (x - mean(x)) / sd(x)})) %>%
-  
-  pivot_longer(cols = c(fns), names_to = "fns") %>%
-  full_join(fns_labels, by=c("fns"="Function")) %>%
-  mutate("Label" = factor(Label, levels = rev(fns_labels$Label)),
-         "Organism" = factor(Organism, levels = unique(fns_labels$Organism)))
-data_values
-
-data_values <- data_values %>% filter(LC %in% lc_names)
-
-ggplot(data_values, aes(x = Label, y = value)) +
-  geom_hline(yintercept = 0, lty="dashed", color="grey60") +
-  geom_boxplot(aes(fill=as.factor(PA)))+#,fatten = NULL) + # activate to remove the median lines
-  scale_fill_manual(values=c("orange","darkgreen"),name = NULL, labels = c("Non-Protected","Protected")) +
-  #scale_y_continuous(limits=c(-3,13)) + 
-  
-  xlab("")+ ylab("")+
-  facet_wrap(vars(LC), ncol=1, nrow=4)+
-  theme_bw() +
-  theme(axis.text.x=element_text(size=15, angle=45, hjust=1),
-        panel.grid.minor.y = element_blank(), panel.grid.major.x = element_blank(),
-        legend.position = "none", legend.text = element_text(size=15), axis.text.y = element_text(size=15))
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_boxplot_estimates_", temp_scale, ".png"),
-       plot = last_plot())
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Bayesian results (PA types) ####
+### Random-slope model (PA ranks/ levels) ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#### FIGURE (OLD) - Bayesian PA types ####
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# transform parameters to long format and assign labels
-pars_long <- pars_sample %>% 
-  dplyr::select(-sigma, -sigma_a, -mu_a) %>% 
-  pivot_longer(cols = colnames(.)[!(colnames(.) %in% c("lc", "fns"))])%>%
-  full_join(protect_type %>% 
-              mutate(PA_rank = as.character(PA_rank)), 
-            by=c("name" = "PA_rank"))  %>%
-  mutate("Label_pa" = ifelse(name=="11", "Unprotected", PA_type)) %>%
-  mutate("Label_pa" = factor(Label_pa, levels = rev(c(protect_type$PA_type, "Unprotected")))) %>%
-  full_join(fns_labels, by=c("fns"="Function")) %>%
-  mutate("Label_fns" = factor(Label, fns_labels$Label))
-head(pars_long)
-
-# save summary (i.e., data from figure)
-pars_summary <- pars_long %>% group_by(lc, fns) %>% 
-  summarize(across(value, list("mean"  = function(x) mean(x, na.rm=TRUE), 
-                               "median" = function(x) median(x, na.rm=TRUE), 
-                               "ci_2.5" = function(x) quantile(x, 0.05, na.rm=TRUE), 
-                               "ci_17" = function(x) quantile(x, 0.17, na.rm=TRUE), 
-                               "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
-                               "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE)))) %>%
-  arrange(lc, fns)
-pars_summary
-write_csv(pars_summary, file=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_intercept_parsBayesian_summary_", temp_scale, ".csv"))
-
-# extract sample size
-n_table <- data_clean %>% filter(LC!="Other") %>%
-  group_by(LC, PA, PA_type, PA_rank) %>% count() %>%
-  pivot_wider(id_cols = c("PA", "PA_type", "PA_rank"), 
-              names_from = LC, values_from = n) %>% 
-  arrange(PA_rank) %>% ungroup() %>%
-  dplyr::select(-PA_rank)
-n_table
-write_csv(n_table, file=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_intercept_parsBayesian_nTable_", temp_scale, ".csv"))
-
-ggplot(pars_long %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
-         # add number of sizes to plot
-         rbind(data_clean %>% filter(LC!="Other") %>%
-                 group_by(LC, PA_type) %>% count() %>%
-                 rename(lc=LC, value=n) %>%
-                 mutate(fns="Number of sites",
-                        name=NA,
-                        PA_protected=NA,
-                        Label_pa=ifelse(is.na(PA_type), "Unprotected", PA_type),
-                        Label="Number of sites",
-                        Label_fns = Label,
-                        Label_short = Label,
-                        Group_function=NA,
-                        Organism=NA) %>%
-                 dplyr::select(colnames(pars_long))) %>%
-         #filter(Label_fns != "Water regulation") %>%%>%
-         filter(!is.na(Label_pa)) %>%
-         mutate(Label_fns = factor(Label_fns, levels = c(labels_order, "Number of sites"))),
-       aes(y=Label_pa, x=value, color=lc))+
-  
-  ## adapt for scale
-  annotate("rect", ymin = -Inf, ymax = 4+0.5, xmin=-Inf, xmax=Inf, fill = "grey90", alpha=0.5)+ #global: 4, C: 3, R: 2
-  annotate("rect", ymin = -Inf, ymax = 1+0.5, xmin=-Inf, xmax=Inf, fill = "grey85", alpha=0.5)+
-  
-  ggdist::stat_pointinterval(fatten_point=1, shape=3, 
-                             position=position_dodgejust(width=0.5))+ 
-  facet_wrap(vars(Label_fns), scales = "free_x", ncol=6, drop=FALSE)+
-  
-  scale_color_manual(values=c("Cropland" = "#4A2040",
-                              "Grassland" = "#E69F00",
-                              "Shrubland" = "#0072B2", 
-                              "Woodland" = "#009E73",
-                              "Dryland" = "#000000",
-                              "Other" = "#000000"), name="Habitat type")+
-  ylab("")+ xlab("")+
-  theme_bw()+
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major.y = element_blank(),
-        legend.position = "bottom",
-        text = element_text(size = 13))
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_intercept_parsBayesian_", temp_scale, "Bacteria.png"),
-       plot = last_plot(),
-       width=12, height=10)
-
-
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Bayesian results (PA ranks/ levels) ####
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-pred_list <- rbind(get(load(paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_global_sample10k.RData"))), 
-                   get(load(paste0(here::here(), "/results/PAranks_Bayesian_continental_sample10k.RData")))) %>% 
-  rbind(get(load(paste0(here::here(), "/results/PAranks_Bayesian_regional_sample10k.RData"))))
-
-temp_scale <- "global"
-ggplot(data = pred_list %>% filter(scale == temp_scale) %>%
-         right_join(fns_labels %>% dplyr::select(Label, Label_short, Function), 
-                    by = c("fns" = "Function")) %>%
-         mutate(Label = factor(Label, levels = labels_order)), 
-       
-       aes(x = PA_rank_rev, y = .epred, color = ordered(LC))) +
-  stat_lineribbon() +
-  #geom_line(aes(y = .epred, group = paste(LC, .draw)), alpha = 0.2)+
-  #geom_point(data = pred_list) +
-  facet_wrap(vars(Label), scales = "free_y", ncol=6)+
-  scale_fill_brewer(palette = "Greys") +
-  scale_color_manual(values=c("Cropland" = "#4A2040",
-                              "Grassland" = "#E69F00",
-                              "Shrubland" = "#0072B2", 
-                              "Woodland" = "#009E73", 
-                              "Dryland" = "#000000",
-                              "Other" = "#000000"), name="Habitat type")+
-  scale_x_continuous(limits = c(1, 10), breaks = c(2, 10), minor_breaks = c(2,4,6,8, 10))+
-  theme_void()+
-  theme(axis.text = element_text(),
-        panel.grid.major.y = element_line(color = "grey"),
-        panel.grid.minor.x =  element_line(color = "grey"),
-        strip.text = element_text(size = 15, hjust=0),
-        legend.position = c(0.8, 0.1),
-        legend.box = "horizontal")
-ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_regressions_parsBayesian_", temp_scale,"Bacteria.png"),
-       plot = last_plot(),
-         width=15, height=10)
-
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Bayesian pointrange grouped per estimate type ####
+#### Bayesian pointrange grouped per estimate type ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 pars_glob <- read_csv(file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_global_emtrends.csv"))
-pars_cont <- read_csv(paste0(here::here(), "/results/PAranks_Bayesian_continental_emtrends.csv"))
-pars_regi <- read_csv(paste0(here::here(), "/results/PAranks_Bayesian_regional_emtrends.csv"))
+pars_cont <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_continental_emtrends.csv"))
+pars_regi <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_regional_emtrends.csv"))
 
-pars_all <- rbind(pars_glob %>% mutate("LC" = "Dryland", .before=1) %>% dplyr::select(-PA_rank_rev), pars_cont) %>%
+pars_all <- rbind(pars_glob, pars_cont) %>%
   rbind(pars_regi)  %>%
   as_tibble()
 rm(pars_glob, pars_cont, pars_regi)
@@ -1468,7 +1844,7 @@ pars_sum <- pars_all %>%
     "PA_rank_rev.trend_CI_upper" = PA_rank_rev.trend_mean + (1.96 * PA_rank_rev.trend_SE)
   )
 
-# plot
+# pointrange plot
 ggplot(pars_all %>%
          full_join(fns_labels %>% dplyr::select(Function, Group_function), by = c("fns" = "Function")) %>%
          mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='70'>",
@@ -1480,9 +1856,9 @@ ggplot(pars_all %>%
                                                            "<img src='figures/icon_location-black.png' width='70'>",
                                                            "<img src='figures/icon_flag-Portugal.png' width='70'>" ))) %>%
          mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))) %>%
-         mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","ns")),
+         mutate(LC = factor(LC, levels = c("Dryland", "Woodland", "Shrubland", "Grassland", "Cropland","ns")),
                 significance =  ifelse(sign(lower.HPD)!= sign(upper.HPD), "ns", as.character(as.factor(LC)))) %>%
-         mutate(significance = factor(significance, levels = c("Cropland", "Grassland", "Shrubland", "Woodland", "ns")))  %>% 
+         mutate(significance = factor(significance, levels = c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "ns")))  %>% 
          filter(!is.na(LC) & !is.na(scale)),
        aes(x = PA_rank_rev.trend, y = LC,
            xmin = lower.HPD, xmax = upper.HPD,
@@ -1504,9 +1880,9 @@ ggplot(pars_all %>%
                                                                       "<img src='figures/icon_location-black.png' width='70'>",
                                                                       "<img src='figures/icon_flag-Portugal.png' width='70'>" ))) %>%
                     mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))) %>%
-                    mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland", "Dryland", "not significant")),
-                           significance =  ifelse(sign(PA_rank_rev.trend_CI_lower)!= sign(PA_rank_rev.trend_CI_upper), "not significant", as.character(as.factor(LC)))) %>%
-                    mutate(significance = factor(significance, levels = c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "not significant"))),
+                    mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","Dryland", "ns")),
+                           significance =  ifelse(sign(PA_rank_rev.trend_CI_lower)!= sign(PA_rank_rev.trend_CI_upper), "ns", as.character(as.factor(LC)))) %>%
+                    mutate(significance = factor(significance, levels = c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "ns"))),
                   
                   aes(fill = significance, color = LC,
                       y = LC, x = PA_rank_rev.trend_mean, 
@@ -1518,7 +1894,8 @@ ggplot(pars_all %>%
   #coord_flip()+
   coord_cartesian(clip = "off")+
   ggh4x::facet_grid2(scale_icon ~ Group_function, drop=FALSE, 
-                     scales = "free", independent = "all", switch = "y",
+                     scales = "free", independent = "x", switch = "y",
+                     space = "free_y",
                      shrink = FALSE)+
   
   #ylab("Effect size")+
@@ -1526,25 +1903,24 @@ ggplot(pars_all %>%
                              "Grassland" = "#E69F00",
                              "Shrubland" = "#0072B2", 
                              "Woodland" = "#009E73", 
-                             "Dryland" = "#000000",
                              "Other" = "#000000",
-                             "not significant" = "white"),
+                             "Dryland" = "#000000",
+                             "ns" = "white"),
                     drop = FALSE)+
   scale_linetype_manual(values=c("Cropland" = "solid",
                                  "Grassland" = "solid",
                                  "Shrubland" = "solid", 
                                  "Woodland" = "solid", 
-                                 "Dryland" = "solid",
                                  "Other" = "solid",
-                                 "not significant" = "longdash"),
+                                 "ns" = "longdash"),
                         drop = FALSE)+
   scale_color_manual(values=c("Cropland" = "#4A2040",
                               "Grassland" = "#E69F00",
                               "Shrubland" = "#0072B2", 
                               "Woodland" = "#009E73", 
-                              "Dryland" = "#000000",
                               "Other" = "#000000",
-                              "not significant" = "#000000"),
+                              "Dryland" = "#000000",
+                              "ns" = "grey"),
                      drop = FALSE)+
   theme_void()+
   
@@ -1552,9 +1928,9 @@ ggplot(pars_all %>%
                                                               color = c("Cropland" = "#4A2040",
                                                                         "Grassland" = "#E69F00",
                                                                         "Shrubland" = "#0072B2", 
-                                                                        "Woodland" = "#009E73", 
-                                                                        "Dryland" = "#000000",
-                                                                        "not significant" = "#000000"))), 
+                                                                        "Woodland" = "#009E73",
+                                                                        "Dryland" = "#000000", 
+                                                                        "ns" = "grey"))), 
          color = "none")+
   theme(legend.position = "bottom", 
         axis.title.y =element_blank(),
@@ -1575,11 +1951,11 @@ ggplot(pars_all %>%
 
 ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_slope_BayesianTrends_allScales_grouped.png"),
        plot = last_plot(), 
-       width = 5000, height = 4000,
+       width = 5000, height = 3000,
        units = "px")
 
 # table all
-pars_all %>%
+pars_stats <- pars_all %>%
   full_join(fns_labels %>% dplyr::select(Function, Group_function), by = c("fns" = "Function")) %>%
   mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='70'>",
                              ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='70'>",
@@ -1592,13 +1968,19 @@ pars_all %>%
   mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))) %>%
   mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","Dryland", "ns")),
          significance =  ifelse(sign(lower.HPD)!= sign(upper.HPD), "ns", as.character(as.factor(LC)))) %>%
-  mutate(significance = factor(significance, levels = c("Dryland","Cropland", "Grassland", "Shrubland", "Woodland", "ns")))  %>% 
+  mutate(significance = factor(significance, levels = c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "ns")))  %>% 
   filter(!is.na(LC) & !is.na(scale)) %>%
-  filter(significance != "ns") %>%
-  arrange(abs(PA_rank_rev.trend)) %>%
-  print(n=100)
+  arrange(abs(PA_rank_rev.trend))
+table(pars_stats$significance, pars_stats$scale)
+table(pars_stats$significance, pars_stats$scale, pars_stats$Group_function)
+table(pars_stats[pars_stats$significance != "ns",]$scale)
+table(pars_stats$significance)
+table(pars_stats[pars_stats$significance != "ns",]$Group_function)
+pars_stats %>% print(n=100)
 
-### APPENDIX S3 - Table with stats ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#### APPENDIX TABLE 3.1 & 3.2 - Tables with stats ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 options("scipen"=100, "digits"=4)
 write_csv(pars_sum %>% 
             mutate("trend" = round(PA_rank_rev.trend_mean, 4),
@@ -1621,9 +2003,9 @@ write_csv(pars_all %>%
                                                               "<img src='figures/icon_location-black.png' width='70'>",
                                                               "<img src='figures/icon_flag-Portugal.png' width='70'>" ))) %>%
             mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))) %>%
-            mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","Dryland","ns")),
+            mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","Dryland", "ns")),
                    significance =  ifelse(sign(lower.HPD)!= sign(upper.HPD), "ns", as.character(as.factor(LC)))) %>%
-            mutate(significance = factor(significance, levels = c("Dryland","Cropland", "Grassland", "Shrubland", "Woodland", "ns")))  %>% 
+            mutate(significance = factor(significance, levels = c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "ns")))  %>% 
             filter(!is.na(LC) & !is.na(scale)) %>%
             arrange(abs(PA_rank_rev.trend)) %>%
             mutate("Habitat" = LC,
@@ -1638,4 +2020,96 @@ write_csv(pars_all %>%
             pivot_wider(names_from = "Habitat", values_from = "Slope [HPD]") %>%
             arrange(Group, Variable, Scale),
           paste0(here::here(), "/results/sensitivity_globalBacteria/Results_slope_BayesianTrends_allScales.csv"))
+
+write_csv(pars_stats, paste0(here::here(), "/results/sensitivity_globalBacteria/Results_slope_BayesianTrends_stats_allScales.csv"))
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#### APPENDIX FIGURE 3.2 - Heatmap Bayesian slopes ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## plot like heatmap
+ggplot(data = pars_all %>%
+         mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","Dryland", "Other")),
+                significance =  ifelse(sign(lower.HPD)!= sign(upper.HPD), "not significant", as.character(as.factor(LC)))) %>%
+         mutate(significance = factor(significance, levels = c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "Other", "not significant")))  %>% 
+         filter(!is.na(LC) & !is.na(scale)) %>%
+         unique() %>%
+         
+         filter(LC %in% lc_names_all) %>%
+         mutate(PA_trend_f = cut(abs(PA_rank_rev.trend),
+                                 breaks=c(-Inf, -10, -1, 0, 1, 10, 100, Inf),
+                                 labels=c("<-10", "<-1", "<0", "<1", "<10", "<100", ">100"))) %>%
+         mutate(scale = factor(scale, levels = c("regional", "continental", "global")),
+                LC = factor(LC, levels = c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "Other"))) %>%
+         full_join(expand.grid(scale = c("global", "continental", "regional"),
+                               LC = c("Dryland", "Cropland", "Grassland", "Woodland"),
+                               fns = fns_labels$Function)) %>%
+         full_join(fns_labels %>% dplyr::select(Function, Group_function, Label_short, Label), by = c("fns" = "Function")) %>%
+         mutate(effect_direction = as.factor(sign(PA_rank_rev.trend))) %>%
+         mutate(effect_direction_c = ifelse(effect_direction=="-1", "negative",
+                                            ifelse(effect_direction=="1", "positive", "0"))) %>%
+         mutate(Label = factor(Label, levels = labels_order)) %>%
+         mutate(effect_significance = ifelse(significance == "not significant", "not significant", effect_direction_c)) %>%
+         filter(LC != "Other" & !is.na(Label)) %>%
+         mutate(effect_significance = factor(effect_significance, levels = c("negative", "positive", "not significant"))) %>%
+         mutate(effect_na = ifelse(is.na(PA_trend_f), "not available", NA)),
+       aes(x = LC, y = scale))+
+  
+  geom_point(aes(size = PA_trend_f,
+                 color = effect_direction_c, 
+                 fill= effect_significance,
+                 shape = effect_na))+
+  facet_wrap(vars(Label), ncol=6, drop=FALSE)+
+  scale_fill_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb", "not significant" = "white"),
+                    name = "Direction of effect",
+                    na.value = "black", drop = FALSE)+
+  scale_color_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb"),
+                     name = "Direction of effect",
+                     na.value = "black")+
+  scale_size_manual(values =  c("<-10" = 10, "<-1" = 5, "<0" = 2, "<1" = 5, "<10" = 10, "<100" = 15, ">100" = 20), #c("marginal" = 2, "not significant" = 5, "small" = 5, "medium" = 10, "large" = 15), 
+                    name = "Slope estimate",
+                    na.value = 1)+
+  scale_shape_manual(values = c("not available" = 4),
+                     name = "Missing data",
+                     na.value = 21)+
+  scale_x_discrete(labels = c(
+    "Dryland" = "<img src='figures/icon_land.png' width='33'>",
+    "Cropland" = "<img src='figures/icon_harvest.png' width='20'>",
+    "Grassland" = "<img src='figures/icon_grass.png' width='17'>",
+    "Shrubland" = "<img src='figures/icon_shrub-crop.png' width='35'>",
+    "Woodland" = "<img src='figures/icon_forest.png' width='30'>"
+  ))+
+  
+  scale_y_discrete(labels = c(
+    "global" = "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>",
+    "continental" = "<img src='figures/icon_location-black.png' width='30'>",
+    "regional" = "<img src='figures/icon_flag-Portugal.png' width='30'>"
+  ))+
+  xlab("")+ylab("")+
+  theme_bw() + # use a white background
+  
+  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black"), 
+                                                 shape = 21, size = 5)), #tell legend to use different point shape
+         color = "none", #don't show legend
+         shape = guide_legend(override.aes = list(size = 5)))+
+  theme(
+    legend.position = "bottom", #c(0.96, -0.05),
+    legend.justification = c(1, 0),
+    legend.box = "horizontal",
+    legend.direction = "vertical",
+    #legend.key.size = unit(20, "pt"),
+    legend.title = element_text(size = 15),
+    legend.text = element_text(size = 15),
+    #axis.title.y =element_blank(),
+    axis.text.y = ggtext::element_markdown(hjust = 0),
+    axis.ticks = element_blank(),
+    axis.text.x = ggtext::element_markdown(vjust = 0),
+    panel.grid = element_blank(),
+    panel.border = element_blank(),
+    strip.background = element_rect(fill="white", color = "white"), #chocolate4
+    strip.text = element_text(color="black", size = 15, hjust = 0)) #white
+ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Results_slope_BayesianTrends_allScales_fns.png"),
+       plot = last_plot(), 
+       width = 4400, height = 3800, units = "px")
+
+
 
