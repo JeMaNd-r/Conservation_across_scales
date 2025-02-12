@@ -24,9 +24,9 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
-#temp_scale <- "global"
+temp_scale <- "global"
 # temp_scale <- "continental"
- temp_scale <- "regional"
+# temp_scale <- "regional"
 
 data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
 data_clean
@@ -250,6 +250,7 @@ pred_list_slope <- do.call(rbind, pred_list_slope)
 
 save(pred_list_intercept, file=paste0(here::here(), "/intermediates/PAtypes_Bayesian_", temp_scale, ".RData"))
 save(pred_list_slope, file=paste0(here::here(), "/intermediates/PAranks_Bayesian_", temp_scale, ".RData"))
+save(model_comparison, file=paste0(here::here(), "/intermediates/PAranks_ModelEval_", temp_scale, ".RData"))
 
 # subset
 pred_sample_intercept <- pred_list_intercept %>% group_by(LC) %>% slice_sample(n = 10000)

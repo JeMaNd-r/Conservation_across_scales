@@ -133,7 +133,8 @@ for(temp_scale in c("global", "continental", "regional")){
                                "Other" = "#000000",
                                "Dryland" = "#000000")) #"gold3", "limegreen", "forestgreen"
   ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_mahal.distance_", temp_scale, ".png"),
-         plot = last_plot())
+         plot = last_plot(),
+         width = 10, height = 8)
 }
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -199,7 +200,8 @@ for(temp_scale in c("global", "continental", "regional")){
                                "Other" = "#000000",
                                "Dryland" = "#000000")) #"gold3", "limegreen", "forestgreen"
   ggsave(filename=paste0(here::here(), "/figures/Data_boxplot_mahal.distance_all_", temp_scale, ".png"),
-         plot = last_plot())
+         plot = last_plot(),
+         width = 10, height = 8)
 }
 
 # put in 1 plot - APPENDIX FIGURE 2.1
@@ -328,7 +330,7 @@ ggplot(data = d_plot_all %>%
   xlab("")+ylab("")+
   theme_bw() + # use a white background
   
-  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black"),
+  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black", "black"),
                                                  shape = 21, size = 5)), #tell legend to use different point shape
     color = "none", #don't show legend
     shape = guide_legend(override.aes = list(size = 5)))+
@@ -613,6 +615,62 @@ ggsave(filename=paste0(here::here(), "/figures/Results_d-value_medianCI_allScale
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Model comparison: random-slope & -intercept models ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+model_comparison_table <- data.frame()
+
+for(temp_scale in c("global", "continental", "regional")){
+  
+  load(file=paste0(here::here(), "/intermediates/PAranks_ModelEval_", temp_scale, ".RData"))
+  
+  model_comparison <- lapply(model_comparison, function(x){
+    
+    # Extracting values
+    x <- tibble(
+      model = c("intercept", "slope"),
+      elpd_loo = c(x$loo$intercept$elpd_loo, x$loo$slope$elpd_loo),
+      p_loo = c(x$loo$intercept$p_loo, x$loo$slope$p_loo),
+      looic = c(x$loo$intercept$looic, x$loo$slope$looic),  # Lower looic is better
+      se_elpd_loo = c(x$loo$intercept$se_elpd_loo, x$loo$slope$se_elpd_loo), 
+      se_p_loo = c(x$loo$intercept$se_p_loo, x$loo$slope$se_p_loo),
+      se_looic = c(x$loo$intercept$se_looic, x$loo$slope$se_looic),
+      elpd_loo_diff = c(x$loo$comparison[,1]), 
+      se_loo_diff = c(x$loo$comparison[,2]), #If elpd_diff / se_diff > 2, the difference is statistically meaningful.
+      elpd_waic = c(x$waic$intercept$elpd_waic, x$waic$slope$elpd_waic),
+      p_waic = c(x$waic$intercept$p_waic, x$waic$slope$p_waic),
+      waic = c(x$waic$intercept$waic, x$waic$slope$waic),
+      se_elpd_waic = c(x$waic$intercept$se_elpd_waic, x$waic$slope$se_elpd_waic),
+      se_p_waic = c(x$waic$intercept$se_p_waic, x$waic$slope$se_p_waic),
+      se_waic = c(x$waic$intercept$se_waic, x$waic$slope$se_waic),
+      r2 = c(x$r2$intercept[1], x$r2$slope[1]),
+      r2_se = c(x$r2$intercept[2], x$r2$slope[2]),
+      r2_q2.5 = c(x$r2$intercept[3], x$r2$slope[3]),
+      r2_q97.5 = c(x$r2$intercept[4], x$r2$slope[4]))
+    
+    x <- x %>%
+      mutate(loo_comp = ifelse(abs(x$elpd_loo_diff / x$se_loo_diff) > 2, 
+                               "worse", "similar"), .before = 2)
+    
+    return(x)
+  })
+  
+  model_comparison <- model_comparison %>% 
+    imap_dfr(~ mutate(.x, fns = .y, .before = 1)) %>%
+    mutate(scale = temp_scale, .before = 1)
+  
+  model_comparison_table <- rbind(model_comparison_table, model_comparison)
+}
+
+# look if there are "worse" models
+model_comparison_table %>%
+  filter(!is.na(loo_comp)) %>%
+  arrange(desc(loo_comp))
+
+# save output
+write_csv(model_comparison_table, paste0(here::here(), "/results/PAranks_ModelEval_allScales.csv"))
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Random-slope model (PA ranks/ levels) ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Bayesian pointrange grouped per estimate type ####
@@ -889,7 +947,7 @@ ggplot(data = pars_all %>%
   xlab("")+ylab("")+
   theme_bw() + # use a white background
   
-  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black"), 
+  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black", "black"), 
                                                  shape = 21, size = 5)), #tell legend to use different point shape
          color = "none", #don't show legend
          shape = guide_legend(override.aes = list(size = 5)))+
