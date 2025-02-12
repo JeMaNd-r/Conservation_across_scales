@@ -19,8 +19,8 @@ library(corrplot)
 library(magick) # to create plot from multiple pngs
 
 #temp_scale <- "global"
-temp_scale <- "continental"
-#temp_scale <- "regional"
+#temp_scale <- "continental"
+temp_scale <- "regional"
 
 # load background map
 world.inp <- map_data("world")
@@ -82,9 +82,6 @@ head(pa_pairs)
 # load effect sizes
 load(file=paste0(here::here(), "/results/d_1000_trails_", temp_scale, ".RData")) #d_list
 
-# load Bayesian results from PA_type comparison
-load(file=paste0(here::here(), "/results/pars_PAtypes_Bayesian_df_", temp_scale, ".RData")) #pars_sample
-
 # Note: other output data are used in the 04b_Plotting_allScales.R script
 
 
@@ -141,7 +138,8 @@ ggplot()+
         panel.border = element_blank(),
         panel.background = element_rect(fill= "grey80"))
 ggsave(filename=paste0(here::here(), "/figures/Data_locations_", temp_scale,".png"),
-       plot = last_plot())
+       plot = last_plot(),
+       width = 10, height = 8)
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -170,9 +168,9 @@ ggplot()+
   geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
                                       shape = as.character(PA), color=LC, 
                                       size = as.character(PA)),
-             stroke = 3)+ #increase circle line width; G+C: 2; R:3
+             stroke = 2)+ #increase circle line width; G+C: 2; R:3
   scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
-  scale_size_manual(values = c("0" =3, "1" = 8))+ #G:+C: 2,4; ,R:3,8 
+  scale_size_manual(values = c("0" =2, "1" = 6))+ #G:+C: 2,4; ,R:3,8 
   scale_color_manual(values = c("Cropland" = "#4A2040",
                                 "Grassland" = "#E69F00",
                                 "Shrubland" = "#0072B2", 
@@ -190,7 +188,8 @@ ggplot()+
         panel.border = element_blank(),
         panel.background = element_rect(fill= "grey80"))
 ggsave(filename=paste0(here::here(), "/figures/Data_locations_PAranks_", temp_scale,".png"),
-       plot = last_plot())
+       plot = last_plot(),
+       width = 10, height = 8)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Pairing ####
@@ -440,6 +439,8 @@ pars_intercept <- pars_intercept %>%
     mutate("Label_pa" = factor(Label_pa, levels = rev(c(protect_type$PA_type, "Unprotected")))) %>%
     full_join(fns_labels, by=c("fns"="Function")) %>%
     mutate("Label_fns" = factor(Label, fns_labels$Label))
+
+if(temp_scale == "global") pars_intercept <- pars_intercept %>% dplyr::select(-LC)
   
 ## OLD: Model output only, we want emmeans from model
 # # transform parameters to long format and assign labels
@@ -480,7 +481,7 @@ write_csv(n_table, file=paste0(here::here(), "/figures/Results_intercept_parsBay
 ggplot(pars_intercept %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
                      # add number of sizes to plot
                      rbind(data_clean %>% filter(LC!="Other") %>%
-                             group_by(LC, PA_type) %>% count() %>%
+                             group_by(PA_type) %>% count() %>%
                              rename(emmean=n) %>%
                              mutate(fns="Number of sites",
                                     PA_protected=NA,
@@ -498,7 +499,7 @@ ggplot(pars_intercept %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
                      filter(!is.na(Label_pa)) %>%
                      mutate(Label_fns = factor(Label_fns, levels = c(labels_order, "Number of sites")),
                             Label_n = ifelse(Label_fns == "Number of sites", "Number of sites", "Other fns")),
-       aes(y=Label_pa, x=emmean, color=LC,
+       aes(y=Label_pa, x=emmean, #color=LC,
            xmin = lower.HPD, xmax = upper.HPD, shape = Label_n))+
   
   ## adapt for scale
@@ -550,7 +551,7 @@ ggplot(data = pred_list %>%
                               "Woodland" = "#009E73", 
                               "Other" = "#000000",
                               "Dryland" = "#000000"), name="Habitat type")+
-  scale_x_continuous(limits = c(1, 10), breaks = c(2, 10), minor_breaks = c(2,4,6,8, 10))+
+  scale_x_continuous(limits = c(1, 11), breaks = c(2, 10), minor_breaks = c(2,4,6,8, 10))+
   theme_void()+
   theme(axis.text = element_text(),
         panel.grid.major.y = element_line(color = "grey"),
