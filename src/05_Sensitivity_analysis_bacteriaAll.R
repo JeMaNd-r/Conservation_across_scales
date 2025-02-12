@@ -410,7 +410,7 @@ protect_legend
 protect_legend$PA_rank_rev <- max(protect_legend$PA_rank) - protect_legend$PA_rank + 1
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-## Compare difference using brms & linear regression model ####
+### Compare difference using brms & linear regression model ####
 # random-slope model & random-intercept, both using brms
 
 source(paste0(here::here(), "/src/00_Parameters.R")) 
@@ -427,7 +427,6 @@ lc_names <- "Dryland"
 
 data_clean <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_clean_", temp_scale, ".csv"))
 data_clean
-
 
 data_clean <- data_clean %>% 
   mutate("PA_rank_rev" = ifelse(is.na(PA_rank), 1, 11-PA_rank+1)) %>%
@@ -523,6 +522,7 @@ pred_list_slope <- do.call(rbind, pred_list_slope)
 
 save(pred_list_intercept, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAtypes_Bayesian_", temp_scale, ".RData"))
 save(pred_list_slope, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, ".RData"))
+save(model_comparison, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_ModelEval_", temp_scale, ".RData"))
 
 # subset
 pred_sample_intercept <- pred_list_intercept %>% group_by(LC) %>% slice_sample(n = 10000)
@@ -573,6 +573,187 @@ emtrends <- do.call(rbind, emtrends)
 if(temp_scale == "global") emtrends <- emtrends %>% mutate(LC = "Dryland", .before = 1) %>% dplyr::select(-PA_rank_rev)
 
 write_csv(emtrends, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_", temp_scale, "_emtrends.csv"))
+
+
+# #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# ### Model with data-informed priors ####
+# 
+# # store results
+# fixed_effects_intercept <- vector("list")
+# fixed_effects_slope <- vector("list")
+# model_comparison <- vector("list")
+# pred_list_intercept <- vector("list")
+# pred_list_slope <- vector("list")
+# 
+# 
+# for(temp_fns in fns){
+#   
+#   data_temp_intercept <- data_clean %>% dplyr::select(all_of(c("LC", temp_fns, "PA_rank"))) %>%
+#     mutate(PA_rank = ifelse(is.na(PA_rank), "Unprotected", PA_rank))
+#   data_temp_slope <- data_clean %>% dplyr::select(all_of(c("LC", temp_fns, "PA_rank_rev")))
+#   
+#   # define priors
+#   temp_sd <- sd(data_clean %>% pull(all_of(temp_fns)), na.rm = TRUE) #priors calculated from all data
+#   temp_mean <- mean(data_clean %>% pull(all_of(temp_fns)), na.rm = TRUE) 
+#   
+#   if(temp_scale == "global"){
+#     temp_priors_intercept <- c(
+#       eval(parse(text = paste0("prior(normal(", temp_mean, ", ", 2 * temp_sd, "), class = 'Intercept')"))),
+#       eval(parse(text = paste0("prior(student_t(3, 0, ", temp_sd, "), class = 'sigma')")))  # Residual standard deviation
+#     )
+#     
+#     temp_priors_slope <- c(
+#       temp_priors_intercept,
+#       eval(parse(text = paste0("prior(normal(0, ", temp_mean, "), class = 'b')"))) #slope
+#     )
+#     
+#     output_intercept <- brm(brmsformula(paste(temp_fns, "~ PA_rank")), 
+#                             data = data_temp_intercept,
+#                             prior = temp_priors_intercept,
+#                             chains = 4, iter = 10000, warmup = 2000)
+#     
+#     output_slope <- brm(brmsformula(paste(temp_fns, "~ PA_rank_rev")), 
+#                         data = data_temp_slope,
+#                         #prior = temp_priors_slope,
+#                         chains = 4, iter = 10000, warmup = 2000)
+#     
+#   }else{
+#     temp_priors_intercept <- c(
+#       eval(parse(text = paste0("prior(normal(", temp_mean, ", ", 2 * temp_sd, "), class = 'Intercept')"))),
+#       eval(parse(text = paste0("prior(student_t(3, 0, ", temp_sd, "), class = 'sd')"))), #not needed if no LC, Random effect standard deviation
+#       eval(parse(text = paste0("prior(student_t(3, 0, ", temp_sd, "), class = 'sigma')")))  # Residual standard deviation
+#     )
+#     
+#     temp_priors_slope <- c(
+#       temp_priors_intercept,
+#       eval(parse(text = paste0("prior(normal(0, ", temp_mean, "), class = 'b')"))) #slope
+#     )
+#     
+#     output_intercept <- brm(brmsformula(paste(temp_fns, "~ PA_rank + LC + (1 | LC)")), 
+#                             data = data_temp_intercept,
+#                             prior = temp_priors_intercept,
+#                             chains = 4, iter = 10000, warmup = 2000)
+#     
+#     output_slope <- brm(brmsformula(paste(temp_fns, "~ PA_rank_rev * LC + (PA_rank_rev | LC)")), 
+#                         data = data_temp_slope,
+#                         prior = temp_priors_slope,
+#                         chains = 4, iter = 10000, warmup = 2000)
+#   }
+# 
+#   # sink(paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_withPriors_", temp_scale, "_", temp_fns, ".txt"))
+#   # output_slope
+#   # output_slope$fit
+#   # hypothesis(output_slope, "PA_rank_rev<0")
+#   # hypothesis(output_slope, "PA_rank_rev>0")
+#   # sink()
+#   
+#   fixed_effects_intercept[[temp_fns]] <- vector("list")
+#   fixed_effects_slope[[temp_fns]] <- vector("list")
+#   fixed_effects_intercept[[temp_fns]][["fixef"]] <- brms::fixef(output_intercept)
+#   fixed_effects_slope[[temp_fns]][["fixef"]] <- brms::fixef(output_slope)
+#   
+#   # model comparison: Leave-One-Out Cross Validation (LOO)
+#   model_comparison[[temp_fns]][["loo"]][["intercept"]] <- loo::loo(output_intercept)
+#   model_comparison[[temp_fns]][["loo"]][["slope"]] <- loo::loo(output_slope)
+#   model_comparison[[temp_fns]][["loo"]][["comparison"]] <- loo::loo_compare(model_comparison[[temp_fns]][["loo"]][["intercept"]],
+#                                                                             model_comparison[[temp_fns]][["loo"]][["slope"]])
+#   
+#   # WAIC (alternative comparison metric)
+#   model_comparison[[temp_fns]][["waic"]][["intercept"]] <- loo::waic(output_intercept)
+#   model_comparison[[temp_fns]][["waic"]][["slope"]] <- loo::waic(output_slope)
+#   
+#   # R2
+#   model_comparison[[temp_fns]][["r2"]][["intercept"]] <- brms::bayes_R2(output_intercept)
+#   model_comparison[[temp_fns]][["r2"]][["slope"]] <- brms::bayes_R2(output_slope)
+#   
+#   if(temp_scale == "global"){
+#     fixed_effects_intercept[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_intercept, specs = "PA_rank"))
+#     
+#     fixed_effects_slope[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(output_slope, var = "PA_rank_rev"))
+#     fixed_effects_slope[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_slope, specs = c("PA_rank_rev")))
+#   }else{
+#     fixed_effects_intercept[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_intercept, specs = "PA_rank"))
+#     fixed_effects_intercept[[temp_fns]][["emmeans_lc"]] <- as_tibble(emmeans::emmeans(output_intercept, ~ PA_rank | LC))
+#     
+#     fixed_effects_slope[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(output_slope, specs = "LC", var = "PA_rank_rev"))
+#     fixed_effects_slope[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_slope, specs = c("PA_rank_rev", "LC")))
+#   }
+#   
+#   # Extract estimates and credible intervals for PA_rank_rev
+#   pred_list_intercept[[temp_fns]] <- data_temp_intercept %>%
+#     group_by(LC) %>%
+#     tidybayes::add_epred_draws(output_intercept) %>%
+#     mutate(scale = temp_scale,
+#            fns = temp_fns)
+#   
+#   pred_list_slope[[temp_fns]] <- data_temp_slope %>%
+#     group_by(LC) %>%
+#     modelr::data_grid(PA_rank_rev = modelr::seq_range(PA_rank_rev, n = 51)) %>%
+#     tidybayes::add_epred_draws(output_slope) %>%
+#     mutate(scale = temp_scale,
+#            fns = temp_fns)
+# }
+# 
+# 
+# pred_list_intercept <- do.call(rbind, pred_list_intercept)
+# pred_list_slope <- do.call(rbind, pred_list_slope)
+# 
+# save(pred_list_intercept, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAtypes_Bayesian_withPriors_", temp_scale, ".RData"))
+# save(pred_list_slope, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_withPriors_", temp_scale, ".RData"))
+# 
+# # subset
+# pred_sample_intercept <- pred_list_intercept %>% group_by(LC) %>% slice_sample(n = 10000)
+# pred_sample_slope <- pred_list_slope %>% group_by(LC) %>% slice_sample(n = 10000)
+# 
+# save(pred_sample_intercept, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAtypes_Bayesian_withPriors_", temp_scale, "_sample10k.RData"))
+# save(pred_sample_slope, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_withPriors_", temp_scale, "_sample10k.RData"))
+# 
+# # save fixed effects & emmeans
+# save(fixed_effects_intercept, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAtypes_Bayesian_withPriors_", temp_scale, "_summary.RData"))
+# save(fixed_effects_slope, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_withPriors_", temp_scale, "_summary.RData"))
+# 
+# sink(paste0(here::here(), "/results/sensitivity_globalBacteria/PAtypes_Bayesian_withPriors_", temp_scale, ".txt"))
+# fixed_effects_intercept
+# sink()
+# 
+# sink(paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_withPriors_", temp_scale, ".txt"))
+# fixed_effects_slope
+# sink()
+# 
+# 
+# # extract emmeans (intercept model)
+# load(file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAtypes_Bayesian_withPriors_", temp_scale, "_summary.RData")) #fixed_effects_intercept
+# emtrends_mean <- sapply(fixed_effects_intercept,function(x) x[2])
+# for(i in 1:length(emtrends_mean)){
+#   emtrends_mean[[i]] <- emtrends_mean[[i]] %>% 
+#     mutate("fns" = gsub(".emmeans", "", names(emtrends_mean)[i]),
+#            "scale" = temp_scale)
+# }
+# emtrends_mean <- do.call(rbind, emtrends_mean)
+# emtrends_mean
+# 
+# if(temp_scale == "global") emtrends_mean <- emtrends_mean %>% mutate(LC = "Dryland", .before = 1) 
+# 
+# write_csv(emtrends_mean, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAtypes_Bayesian_withPriors_", temp_scale, "_emmeans.csv"))
+# 
+# 
+# # extract emtrends (slope model)
+# load(file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_withPriors_", temp_scale, "_summary.RData")) #fixed_effects_slope
+# emtrends <- sapply(fixed_effects_slope,function(x) x[2])
+# for(i in 1:length(emtrends)){
+#   emtrends[[i]] <- emtrends[[i]] %>% 
+#     mutate("fns" = gsub(".emtrends", "", names(emtrends)[i]),
+#            "scale" = temp_scale)
+# }
+# emtrends <- do.call(rbind, emtrends)
+# 
+# if(temp_scale == "global") emtrends <- emtrends %>% mutate(LC = "Dryland", .before = 1) %>% dplyr::select(-PA_rank_rev)
+# 
+# write_csv(emtrends, file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_withPriors_", temp_scale, "_emtrends.csv"))
+# 
+# 
+#### Compare models with and without data-informed priors ####
+
 
 
 
@@ -626,9 +807,13 @@ labels_order <- c(
   "Bacterial Dissimilarity", "Fungal Dissimilarity", "Invertebrate Dissimilarity", "Protist Dissimilarity"
 )
 
+# subset functions
+fns <- c("Bac_richness", "Bac_shannonDiv", "Bac_JaccDist_av")
+
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Load soil biodiversity data ####
-data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+data_clean <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_clean_", temp_scale, ".csv"))
 data_clean
 
 if(temp_scale == "global") data_clean <- data_clean %>% mutate(LC = "Dryland")
@@ -646,9 +831,6 @@ head(pa_pairs)
 # load effect sizes
 load(file=paste0(here::here(), "/results/sensitivity_globalBacteria/d_1000_trails_", temp_scale, ".RData")) #d_list
 
-# load Bayesian results from PA_type comparison
-load(file=paste0(here::here(), "/results/sensitivity_globalBacteria/pars_PAtypes_Bayesian_df_", temp_scale, ".RData")) #pars_sample
-
 # Note: other output data are used in the 04b_Plotting_allScales.R script
 
 
@@ -663,10 +845,10 @@ data_locations <- data_clean %>%
   filter(SampleID %in% unique(pa_pairs$ID) | 
            SampleID %in% unique(pa_pairs$nonPA)) %>%
   dplyr::select(Longitude,Latitude,SampleID, PA, LC)
-data_locations #63
+data_locations #161
 write_csv(data_locations, file = paste0(here::here(), "/results/sensitivity_globalBacteria/Locations_", temp_scale, ".csv"))
-nrow(data_locations %>% filter(PA==1)) #G: 39
-nrow(data_locations %>% filter(PA==0)) #G: 24
+nrow(data_locations %>% filter(PA==1)) #G: 36
+nrow(data_locations %>% filter(PA==0)) #G: 125
 
 # set limits for point maps
 if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
@@ -705,7 +887,8 @@ ggplot()+
         panel.border = element_blank(),
         panel.background = element_rect(fill= "grey80"))
 ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_locations_", temp_scale,".png"),
-       plot = last_plot())
+       plot = last_plot(),
+       width = 10, height = 8)
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -734,7 +917,7 @@ ggplot()+
                                       size = as.character(PA)),
              stroke = 2)+ #increase circle line width; G+C: 2; R:3
   scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
-  scale_size_manual(values = c("0" =2, "1" = 4))+ #G:+C: 2,4; ,R:3,8 
+  scale_size_manual(values = c("0" =2, "1" = 6))+ #G:+C: 2,4; ,R:3,8 
   scale_color_manual(values = c("Cropland" = "#4A2040",
                                 "Grassland" = "#E69F00",
                                 "Shrubland" = "#0072B2", 
@@ -752,7 +935,8 @@ ggplot()+
         panel.border = element_blank(),
         panel.background = element_rect(fill= "grey80"))
 ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_locations_PAranks_", temp_scale,".png"),
-       plot = last_plot())
+       plot = last_plot(),
+       width = 10, height = 8)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Pairing ####
@@ -1112,7 +1296,7 @@ ggplot(data = pred_list %>%
                               "Woodland" = "#009E73", 
                               "Other" = "#000000",
                               "Dryland" = "#000000"), name="Habitat type")+
-  scale_x_continuous(limits = c(1, 10), breaks = c(2, 10), minor_breaks = c(2,4,6,8, 10))+
+  scale_x_continuous(limits = c(1, 11), breaks = c(2, 10), minor_breaks = c(2,4,6,8, 10))+
   theme_void()+
   theme(axis.text = element_text(),
         panel.grid.major.y = element_line(color = "grey"),
@@ -1340,7 +1524,7 @@ ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Data_b
 
 # calculate & plot Mahalanobis distance for all
 temp_scale <- "global"
-data <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+data <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/Data_clean_", temp_scale, ".csv"))
 
 lc_names <- "Dryland" 
 
@@ -1518,7 +1702,7 @@ ggplot(data = d_plot_all %>%
   xlab("")+ylab("")+
   theme_bw() + # use a white background
   
-  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black"),
+  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black", "black"),
                                                  shape = 21, size = 5)), #tell legend to use different point shape
          color = "none", #don't show legend
          shape = guide_legend(override.aes = list(size = 5)))+
@@ -1558,6 +1742,9 @@ table(d_plot_all %>% filter(!is.na(effect_significance)) %>% dplyr::select(scale
 
 source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
+
+# subset functions
+fns <- c("Bac_richness", "Bac_shannonDiv", "Bac_JaccDist_av")
 
 all_corr <- data.frame("LC" = "lc", "fns" = "fns", "correlation" = 1, "scale" = "scale", "p_value" = 1)[0,]
 
@@ -1811,13 +1998,75 @@ ggsave(filename=paste0(here::here(), "/results/sensitivity_globalBacteria/Result
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Model comparison: random-slope & -intercept models ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+model_comparison_table <- data.frame()
+
+for(temp_scale in c("global", "continental", "regional")){
+  
+  if(temp_scale == "global"){
+    load(file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_ModelEval_", temp_scale, ".RData")) 
+  } else {
+    load(file=paste0(here::here(), "/intermediates/PAranks_ModelEval_", temp_scale, ".RData"))
+  }
+  
+  
+  model_comparison <- lapply(model_comparison, function(x){
+    
+    # Extracting values
+    x <- tibble(
+      model = c("intercept", "slope"),
+      elpd_loo = c(x$loo$intercept$elpd_loo, x$loo$slope$elpd_loo),
+      p_loo = c(x$loo$intercept$p_loo, x$loo$slope$p_loo),
+      looic = c(x$loo$intercept$looic, x$loo$slope$looic),  # Lower looic is better
+      se_elpd_loo = c(x$loo$intercept$se_elpd_loo, x$loo$slope$se_elpd_loo), 
+      se_p_loo = c(x$loo$intercept$se_p_loo, x$loo$slope$se_p_loo),
+      se_looic = c(x$loo$intercept$se_looic, x$loo$slope$se_looic),
+      elpd_loo_diff = c(x$loo$comparison[,1]), 
+      se_loo_diff = c(x$loo$comparison[,2]), #If elpd_diff / se_diff > 2, the difference is statistically meaningful.
+      elpd_waic = c(x$waic$intercept$elpd_waic, x$waic$slope$elpd_waic),
+      p_waic = c(x$waic$intercept$p_waic, x$waic$slope$p_waic),
+      waic = c(x$waic$intercept$waic, x$waic$slope$waic),
+      se_elpd_waic = c(x$waic$intercept$se_elpd_waic, x$waic$slope$se_elpd_waic),
+      se_p_waic = c(x$waic$intercept$se_p_waic, x$waic$slope$se_p_waic),
+      se_waic = c(x$waic$intercept$se_waic, x$waic$slope$se_waic),
+      r2 = c(x$r2$intercept[1], x$r2$slope[1]),
+      r2_se = c(x$r2$intercept[2], x$r2$slope[2]),
+      r2_q2.5 = c(x$r2$intercept[3], x$r2$slope[3]),
+      r2_q97.5 = c(x$r2$intercept[4], x$r2$slope[4]))
+    
+    x <- x %>%
+      mutate(loo_comp = ifelse(abs(x$elpd_loo_diff / x$se_loo_diff) > 2, 
+                               "worse", "similar"), .before = 2)
+    
+    return(x)
+  })
+  
+  model_comparison <- model_comparison %>% 
+    imap_dfr(~ mutate(.x, fns = .y, .before = 1)) %>%
+    mutate(scale = temp_scale, .before = 1)
+  
+  model_comparison_table <- rbind(model_comparison_table, model_comparison)
+}
+
+# look if there are "worse" models
+model_comparison_table %>%
+  filter(!is.na(loo_comp)) %>%
+  arrange(desc(loo_comp))
+
+# save output
+write_csv(model_comparison_table, paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_ModelEval_allScales.csv"))
+
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Random-slope model (PA ranks/ levels) ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #### Bayesian pointrange grouped per estimate type ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 pars_glob <- read_csv(file=paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_global_emtrends.csv"))
-pars_cont <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_continental_emtrends.csv"))
-pars_regi <- read_csv(paste0(here::here(), "/results/sensitivity_globalBacteria/PAranks_Bayesian_regional_emtrends.csv"))
+pars_cont <- read_csv(paste0(here::here(), "/results/PAranks_Bayesian_continental_emtrends.csv"))
+pars_regi <- read_csv(paste0(here::here(), "/results/PAranks_Bayesian_regional_emtrends.csv"))
 
 pars_all <- rbind(pars_glob, pars_cont) %>%
   rbind(pars_regi)  %>%
@@ -1882,7 +2131,8 @@ ggplot(pars_all %>%
                     mutate(Group_function = factor(Group_function, levels = c("Function", "Richness", "Shannon", "Dissimilarity"))) %>%
                     mutate(LC = factor(LC, levels = c("Woodland", "Shrubland", "Grassland", "Cropland","Dryland", "ns")),
                            significance =  ifelse(sign(PA_rank_rev.trend_CI_lower)!= sign(PA_rank_rev.trend_CI_upper), "ns", as.character(as.factor(LC)))) %>%
-                    mutate(significance = factor(significance, levels = c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "ns"))),
+                    mutate(significance = factor(significance, levels = c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "ns"))) %>%
+                    filter(!is.na(PA_rank_rev.trend_CI_lower)),
                   
                   aes(fill = significance, color = LC,
                       y = LC, x = PA_rank_rev.trend_mean, 
@@ -2087,7 +2337,7 @@ ggplot(data = pars_all %>%
   xlab("")+ylab("")+
   theme_bw() + # use a white background
   
-  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black"), 
+  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black", "black"), 
                                                  shape = 21, size = 5)), #tell legend to use different point shape
          color = "none", #don't show legend
          shape = guide_legend(override.aes = list(size = 5)))+
