@@ -424,7 +424,7 @@ ggplot(data = d_value_bactGlob %>%
 
 ```
 
-In contrast to the patterns from the all-complete dataset, we found a positive effect of protection on bacterial richness and Shannon index in the bacteria-complete dataset, while effect size for dissimilarity was not significantly different from 0 (Appendix Table 4.1); the all-complete dataset showed the exact opposite pattern with less diverse and similar bacteria communities in protected areas. Higher richness and Shannon index in protected areas in the bacteria-complete dataset are exactly opposite to the pattern we found at regional scale, indicating again that effects are not consistent across scales.
+In contrast to the patterns from the all-complete dataset, we found a positive effect of protection on bacterial richness in the bacteria-complete dataset, while effect size for dissimilarity and Shannon index was not significantly different from 0 (Appendix Table 4.1); the all-complete dataset showed the exact opposite pattern with less diverse and similar bacteria communities in protected areas. Higher richness and Shannon index in protected areas in the bacteria-complete dataset are exactly opposite to the pattern we found at regional scale, indicating again that effects are not consistent across scales.
 
 ```{r raw_bact_complete, echo=FALSE, warning=FALSE, message=FALSE}
 # load values
@@ -464,7 +464,8 @@ clean_values_glob <- clean_glob %>%
 
 ggplot() +
   geom_hline(yintercept = 0, lty="dashed", color="grey60") +
-  geom_boxplot(data = clean_values_bact, aes(x = Label, y = value, fill=as.factor(PA)))+
+  geom_boxplot(data = clean_values_bact %>%
+                 filter(!is.na(LC)), aes(x = Label, y = value, fill=as.factor(PA)))+
   scale_fill_manual(values=c("orange","darkgreen"),name = NULL, labels = c("Non-Protected","Protected")) +
   
   xlab("")+ ylab("")+
@@ -489,7 +490,7 @@ ggplot() +
 
 ### Random-intercept model
 
-Random-intercept models did not differ for the bacteria-complete and all-complete dataset regarding the protected area categories that are present in both (Appendix Table 4.2; Appendix Figure 4.2). In addition to the results of the all-complete dataset described in the main text and Appendix 2-3, we found similarly low bacterial richness and Shannon index as well as similarly high dissimilarity for protected sites of category Ib and VI, that align with richness trends for sites labelled as *Not Assigned* and otherwise did not differ from attribute values in other IUCN categories.
+Random-intercept models did not differ for the bacteria-complete and all-complete dataset regarding the protected area categories that are present in both (Appendix Table 4.2; Appendix Figure 4.2). We found similarly low bacterial richness and Shannon index as well as similarly high dissimilarity for protected sites of category Ib and VI, that align most with richness trends for protected sites of category V and otherwise did not differ from attribute values in other IUCN categories.
 
 ```{r table_intercepts_bact, echo=FALSE, warning=FALSE, message=FALSE}
 intercepts_bacteria <- read_csv(here::here("results", "sensitivity_globalBacteria", "PAtypes_Bayesian_global_emmeans.csv"))
