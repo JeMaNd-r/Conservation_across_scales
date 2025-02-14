@@ -16,6 +16,8 @@ library(ggtext) #to add icons as axis labels
 library(ggh4x) # for free axes in facet_grid
 library(corrplot)
 library(magick) # to create plot from multiple pngs
+library(geosphere) # calculate spatial distance
+library(ggpubr) #plot correlation in ggplot
 
 source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
@@ -532,6 +534,101 @@ ggsave(paste0(here::here(), "/figures/Correlation_diff_mahal_allScales.png"),
        last_plot(),
        height = 10, width = 6)
 
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Spatial distance and difference in attributes ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+for(temp_scale in c("global", "continental", "regional")){
+  
+  if(temp_scale == "global"){
+    lc_names <- "Dryland" #lc_names_all[lc_names_all != "Other" & lc_names_all != "Cropland"]
+  } 
+  if(temp_scale == "continental"){
+    lc_names <- lc_names_all[lc_names_all != "Other" & lc_names_all != "Shrubland" & lc_names_all != "Dryland"]
+  }
+  if(temp_scale == "regional"){
+    lc_names <- lc_names_all[lc_names_all != "Other" & lc_names_all != "Shrubland" & lc_names_all != "Dryland"]
+  }
+  
+  data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+  
+  # load pairs of PA and nonPA
+  pa_pairs <- read_csv(file=sort(list.files(here::here("intermediates", temp_scale), pattern = "Pairs_paNonpa_1000trails_", full.names = TRUE), decreasing = TRUE)[1])
+  
+  # calculate geographic distance
+  pa_dist <- pa_pairs %>% 
+    full_join(data_clean %>% dplyr::select(SampleID, Longitude, Latitude), by = c("nonPA" = "SampleID")) %>% 
+    full_join(data_clean %>% dplyr::select(SampleID, Longitude, Latitude), by = c("ID" = "SampleID"), suffix = c(".pa", ".nonpa")) %>%
+    mutate(distance = geosphere::distHaversine(
+      cbind(Longitude.pa, Latitude.pa), # First site in the pair
+      cbind(Longitude.nonpa, Latitude.nonpa)) /1000 ) %>% # Second site in the pair, transform from meters in kilometers
+    filter(!is.na(nonPA) & !is.na(ID))
+  
+  # calculate difference for fns columns and mean for mahal.min column (= mahal.min because same for both) within each group
+  pa_env <- pa_pairs %>% full_join(data_clean, by = c("nonPA" = "SampleID", "LC")) %>% mutate(data = "nonPA") %>%
+    rbind(pa_pairs %>% full_join(data_clean, by = c("ID" = "SampleID", "LC")) %>% mutate(data = "PA")) %>%
+    filter(!is.na(nonPA) & !is.na(ID)) %>%
+    arrange(ID, nonPA, times) 
+  
+  pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% 
+    summarize(across(all_of(fns), diff),
+              across(mahal.min, mean)) %>% 
+    dplyr::select(ID, nonPA, mahal.min, LC, all_of(fns))
+  
+  # merge with distances
+  pa_env <- pa_env %>%
+    full_join(pa_dist %>% dplyr::select(ID, nonPA, distance), by = c("nonPA", "ID")) %>% 
+    unique() %>%
+    ungroup() %>%
+    pivot_longer(cols = all_of(fns), names_to = "Function")
+
+  # Compute unique correlation values per Function
+  cor_values <- pa_env %>%
+    group_by(Function) %>%
+    summarize(cor_value = cor.test(distance, abs(value), use = "complete.obs", method = "spearman")[["estimate"]],
+              cor_p = cor.test(distance, abs(value), use = "complete.obs", method = "spearman")[["p.value"]],
+              cor_t = cor.test(distance, abs(value), use = "complete.obs", method = "spearman")[["statistic"]])
+  
+  write_csv(cor_values, 
+            paste0(here::here(), "/figures/Correlation_diff_distance_", temp_scale, ".csv"))
+  
+  # plot distance x difference
+  ggplot(data = pa_env,
+         aes(x = distance, y = abs(value)))+
+    geom_point(cex = 0.5)+
+    facet_wrap(vars(Function), scales = "free")+
+    ggpubr::stat_cor(method = "spearman", color = "red", size = 2) + 
+    #geom_abline(data = cor_values, aes(slope = cor_value, intercept = 0), linetype = "dashed")+ # Line from correlation
+    xlab("Distance in km")+ 
+    ylab("Absolute difference in attribute values")+
+    theme_bw()
+  ggsave(paste0(here::here(), "/figures/Correlation_diff_distance_", temp_scale, ".png"),
+         last_plot(),
+         height = 15, width = 15)
+}
+  
+# merge cor_values table
+corr_list <- list(
+  read_csv(paste0(here::here(), "/figures/Correlation_diff_distance_", "global", ".csv")) %>% mutate(scale = "global"),
+  read_csv(paste0(here::here(), "/figures/Correlation_diff_distance_", "continental", ".csv")) %>% mutate(scale = "continental"),
+  read_csv(paste0(here::here(), "/figures/Correlation_diff_distance_", "regional", ".csv")) %>% mutate(scale = "regional")
+)
+
+corr_list <- do.call(rbind, corr_list) %>%
+  dplyr::select(scale, Function, cor_value, cor_p, cor_t)
+
+corr_list %>% filter(cor_p < 0.05) %>% count(scale)
+corr_list %>% filter(cor_p < 0.05) %>% count()
+corr_list %>% filter(cor_value > 0 & cor_p < 0.05) %>% count(scale) #number positive cor
+corr_list %>% filter(cor_value > 0 & cor_p < 0.05) %>% count()
+corr_list %>% filter(cor_value < 0 & cor_p < 0.05) %>% count(scale) #number negative cor
+corr_list %>% filter(cor_value < 0 & cor_p < 0.05) %>% count()
+
+write_csv(corr_list, 
+          paste0(here::here(), "/figures/Correlation_diff_distance_allScales.csv"))
+
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### APPENDIX FIGURE 2.3 & TABLE 2.3 - Pointrange plot grouped per estimate type ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -668,7 +765,7 @@ model_comparison_table %>%
 
 # save output
 write_csv(model_comparison_table, paste0(here::here(), "/results/PAranks_ModelEval_allScales.csv"))
-
+model_comparison_table <- read_csv(paste0(here::here(), "/results/PAranks_ModelEval_allScales.csv"))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Random-slope model (PA ranks/ levels) ####
