@@ -2823,7 +2823,7 @@
 "Dryland",-0.235945501120627,0.2098321993154,0.654239039145662,"Bac_shannonDiv",941,"Bacterial Shannon","Bacterial S","Shannon","Bacteria"
 "Dryland",-0.417879519722935,0.0260700889490139,0.469850505726106,"Bac_JaccDist_av",941,"Bacterial Dissimilarity","Bacterial D","Dissimilarity","Bacteria"
 "Dryland",0.420078816149413,0.888449233330014,1.3514913094949,"Bac_richness",942,"Bacterial Richness","Bacterial R","Richness","Bacteria"
-"Dryland",-2.12607604123138e-05,0.450999965683703,0.899133960935002,"Bac_shannonDiv",942,"Bacterial Shannon","Bacterial S","Shannon","Bacteria"
+"Dryland",-0.0000212607604123138,0.450999965683703,0.899133960935002,"Bac_shannonDiv",942,"Bacterial Shannon","Bacterial S","Shannon","Bacteria"
 "Dryland",-0.704612472055194,-0.259703927007736,0.186899463910154,"Bac_JaccDist_av",942,"Bacterial Dissimilarity","Bacterial D","Dissimilarity","Bacteria"
 "Dryland",0.136198833981387,0.591733860115442,1.04354739894774,"Bac_richness",943,"Bacterial Richness","Bacterial R","Richness","Bacteria"
 "Dryland",-0.231084332647603,0.214768483678276,0.659218203499637,"Bac_shannonDiv",943,"Bacterial Shannon","Bacterial S","Shannon","Bacteria"

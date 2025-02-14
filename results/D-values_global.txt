@@ -1,6 +1,6 @@
 #################################################
 ##  Significant d-values from global analysis  ##
-##  Sys.Date() 2025-01-07  ##
+##  Sys.Date() 2025-02-10  ##
 #################################################
         lc                            fns effect_mean  effect_SD effect_median effect_ci_2.5 effect_ci_17 effect_ci_83 effect_ci_97.5
 1  Dryland       Ectomycorrhizal_richness  -0.8410886 0.08485918    -0.8397393    -0.9869741   -0.9216621   -0.7585731    -0.67422898

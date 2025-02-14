@@ -1,33 +1,33 @@
 $Bac_richness
 $Bac_richness$fixef
-               Estimate Est.Error       Q2.5      Q97.5
-Intercept   4000.129176  52.13747 3898.51681 4102.73011
-PA_rank_rev    4.135498  14.47111  -24.12835   32.58496
+            Estimate Est.Error    Q2.5   Q97.5
+Intercept   3999.361     51.78 3897.97 4099.69
+PA_rank_rev    4.277     14.51  -24.19   32.92
 
 $Bac_richness$emtrends
 # A tibble: 1 x 4
   PA_rank_rev PA_rank_rev.trend lower.HPD upper.HPD
         <dbl>             <dbl>     <dbl>     <dbl>
-1        2.44              4.06     -24.0      32.7
+1        2.44              4.25     -24.6      32.4
 
 $Bac_richness$emmeans
 # A tibble: 1 x 4
   PA_rank_rev emmean lower.HPD upper.HPD
         <dbl>  <dbl>     <dbl>     <dbl>
-1        2.44  4010.     3937.     4085.
+1        2.44  4010.     3935.     4086.
 
 
 $Bac_shannonDiv
 $Bac_shannonDiv$fixef
-                 Estimate  Est.Error        Q2.5      Q97.5
-Intercept    7.5139835336 0.02633186  7.46221343 7.56577300
-PA_rank_rev -0.0005313279 0.00742698 -0.01508497 0.01407734
+              Estimate Est.Error     Q2.5   Q97.5
+Intercept    7.5137048  0.026298  7.46200 7.56508
+PA_rank_rev -0.0004549  0.007358 -0.01488 0.01423
 
 $Bac_shannonDiv$emtrends
 # A tibble: 1 x 4
   PA_rank_rev PA_rank_rev.trend lower.HPD upper.HPD
         <dbl>             <dbl>     <dbl>     <dbl>
-1        2.44         -0.000553   -0.0153    0.0138
+1        2.44         -0.000507   -0.0154    0.0136
 
 $Bac_shannonDiv$emmeans
 # A tibble: 1 x 4
@@ -38,15 +38,15 @@ $Bac_shannonDiv$emmeans
 
 $Bac_JaccDist_av
 $Bac_JaccDist_av$fixef
-                Estimate    Est.Error          Q2.5        Q97.5
-Intercept   0.8805999228 0.0011771299  0.8782918089 0.8828765459
-PA_rank_rev 0.0001288831 0.0003271119 -0.0005136774 0.0007705461
+             Estimate Est.Error       Q2.5     Q97.5
+Intercept   0.8805709 0.0011741  0.8782784 0.8828734
+PA_rank_rev 0.0001291 0.0003249 -0.0005082 0.0007662
 
 $Bac_JaccDist_av$emtrends
 # A tibble: 1 x 4
   PA_rank_rev PA_rank_rev.trend lower.HPD upper.HPD
         <dbl>             <dbl>     <dbl>     <dbl>
-1        2.44          0.000129 -0.000510  0.000773
+1        2.44          0.000128 -0.000528  0.000743
 
 $Bac_JaccDist_av$emmeans
 # A tibble: 1 x 4

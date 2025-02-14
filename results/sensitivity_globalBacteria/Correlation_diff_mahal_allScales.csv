@@ -1,0 +1,10 @@
+Group,Variable,Scale,Dryland,Cropland,Grassland,Woodland
+Dissimilarity,Bacterial D,global,-0.004 [0.483] ns,NA,NA,NA
+Dissimilarity,Bacterial D,continental,NA,-0.131 [<0.002] *,-0.105 [<0.002] *,0.162 [<0.002] *
+Dissimilarity,Bacterial D,regional,NA,0.1 [<0.002] *,0.069 [<0.002] *,0.014 [0.256] ns
+Richness,Bacterial R,global,0.049 [<0.002] *,NA,NA,NA
+Richness,Bacterial R,continental,NA,0.074 [<0.002] *,-0.042 [<0.002] *,-0.199 [<0.002] *
+Richness,Bacterial R,regional,NA,-0.163 [<0.002] *,-0.084 [<0.002] *,-0.03 [0.011] *
+Shannon,Bacterial S,global,0.062 [<0.002] *,NA,NA,NA
+Shannon,Bacterial S,continental,NA,0.065 [<0.002] *,-0.055 [<0.002] *,-0.209 [<0.002] *
+Shannon,Bacterial S,regional,NA,-0.117 [<0.002] *,-0.102 [<0.002] *,-0.037 [0.002] *
