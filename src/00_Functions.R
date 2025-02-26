@@ -281,10 +281,13 @@ f_pairing <- function(data, col_id, col_lc, vars_z){
     times <- times+1; if(times > number_times) {break} #stop loop if reached 1000 trails
     times.with.error <- times.with.error + 1
     
+    stop_loop <- FALSE #to stop loop if needed (see further below)
+    
     # add columns to store pairing temporary
     pa[,c("nonPA", "mahal.min")] <- NA  
     
     for(i in 1:length(lc_names)){
+      
       temp_PA <- pa[pa[,col_lc]==lc_names[i],] 
       temp_nonPA  <- nonpa[nonpa[,col_lc]==lc_names[i],]
       
@@ -352,6 +355,19 @@ f_pairing <- function(data, col_id, col_lc, vars_z){
         times <- times-1
         print("Not enough PA sites paired.")
         
+        if(times < -1){ # if running into negative numbers with times
+          print("No pairing possible. Try decreasing min_size, radius_thresh or col_lc (data grouping).")
+          if(exists("pairing_possible")){ # relevant for sensitivity analysis of distance threshold
+            # add information to output list
+            pairing_possible <- c(pairing_possible, list(cbind("radius_thres" = radius_thres, 
+                                                             "min_size" = min_size,
+                                                             "sites_lower_min_nonPA" = pull(count_nonPA %>% filter(No_nonPA < min_nonPA) %>% count()),
+                                                             "pairing_possible" = 0)))
+          }
+          stop_loop <- TRUE
+          break() #stop looping into negative numbers
+          }
+        
       } else {
         temp_PA <- temp_PA %>% sample_n(size = min_size, replace = FALSE)
         
@@ -366,6 +382,8 @@ f_pairing <- function(data, col_id, col_lc, vars_z){
       }
       print(times)
     }
+    
+    if(stop_loop) break()
   }
   
   rm(temp_PA, temp_nonPA, pa, nonpa, nonPA.pair)
