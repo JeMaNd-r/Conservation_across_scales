@@ -44,7 +44,7 @@ data_clean
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load PA-nonPA pairs ####
-pa_pairs <- read_csv(file=sort(list.files(here::here("intermediates", temp_scale), pattern = "Unpaired"), decreasing = TRUE)[1])
+pa_pairs <- read_csv(file=sort(list.files(here::here("intermediates", temp_scale), pattern = "Pairs"), decreasing = TRUE)[1])
 head(pa_pairs)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
