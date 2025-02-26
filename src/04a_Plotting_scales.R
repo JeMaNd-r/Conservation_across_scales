@@ -67,6 +67,9 @@ labels_order <- c(
 data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
 data_clean
 
+# exclude LC types if needed ####
+data_clean <- data_clean %>% filter(LC %in% lc_names)
+
 if(temp_scale == "global") data_clean <- data_clean %>% mutate(LC = "Dryland")
 
 # define min_size
@@ -466,7 +469,7 @@ if(temp_scale == "global") pars_intercept <- pars_intercept %>% dplyr::select(-L
 #                                "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE)))) %>%
 #   arrange(lc, fns)
 # pars_summary
-# write_csv(pars_summary, file=paste0(here::here(), "/figures/Results_intercept_parsBayesian_summary_", temp_scale, ".csv"))
+# write_csv(pars_summary, file=paste0(here::here(), "/figures/Results_intercept_BayesianTrends_summary_", temp_scale, ".csv"))
 
 # extract sample size
 n_table <- data_clean %>% filter(LC!="Other") %>%
@@ -476,7 +479,7 @@ n_table <- data_clean %>% filter(LC!="Other") %>%
   arrange(PA_rank) %>% ungroup() %>%
   dplyr::select(-PA_rank)
 n_table
-write_csv(n_table, file=paste0(here::here(), "/figures/Results_intercept_parsBayesian_nTable_", temp_scale, ".csv"))
+write_csv(n_table, file=paste0(here::here(), "/figures/Results_intercept_BayesianTrends_nTable_", temp_scale, ".csv"))
 
 ggplot(pars_intercept %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
                      # add number of sizes to plot
@@ -524,10 +527,50 @@ ggplot(pars_intercept %>% filter(!is.na(Label)) %>% #filter(!is.na(PA_type)) %>%
         panel.grid.major.y = element_blank(),
         legend.position = "bottom",
         text = element_text(size = 13))
-ggsave(filename=paste0(here::here(), "/figures/Results_intercept_parsBayesian_", temp_scale, ".png"),
+ggsave(filename=paste0(here::here(), "/figures/Results_intercept_BayesianTrends_", temp_scale, ".png"),
        plot = last_plot(),
        width=12, height=10)
 
+
+# ggdist to show whole distribution and not just emmeans
+pred_list <- get(load(paste0(here::here(), "/results/PAtypes_Bayesian_", temp_scale, "_sample10k.RData")))
+
+pred_list <- pred_list %>%
+  ungroup() %>%
+  rowwise() %>%
+  mutate(value = sum(c_across(c(Soil_carbon_service, OM_decomposition_service:Invertebrate_JaccDist_av)), na.rm=TRUE)) %>%
+  dplyr::select(LC:fns, value, -Soil_carbon_service) %>%
+  full_join(protect_type %>% 
+              mutate(PA_rank = as.character(PA_rank)),
+            by=c("PA_rank"))  %>%
+  mutate("Label_pa" = ifelse(PA_rank=="Unprotected", "Unprotected", PA_type)) %>%
+  mutate("Label_pa" = factor(Label_pa, levels = rev(c(protect_type$PA_type, "Unprotected")))) %>%
+  full_join(fns_labels, by=c("fns"="Function")) %>%
+  mutate("Label_fns" = factor(Label, fns_labels$Label))
+
+ggplot(data = pred_list %>%
+         mutate(Label = factor(Label, levels = labels_order)), 
+       
+       aes(x = Label_pa, y = .epred, color = ordered(LC))) +
+  stat_slab(normalize = "panels", position = "dodge", scale = 1.5) +
+  facet_wrap(vars(Label), scales = "free", ncol=6)+
+  coord_flip()+
+  #scale_fill_brewer(palette = "Greys") +
+  scale_color_manual(values=c("Cropland" = "#4A2040",
+                              "Grassland" = "#E69F00",
+                              "Shrubland" = "#0072B2", 
+                              "Woodland" = "#009E73", 
+                              "Other" = "#000000",
+                              "Dryland" = "#000000"), name="Habitat type")+
+  theme_void()+
+  theme(axis.text = element_text(),
+        panel.grid.minor.x =  element_line(color = "grey"),
+        strip.text = element_text(size = 15, hjust=0),
+        legend.position = c(0.8, 0.1),
+        legend.box = "horizontal")
+ggsave(filename=paste0(here::here(), "/figures/Results_intercept_parsBayesian_", temp_scale,".png"),
+       plot = last_plot(),
+       width=15, height=10)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Random-slope model (PA ranks/ levels) ####
