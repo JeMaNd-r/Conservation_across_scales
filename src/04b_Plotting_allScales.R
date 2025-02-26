@@ -221,6 +221,8 @@ magick::image_write(magick::image_append(c(magick::image_append(c(pairs_glob, pa
 rm(pairs_glob, pairs_cont, pairs_regi, all_glob, all_cont, all_regi)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+## Effect sizes ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ### FIGURE 2 & APPENDIX TABLE 2.2 - Heatmap of effect sizes ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # mean per lc type and all 3 scales
@@ -618,7 +620,7 @@ corr_list <- list(
 corr_list <- do.call(rbind, corr_list) %>%
   dplyr::select(scale, Function, cor_value, cor_p, cor_t)
 
-corr_list %>% filter(cor_p < 0.05) %>% count(scale)
+corr_list %>% filter(cor_p < 0.05) %>% count(scale) # number of significant cor
 corr_list %>% filter(cor_p < 0.05) %>% count()
 corr_list %>% filter(cor_value > 0 & cor_p < 0.05) %>% count(scale) #number positive cor
 corr_list %>% filter(cor_value > 0 & cor_p < 0.05) %>% count()

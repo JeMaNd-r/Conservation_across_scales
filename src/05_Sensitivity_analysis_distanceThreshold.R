@@ -414,7 +414,7 @@ d_significant <- d_all %>%
   pivot_wider(names_from = radius_thres, values_from = n) 
 d_significant
 
-write_csv(d_significant, paste0(here::here(), "/results/sensitivity_distanceThreshold/Results_d-value_summary_allRadius", temp_scale,".csv"))
+write_csv(d_significant, paste0(here::here(), "/results/sensitivity_distanceThreshold/Results_d-value_summary_allRadius_", temp_scale,".csv"))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## some numbers #### 
@@ -425,5 +425,6 @@ radius_thres <- 300000
 temp_data <- read_csv(file = paste0(here::here(), "/results/sensitivity_distanceThreshold/", temp_scale, "/Locations_", radius_thres , ".csv"))
 temp_data %>% count(LC, PA)
 
-
-
+# effect sizes
+d_significant <- read_csv(paste0(here::here(), "/results/sensitivity_distanceThreshold/Results_d-value_summary_allRadius_continental.csv"))
+d_significant
