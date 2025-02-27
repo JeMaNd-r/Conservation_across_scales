@@ -225,6 +225,35 @@ Please report any bugs or issues [HERE](https://github.com/JeMaNd-r/Conservation
 
 ## 4. Reproducibility parameters
 
+This project uses **renv** for package management, thereby ensuring a reproducible R environment. To set up the project on your machine, you can follow these steps:
+
+### Installation & Setup using *renv*
+
+1. Clone the Repository
+
+Clone the repository using Git Bash or GitHub Desktop, or download it manually. Afterwards, set the Git working directory to the project directory if you want to allow tracking of changes.
+
+```R
+git clone https://github.com/JeMaNd-r/Conservation_across_scales.git
+cd Conservation_across_scales
+```
+
+2. Open R and Install *renv* (if not already installed)
+
+```R
+install.packages("renv")
+```
+
+3. Restore the Project Environment
+
+```R
+renv::restore() #install package versions used in the project based on the renv.lock file
+```
+
+### Alternative setup 
+
+If you prefer setting up the packages and R environment manually, please have a look at the `sessionInfo()` output below.
+
 ```R
 R version 4.3.0 (2023-04-21 ucrt)
 Platform: x86_64-w64-mingw32/x64 (64-bit)
