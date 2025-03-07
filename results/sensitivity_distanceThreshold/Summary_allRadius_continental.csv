@@ -1,0 +1,8 @@
+radius_thres,min_size,sites_lower_min_nonPA,pairing_possible,n_pa,n_nonpa,n_d_sign,n_d_sign_pos,n_d_sign_neg
+200000,7,54,1,0,0,NA,NA,NA
+300000,3,40,1,21,145,NA,NA,NA
+400000,10,26,1,35,226,4,2,2
+500000,14,13,1,48,269,5,3,2
+600000,15,9,1,52,269,8,5,3
+700000,15,8,1,53,267,5,5,0
+1000000,15,5,1,56,245,11,9,2
