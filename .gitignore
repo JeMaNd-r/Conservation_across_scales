@@ -71,3 +71,5 @@ PA_assignment_*.csv
 Unpaired_protected_sites_*.csv
 Locations_*.csv
 *.zip
+*.docx
+docs/Notes.txt
