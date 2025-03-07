@@ -30,6 +30,19 @@ The structure of the README file is based on [this one](https://github.com/JWicq
 On the project main page on GitHub, click on the green button `Code` and then click on `Download ZIP`.
 Alternatively, you can `clone` the repository.
 
+All datasets except *LABELS_functions.csv* and *Elevation_Worldclim_Global_METADATA.txt* require downloading or requesting. 
+Climate rasters (*CHELSA_bio1_1981-2010_V.2.1.tif*, *CHELSA_bio12_1981-2010_V.2.1.tif*) were obtained from CHELSA on 2022-04-10, and *Elevation_Worldclim_Global.tif* from WorldClim on 2022-12-21. 
+Sequencing datasets (*Diversity_[temp_scale].csv*, *Diversity_global_atlas.csv*) correspond to pre-processed soil biodiversity and functioning data from providers of corresponding global, continental, and regional datasets. 
+
+Global dataset: 
+The *Global_Atlas_drylands_V2.xlsx* and *GlobalAtlasv2_conservation_heterogeneity_papers_v2.xlsx* datasets contain dryland and alternative global data, respectively. It can be requested from Fernando T. Maestre Gil.
+
+Continental dataset:
+The *LUCAS_2018_iDiv_20221018.csv* dataset covers continental Europe. It can be requested through European Soil Data Centre, [ESDAC](https://esdac.jrc.ec.europa.eu/content/soil-function-data-measured-lucas-2018-sites-across-eu). Coordinates need to be requested separately from ESDAC directly or from Alberto Orgiazzi. 
+
+Regional dataset:
+The *SoilReCon_Data_211123.csv* dataset represents regional data from Portugal. It can be requested from Concha Cano-Diaz.
+
 
 ## 2. Description of the project
 
@@ -88,6 +101,8 @@ The table **LABELS_functions.csv** serves as reference table to link raw columns
 
 The dataset **LUCAS_2018_iDiv_20221018.csv** corresponds to the continental dataset used for analysis. This data was collected in the European Land Cover/Area frame Survey (LUCAS) soil module in 2018. The associated file **LUCAS_2018_iDiv_metadata.txt** contains information about the columns and sampling/analysis methods.
 References: 
+- Dataset can be requested from [ESDAC](https://esdac.jrc.ec.europa.eu/content/soil-function-data-measured-lucas-2018-sites-across-eu). Note that coordinates of sampling sites need to be requested separately.
+- Zeiss R, Eisenhauer N, Orgiazzi A, Rillig M, Buscot F, Jones A,  Lehmann A, Reitz T, Guerra C (2022). Challenges of and opportunities for protecting European soil biodiversity. Conservation Biology, 36(5), e13930.
 - European Commission. Joint Research Centre. (2022) LUCAS 2018 soil module: presentation of dataset and results. LU: Publications Office.
 - Hiederer R (2018) Data Evaluation of LUCAS Soil Component Laboratory Data for Soil Organic Carbon. JRC Technical Reports: 73.
 - Orgiazzi A, Ballabio C, Panagos P, Jones A, Fernandez-Ugalde O (2018) LUCAS Soil, the largest expandable soil dataset for Europe: a review. European Journal of Soil Science 69: 140-153.
@@ -208,6 +223,16 @@ More specific naming conventions in the `figures` folder:
 - `Results_intercept_parsBayesian` Results of random-intercept models with number of sampling sites documented in `_nTable` CSV files. Plotted are EM Means only.
 - `Results_slope_BayesianTrends` and `Results_slope_parsBayesian` Results of random-slope models, namely pointranges and posterior samples.
 
+#### 05_Sensitivity_analysis_....R
+
+Three sensitivity analysis were conducted. 
+
+- `05_Sensitivity_analysis_alternativeGlobal.R` used an alternative global dataset that covers multiple habitat types instead of just drylands. Output generated with this script is stored in `results/sensitivity_globalAlternativeDataset`.
+- `05_Sensitivity_analysis_bacteriaAll.R` uses all sites with complete data for soil bacterial biodiversity measures that is bacterial richness, Shannon index and dissimilarity. In this analysis, all available sites are used to just compare the 3 bacterial diversity attributes. Output generated with this script is stored in `results/sensitivity_globalBacteria`.
+- `05_Sensitivity_analysis_distanceThreshold.R` considers different distance thresholds to build pairs of protected and environmentally similar unprotected sites and compare their soil biodiversity and functioning attributes. Output generated with this script is stored in `results/sensitivity_distanceThreshold`.
+
+Files in the sensitivity output folders follow naming conventions described above.
+
 
 ### 2.4 How to reproduce the final datasets?
 
@@ -226,6 +251,7 @@ Please report any bugs or issues [HERE](https://github.com/JeMaNd-r/Conservation
 ## 4. Reproducibility parameters
 
 This project uses **renv** for package management, thereby ensuring a reproducible R environment. To set up the project on your machine, you can follow these steps:
+
 
 ### Installation & Setup using *renv*
 
@@ -323,7 +349,7 @@ Carlos A. Guerra
 
 ## 6. License
 
-This project is licensed under the MIT License - see the LICENSE.md file for details.
+This project is licensed under the CC-BY 4.0 license - see the LICENSE.md file for details.
 
 
 ## 7. Use of ChatGPT in Project Development
