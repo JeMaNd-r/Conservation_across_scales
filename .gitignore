@@ -49,16 +49,9 @@ rsconnect/
 *.RData
 *.png
 *.db
-figures/Data_distr_delta1000_global.csv
 
 /data_raw
 /intermediates
-/results/seed_1759
-/results/seed_5738375
-/results/seed_random
-/figures/seed_1759
-/figures/seed_5738375
-/figures/seed_random
 *.html
 /docs/Appendix_files
 *.bib
@@ -70,3 +63,10 @@ renv/lock/
 renv/python/
 renv/sandbox/
 renv/staging/
+
+# sensitive data
+Data_clean_*.csv
+Data_paired_*.csv
+PA_assignment_*.csv
+Unpaired_protected_sites_*.csv
+Locations_*.csv
