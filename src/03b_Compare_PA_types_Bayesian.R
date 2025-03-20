@@ -302,3 +302,203 @@ if(temp_scale == "global") emtrends <- emtrends %>% mutate(LC = "Dryland", .befo
 
 write_csv(emtrends, file=paste0(here::here(), "/results/PAranks_Bayesian_", temp_scale, "_emtrends.csv"))
 
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Comparison using brms without(!) random factors ####
+# not relevant for global dataset as there are no different LC and therefore no random factor used above
+
+for(temp_scale in c("continental", "regional")){
+  source(paste0(here::here(), "/src/00_Parameters.R"))
+  source(paste0(here::here(), "/src/00_Functions.R"))
+  
+  if(temp_scale == "continental"){
+    lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
+    fns <- fns[fns != "Water_regulation_service"]
+  }
+  if(temp_scale == "regional"){
+    lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
+    fns <- fns[fns != "Water_regulation_service"]
+  }
+  
+  if(temp_scale == "continental"){
+    lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
+    fns <- fns[fns != "Water_regulation_service"]
+  }
+  if(temp_scale == "regional"){
+    lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
+    fns <- fns[fns != "Water_regulation_service"]
+  }
+  
+  data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+  data_clean
+  
+  data_clean <- data_clean %>% 
+    mutate("PA_rank_rev" = ifelse(is.na(PA_rank), 1, 11-PA_rank+1)) %>%
+    filter(LC %in% lc_names) %>%
+    arrange(LC, PA_rank_rev)
+  
+  min_size <- min(table(data_clean$LC, 
+                        data_clean$PA)[table(data_clean$LC, 
+                                             data_clean$PA)
+                                       >0])
+  
+  # store results
+  fixed_effects_intercept <- vector("list")
+  fixed_effects_slope <- vector("list")
+  model_comparison <- vector("list")
+  pred_list_intercept <- vector("list")
+  pred_list_slope <- vector("list")
+  
+  for(temp_fns in fns){
+    
+    data_temp_intercept <- data_clean %>% dplyr::select(all_of(c("LC", temp_fns, "PA_rank"))) %>%
+      mutate(PA_rank = ifelse(is.na(PA_rank), "Unprotected", PA_rank))
+    data_temp_slope <- data_clean %>% dplyr::select(all_of(c("LC", temp_fns, "PA_rank_rev")))
+    
+    output_intercept <- brm(brmsformula(paste(temp_fns, "~ PA_rank + LC")), data = data_temp_intercept,
+                            chains = 4, iter = 10000, warmup = 2000)
+    
+    output_slope <- brm(brmsformula(paste(temp_fns, "~ PA_rank_rev * LC")), data = data_temp_slope,
+                        chains = 4, iter = 10000, warmup = 2000)
+
+    fixed_effects_intercept[[temp_fns]] <- vector("list")
+    fixed_effects_slope[[temp_fns]] <- vector("list")
+    fixed_effects_intercept[[temp_fns]][["fixef"]] <- brms::fixef(output_intercept)
+    fixed_effects_slope[[temp_fns]][["fixef"]] <- brms::fixef(output_slope)
+    
+    # model comparison: Leave-One-Out Cross Validation (LOO)
+    model_comparison[[temp_fns]][["loo"]][["intercept"]] <- loo::loo(output_intercept)
+    model_comparison[[temp_fns]][["loo"]][["slope"]] <- loo::loo(output_slope)
+    model_comparison[[temp_fns]][["loo"]][["comparison"]] <- loo::loo_compare(model_comparison[[temp_fns]][["loo"]][["intercept"]],
+                                                                              model_comparison[[temp_fns]][["loo"]][["slope"]])
+    
+    # WAIC (alternative comparison metric)
+    model_comparison[[temp_fns]][["waic"]][["intercept"]] <- loo::waic(output_intercept)
+    model_comparison[[temp_fns]][["waic"]][["slope"]] <- loo::waic(output_slope)
+    
+    # R2
+    model_comparison[[temp_fns]][["r2"]][["intercept"]] <- brms::bayes_R2(output_intercept)
+    model_comparison[[temp_fns]][["r2"]][["slope"]] <- brms::bayes_R2(output_slope)
+    
+    fixed_effects_intercept[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_intercept, specs = "PA_rank"))
+    fixed_effects_intercept[[temp_fns]][["emmeans_lc"]] <- as_tibble(emmeans::emmeans(output_intercept, specs = c("PA_rank", "LC")))
+    
+    fixed_effects_slope[[temp_fns]][["emtrends"]] <- as_tibble(emmeans::emtrends(output_slope, specs = "LC", var = "PA_rank_rev"))
+    fixed_effects_slope[[temp_fns]][["emmeans"]] <- as_tibble(emmeans::emmeans(output_slope, specs = c("PA_rank_rev", "LC")))
+    
+    # Extract estimates and credible intervals for PA_rank_rev
+    pred_list_intercept[[temp_fns]] <- data_temp_intercept %>%
+      group_by(LC) %>%
+      tidybayes::add_epred_draws(output_intercept) %>%
+      mutate(scale = temp_scale,
+             fns = temp_fns)
+    
+    pred_list_slope[[temp_fns]] <- data_temp_slope %>%
+      group_by(LC) %>%
+      modelr::data_grid(PA_rank_rev = modelr::seq_range(PA_rank_rev, n = 51)) %>%
+      tidybayes::add_epred_draws(output_slope) %>%
+      mutate(scale = temp_scale,
+             fns = temp_fns)
+  }
+  
+  pred_list_intercept <- do.call(rbind, pred_list_intercept)
+  pred_list_slope <- do.call(rbind, pred_list_slope)
+  
+  save(pred_list_intercept, file=paste0(here::here(), "/intermediates/PAtypes_BayesianNoRandom_", temp_scale, ".RData"))
+  save(pred_list_slope, file=paste0(here::here(), "/intermediates/PAranks_BayesianNoRandom_", temp_scale, ".RData"))
+  save(model_comparison, file=paste0(here::here(), "/intermediates/PAranks_ModelEvalNoRandom_", temp_scale, ".RData"))
+  
+  # subset
+  pred_sample_intercept <- pred_list_intercept %>% group_by(LC) %>% slice_sample(n = 10000)
+  pred_sample_slope <- pred_list_slope %>% group_by(LC) %>% slice_sample(n = 10000)
+  
+  save(pred_sample_intercept, file=paste0(here::here(), "/results/PAtypes_BayesianNoRandom_", temp_scale, "_sample10k.RData"))
+  save(pred_sample_slope, file=paste0(here::here(), "/results/PAranks_BayesianNoRandom_", temp_scale, "_sample10k.RData"))
+  
+  # save fixed effects & emmeans
+  save(fixed_effects_intercept, file=paste0(here::here(), "/intermediates/PAtypes_BayesianNoRandom_", temp_scale, "_summary.RData"))
+  save(fixed_effects_slope, file=paste0(here::here(), "/intermediates/PAranks_BayesianNoRandom_", temp_scale, "_summary.RData"))
+  
+  sink(paste0(here::here(), "/intermediates/PAtypes_BayesianNoRandom_", temp_scale, ".txt"))
+  fixed_effects_intercept
+  sink()
+  
+  sink(paste0(here::here(), "/intermediates/PAranks_BayesianNoRandom_", temp_scale, ".txt"))
+  fixed_effects_slope
+  sink()
+  
+  # extract emmeans (intercept model)
+  load(file=paste0(here::here(), "/intermediates/PAtypes_BayesianNoRandom_", temp_scale, "_summary.RData")) #fixed_effects_intercept
+  emtrends_mean <- sapply(fixed_effects_intercept,function(x) x[2])
+  for(i in 1:length(emtrends_mean)){
+    emtrends_mean[[i]] <- emtrends_mean[[i]] %>% 
+      mutate("fns" = gsub(".emmeans", "", names(emtrends_mean)[i]),
+             "scale" = temp_scale)
+  }
+  emtrends_mean <- do.call(rbind, emtrends_mean)
+  emtrends_mean
+  
+  write_csv(emtrends_mean, file=paste0(here::here(), "/results/PAtypes_BayesianNoRandom_", temp_scale, "_emmeans.csv"))
+  
+  
+  # extract emtrends (slope model)
+  load(file=paste0(here::here(), "/intermediates/PAranks_BayesianNoRandom_", temp_scale, "_summary.RData")) #fixed_effects_slope
+  emtrends <- sapply(fixed_effects_slope,function(x) x[2])
+  for(i in 1:length(emtrends)){
+    emtrends[[i]] <- emtrends[[i]] %>% 
+      mutate("fns" = gsub(".emtrends", "", names(emtrends)[i]),
+             "scale" = temp_scale)
+  }
+  emtrends <- do.call(rbind, emtrends)
+  
+  write_csv(emtrends, file=paste0(here::here(), "/results/PAranks_BayesianNoRandom_", temp_scale, "_emtrends.csv"))
+}
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## Compare model evaluation: with/without random factor ####
+
+for(temp_scale in c("continental", "regional")){
+  
+  model_comp_random <- get(load(file=paste0(here::here(), "/intermediates/PAranks_ModelEval_", temp_scale, ".RData")))
+  model_comp_norandom <- get(load(file=paste0(here::here(), "/intermediates/PAranks_ModelEvalNoRandom_", temp_scale, ".RData")))
+
+  loo_comp <- vector("list")
+  for(temp_fns in fns){
+    
+    for(i in c("intercept", "slope")){
+      temp_loo <- loo::loo_compare(model_comp_random[[temp_fns]][["loo"]][[i]],
+                                   model_comp_norandom[[temp_fns]][["loo"]][[i]])
+      
+      temp_loo_comp <- tibble(
+        model = i,
+        lc = lc,
+        random_factor = c(TRUE, FALSE),
+        fns = temp_fns,
+        elpd_loo_diff = c(temp_loo[,1]), 
+        se_loo_diff = c(temp_loo[,2]), #If elpd_diff / se_diff > 2, the difference is statistically meaningful.
+      )
+      
+      temp_loo_comp <- temp_loo_comp %>%
+        mutate(loo_comp = ifelse(abs(elpd_loo_diff / se_loo_diff) > 2, 
+                                      "worse", "similar"), .before = 2)
+      
+      loo_comp[[temp_fns]] <- rbind(loo_comp[[temp_fns]], temp_loo_comp) 
+    }
+  }
+  loo_comp <- do.call(rbind, loo_comp)
+  
+  write_csv(loo_comp, file = paste0(here::here(), "/intermediates/PAranks_ModelEvalCompRandom_", temp_scale, ".RData"))
+}
+
+
+### Some quick exploration ####
+loo_comp <- read_csv(paste0(here::here(), "/intermediates/PAranks_ModelEvalCompRandom_", temp_scale, ".RData"))
+
+# look if there are "worse" models
+loo_comp %>%
+  filter(!is.na(loo_comp)) %>%
+  arrange(desc(loo_comp)) %>%
+  print(n=100)
+
+
