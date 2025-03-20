@@ -472,7 +472,6 @@ for(temp_scale in c("continental", "regional")){
       
       temp_loo_comp <- tibble(
         model = i,
-        lc = lc,
         random_factor = c(TRUE, FALSE),
         fns = temp_fns,
         elpd_loo_diff = c(temp_loo[,1]), 
