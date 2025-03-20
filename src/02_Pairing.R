@@ -20,8 +20,8 @@ source("src/00_Functions.R")
 
 
 #temp_scale <- "global"
-temp_scale <- "continental"
-#temp_scale <- "regional"
+#temp_scale <- "continental"
+temp_scale <- "regional"
 
 # create directory for intermediate results
 if(!dir.exists(paste0(here::here(), "/intermediates/", temp_scale))){
@@ -87,8 +87,8 @@ count_nonPA <- f_check_pairs(data = data_clean,
                              col_id = "SampleID", col_lc = "LC", 
                              vars_z = mahal_vars_z)
 all_nonPA <- count_nonPA[[2]]
-count_nonPA <- count_nonPA[[1]] #G: 14 <5, 19 <7, 23 <10; G-together: 3 <22; C: 16 without enough (10) nonPAs for pairing
-#head(count_nonPA)
+count_nonPA <- count_nonPA[[1]] #G: 14 <5, 19 <7, 23 <10; G-together: 3 <22; C: 16 without enough (10) nonPAs for pairing; R: 8 without enough
+count_nonPA
 
 #View(all_nonPA %>% dplyr::select(SampleID, count_nonPA[count_nonPA$n<10 & !is.na(count_nonPA$SampleID), "SampleID"]))
 
@@ -107,7 +107,7 @@ count_nonPA <- count_nonPA[[1]] #G: 14 <5, 19 <7, 23 <10; G-together: 3 <22; C: 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Remove sites ####
 
-unpaired_pa <- read.csv(sort(list.files(here::here("intermediates", temp_scale), pattern = "Unpaired"), decreasing = TRUE)[1])
+unpaired_pa <- read.csv(sort(list.files(here::here("intermediates", temp_scale), pattern = "Unpaired", full.names = TRUE), decreasing = TRUE)[1])
 head(unpaired_pa) 
 
 # Note: There were nonPA sites with mahalanobis distance below threshold
@@ -119,7 +119,7 @@ nrow(data_clean); nrow(data_clean[data_clean$PA,]) #G/G-t: nrow=248 with 42 PAs,
 # start with something small, then check how many possible;
 #if(temp_scale == "global") min_nonPA <- 5 #not needed when analyzing all LC types together
 data_clean <- data_clean[!(data_clean$SampleID %in% count_nonPA[count_nonPA$No_nonPA < min_nonPA, "SampleID"]),]
-nrow(data_clean); nrow(data_clean[data_clean$PA,]) #nrow=234 with 28 PAs; G-together: 245 with 39; C: 791 wit 48; R: 318 with 43
+nrow(data_clean); nrow(data_clean[data_clean$PA,]) #nrow=234 with 28 PAs; G-together: 245 with 39; C: 791 wit 48; R: 316 with 41
 data_clean %>% group_by(LC, PA) %>% count()
 
 # save data

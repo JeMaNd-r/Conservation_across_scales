@@ -17,9 +17,12 @@ source(paste0(here::here(), "/src/00_Functions.R"))
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load soil biodiversity data ####
 # temp_scale <- "global"
- temp_scale <- "continental"
-# temp_scale <- "regional"
+# temp_scale <- "continental"
+ temp_scale <- "regional"
 
+data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+data_clean
+ 
 min_size <- min(table(data_clean$LC, 
                       data_clean$PA)[table(data_clean$LC, 
                                            data_clean$PA)
@@ -39,12 +42,10 @@ if(temp_scale == "regional"){
   #min_size <- 7 # number of samples/ sites that should be paired per LC type
   fns <- fns[fns != "Water_regulation_service"]
 }
-data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
-data_clean
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Load PA-nonPA pairs ####
-pa_pairs <- read_csv(file=sort(list.files(here::here("intermediates", temp_scale), pattern = "Pairs"), decreasing = TRUE)[1])
+pa_pairs <- read_csv(file=sort(list.files(here::here("intermediates", temp_scale), pattern = "Pairs", full.names = TRUE), decreasing = TRUE)[1])
 head(pa_pairs)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -

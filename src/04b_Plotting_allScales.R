@@ -753,6 +753,7 @@ for(temp_scale in c("global", "continental", "regional")){
     return(x)
   })
   
+  
   model_comparison <- model_comparison %>% 
     imap_dfr(~ mutate(.x, fns = .y, .before = 1)) %>%
     mutate(scale = temp_scale, .before = 1)

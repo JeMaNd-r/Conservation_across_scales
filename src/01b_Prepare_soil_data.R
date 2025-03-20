@@ -271,16 +271,6 @@ coord_regi #407
 data_regi <- read_csv(here::here("data_raw/Diversity_regional.csv")) #407 
 data_regi
 
-# # remove samples with low reads
-# # expert decision: recommendation of the bio-informatitian that initially 
-# # processed the samples in Australia: threshold = 13500 reads for 16S 
-# # and 5000 reads for 18S.  
-# low_reads16 <- c(55, 56, 78, 94, 97, 122, 156, 159, 224, 229, 280, 349, 409, 410,
-#                  11, 73, 367, 378, 380, 432)
-# low_reads18 <- c(55, 56, 78, 94, 97, 122, 156, 159, 224, 229, 280, 349, 409, 410,
-#                  23, 24, 42, 77, 237, 290, 335, 359, 376, 401, 456)
-# data_regi
-
 data_regi <- coord_regi %>% 
   dplyr::select(SampleID, Longitude, Latitude, Landuse, 
                 pH_H2O,
@@ -347,7 +337,7 @@ data_regi <- data_regi %>%
                               ifelse(Landuse=="FOR", "Woodland",
                                      ifelse(Landuse=="EXO", "Woodland",
                                             ifelse(Landuse=="URB", "Other",
-                                                   ifelse(Landuse=="PERM", "Woodland",
+                                                   ifelse(Landuse=="PERM", "Cropland",
                                                           NA)))))))
 unique(data_regi$LC)
 table(data_regi$LC)
