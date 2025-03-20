@@ -438,16 +438,36 @@ f_compare_pa_nonpa <- function(data, data_pairs, col_id, col_fns){
         mutate("ID"=nonPA) %>% 
         dplyr::select(-nonPA, -mahal.min)
       
-      temp_d <- psych::cohen.d(rbind(temp_PA, temp_nonPA)[,c("PA",col_fns)], group="PA")
+      # exclude fns with sd=0, i.e. AM_richness in some pairing sets with only 0 values for both PA and nonPA
+      col_SD_0 <- rbind(temp_PA, temp_nonPA) %>%
+        summarize(across(all_of(col_fns), function(x) sd(x, na.rm = TRUE))) %>% 
+        select(where(~ .x == 0)) %>%
+        names()
+      
+      if(length(col_SD_0)!=0){ # if there is a fns with sd=0, filter out before calculating effect size
+        temp_d <- psych::cohen.d(rbind(temp_PA, temp_nonPA)[,c("PA",col_fns[col_fns != col_SD_0])], group="PA")
+      }else{
+        temp_d <- psych::cohen.d(rbind(temp_PA, temp_nonPA)[,c("PA",col_fns)], group="PA")
+      }
+      
       d_list[[x]][[lc]] <- data.frame(lc=lc, 
                                       data.frame(temp_d$cohen.d),
                                       fns = rownames(data.frame(temp_d$cohen.d)),
                                       run=x,
                                       row.names = NULL)
       
+      # add row with excluded fns if needed
+      if(length(col_SD_0)!=0){ 
+        d_list[[x]][[lc]] <- d_list[[x]][[lc]] %>% 
+          add_row(data.frame(lc=lc, 
+                             lower = 0, effect = 0, upper = 0,
+                             fns = col_SD_0,
+                             run=x,
+                             row.names = NULL))
+      }
+      
       #print(sum(temp_pairs[temp_pairs$LC==lc,"nonPA"] == temp_nonPA[,"ID"])==min_size) # make sure that the sites are pairing properly
       # print should give min_size (TRUE = fitting pairs) for each LC types * 1000 runs
-      
     }
     
     # combine individual list elements (df) into one df
