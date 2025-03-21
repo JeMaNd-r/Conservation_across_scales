@@ -8,8 +8,6 @@ engine: knitr
 bibliography: references.bib
 ---
 
-## Appendix
-
 ```{r packages, echo=FALSE, warning=FALSE, message=FALSE}
 library(here)
 library(tidyverse)
@@ -284,7 +282,7 @@ n_slope_total <- nrow(slope_stats)
 #   count(scale, LC, Group_function)
 ```
 
-The analysis of protected area types revealed mixed patterns, but attributes of soil biodiversity and functioning were mostly similar across protection levels and did not differ in or across protected and unprotected sites (e.g. 95% CI of intercept and slope estimates largely overlapping with each other and 0 respectively). In the random-slope models, we found none of the tested trends to be significant (`r n_slope_significant` out of `r n_slope_total`) compared with the effect size estimation (`r n_significant` out of `r n_total`; Appendix Figure 3.2, Appendix Table 3.2 and 3.3. This difference seemed to result from large HPD intervals of slope estimates, that may be driven by soil biodiversity and functioning attribute values of unprotected areas being close to the average of total protected areas (see figures of random-intercept models below). In addition, because of higher and lower values of protected sites compared to unprotected ones, slope estimates can be negative and positive and thereby mutually extinguish across protection levels.
+The analysis of protected area types revealed mixed patterns, but attributes of soil biodiversity and functioning were mostly similar across protection levels and did not differ in or across protected and unprotected sites (e.g. 95% CI of intercept and slope estimates largely overlapping with each other and 0 respectively). In the random-slope models, we found fewer tested trends to be significant (`r n_slope_significant` out of `r n_slope_total`) compared with the effect size estimation (`r n_significant` out of `r n_total`; Appendix Figure 3.2, Appendix Table 3.2 and 3.3). Random slopes were significant mostly at regional scale (n = 7), for protected woodlands (6) and for Shannon index (4), but only once for their combination (Figure 3, Appendix Table 3.1 and 3.2), namely a positive effect on protist Shannon index in regional woodlands. Most regional effects were found in grasslands (3), and continental effects occurred only in woodlands (3). We did not find any significant effect of protection level gradient at the global scale.
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 #| label: Figure 3.2
@@ -293,6 +291,12 @@ The analysis of protected area types revealed mixed patterns, but attributes of 
 knitr::include_graphics(here::here("docs", "Appendix_bayesian_trends.png"))
 
 ```
+
+### Detailed description of differences to effect size estimates
+
+Overall, random slope model and effect size estimates revealed very similar results for soil biodiversity and functioning attributes. In contrast to the effect sizes, we found more significant trends for biodiversity (10 out of 144 = 6.9 %) than for functioning attributes (2 out of 44 = 4.5 %). Organism diversity showed no consistent trends, but the ones that we also found in the effect size analysis were partly consistent with them. We actually found opposite patterns for bacteria in continental woodlands: while we found negative effect sizes for bacteria richness and Shannon index in regional grasslands and global drylands, effects in continental woodlands were positive. Similarly, the effect of protection level in continental woodlands was negative on bacterial dissimilarity, that is exactly opposite of both the effects on richness and Shannon index, and as we found for effect size estimates in global drylands. In addition, dissimilarity of fungi showed negative trends in regional croplands and continental woodlands that were both not found in the effects size analysis. Indeed, we found opposite patterns for the effect size estimates in global drylands and continental grasslands, namely positive effects on fungal dissimilarity. Looking at arbuscular (AM) and ectomycorrhizal (EM) fungal richness individually, trends for AM and EM fungi richness from effect size estimates could only be confirmed in regional grasslands, namely negative for AM and positive for EM fungal richness. Invertebrate diversity, nematode and decomposer richness showed no significant trends along the protection levels, even though we did find some in the effect size estimation. Protist richness was higher in protected regional and continental woodlands; effects that were not found in effect size estimation, where we found a positive effect in regional grasslands instead. The remaining significant effects on protists found in effect size estimates could not be detected in the random-slope model. The only two significant slope estimates on soil functions were consistent with the findings of the effect size estimation. We found a positive effect on decomposition in regional grasslands, and a negative effect on soil stability in regional croplands. For the other functions and habitat-scale-combinations, we could not detect patterns found in effect size estimation.
+
+The difference between effect size estimation and random-slope models seemed to result from large HPD intervals of slope estimates, that were driven by soil biodiversity and functioning attribute values of unprotected areas being close to the average of total protected areas (see figures of random-intercept models below). In addition, because of higher and lower values of protected sites compared to unprotected ones, slope estimates can be negative and positive and thereby mutually extinguish across protection levels.
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 
