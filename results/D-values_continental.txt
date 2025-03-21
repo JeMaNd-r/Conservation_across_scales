@@ -1,6 +1,6 @@
 #################################################
 ##  Significant d-values from global analysis  ##
-##  Sys.Date() 2025-02-10  ##
+##  Sys.Date() 2025-03-21  ##
 #################################################
           lc                            fns effect_mean effect_SD effect_median effect_ci_2.5 effect_ci_17 effect_ci_83 effect_ci_97.5
 1   Cropland            Decomposer_richness   0.8202599 0.1497742     0.8249197    0.55099257   0.69482865  0.955538901     1.08160660
