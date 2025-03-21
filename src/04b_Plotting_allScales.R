@@ -574,7 +574,7 @@ for(temp_scale in c("global", "continental", "regional")){
     arrange(ID, nonPA, times) 
   
   pa_env <- pa_env %>% group_by(ID, nonPA, LC, times, n) %>% 
-    summarize(across(all_of(fns), diff),
+    summarize(across(all_of(fns), diff), #calculates nonPA-PA -> positive means PA larger/better
               across(mahal.min, mean)) %>% 
     dplyr::select(ID, nonPA, mahal.min, LC, all_of(fns))
   
@@ -630,6 +630,7 @@ corr_list %>% filter(cor_value < 0 & cor_p < 0.05) %>% count()
 write_csv(corr_list, 
           paste0(here::here(), "/figures/Correlation_diff_distance_allScales.csv"))
 
+corr_list <- read_csv(paste0(here::here(), "/figures/Correlation_diff_distance_allScales.csv"))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### APPENDIX FIGURE 2.3 & TABLE 2.3 - Pointrange plot grouped per estimate type ####
