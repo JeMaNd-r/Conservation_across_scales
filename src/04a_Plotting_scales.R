@@ -17,10 +17,12 @@ library(ggtext) #to add icons as axis labels
 library(ggh4x) # for free axes in facet_grid
 library(corrplot)
 library(magick) # to create plot from multiple pngs
+library(maps) #for mapping data locations
+library(mapproj) # for mapping data locations
 
 #temp_scale <- "global"
-#temp_scale <- "continental"
-temp_scale <- "regional"
+temp_scale <- "continental"
+#temp_scale <- "regional"
 
 # load background map
 world.inp <- map_data("world")
@@ -99,10 +101,10 @@ data_locations <- data_clean %>%
   filter(SampleID %in% unique(pa_pairs$ID) | 
          SampleID %in% unique(pa_pairs$nonPA)) %>%
   dplyr::select(Longitude,Latitude,SampleID, PA, LC)
-data_locations #G: nrow=131, C: 316, R: 161
+data_locations #G: nrow=131, C: 317, R: 157
 write_csv(data_locations, file = paste0(here::here(), "/results/Locations_", temp_scale, ".csv"))
-nrow(data_locations %>% filter(PA==1)) #G: 28 PAs, G-together: 39; C: 48, R: 36
-nrow(data_locations %>% filter(PA==0)) #G: 93 PAs, G-together: 92; C: 269, R: 125
+nrow(data_locations %>% filter(PA==1)) #G: 28 PAs, G-together: 39; C: 48, R: 34
+nrow(data_locations %>% filter(PA==0)) #G: 93 PAs, G-together: 92; C: 269, R: 123
 
 # set limits for point maps
 if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
@@ -113,16 +115,18 @@ if(temp_scale == "regional") temp_limits <- c(-9, -6, 40.5, 42.5)
 ggplot()+
   geom_map(data = world.inp, map = world.inp, 
            aes(map_id = region),  show.legend = FALSE, 
-           fill="white", color = "grey80", linewidth = 0.25) + #G:0.15, C+R:
+           fill="white", color = "grey80", linewidth = 0.3) + #G:0.3, C: 0.6, R: 0.8
   xlim(temp_limits[1], temp_limits[2])+
   ylim(temp_limits[3], temp_limits[4])+
   
   geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
-                                      shape = as.character(PA), color=LC, 
+                                      shape = as.character(PA), 
+                                      color = LC,
+                                      fill = as.character(PA), 
                                       size = as.character(PA)),
              stroke = 2)+
-             #stroke = 1.4, color = "#000000")+ #increase circle line width; G: 2 (1.4), C+R:3
-  scale_shape_manual(values = c("0" = 19, "1" = 1))+ #label = c("Protected", "Unprotected")
+  #stroke = 1.4, color = "#000000")+ #increase circle line width; G: 2 (1.4), C+R:3
+  scale_shape_manual(values = c("0" = 21, "1" = 1))+ #label = c("Protected", "Unprotected")
   scale_size_manual(values = c("0" = 2, "1" = 6))+ #G: 1.4,4.5/0.3, 1, C+R:3,8/ 0.6,2
   scale_color_manual(values = c("Cropland" = "#4A2040",
                                 "Grassland" = "#E69F00",
@@ -130,6 +134,7 @@ ggplot()+
                                 "Woodland" = "#009E73", 
                                 "Other" = "#000000",
                                 "Dryland" = "#000000"))+ 
+  scale_fill_manual(values = c("0" = "white", "1" = "black"))+
   coord_map()+
   theme_bw()+
   theme(axis.title = element_blank(), legend.title = element_blank(),
@@ -143,6 +148,7 @@ ggplot()+
 ggsave(filename=paste0(here::here(), "/figures/Data_locations_", temp_scale,".png"),
        plot = last_plot(),
        width = 10, height = 8)
+
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
