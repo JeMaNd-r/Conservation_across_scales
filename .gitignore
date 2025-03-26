@@ -65,7 +65,9 @@ renv/sandbox/
 renv/staging/
 
 # sensitive data
-Data_clean_*.csv
+Data_clean_global.csv
+Data_clean_continental.csv
+Data_clean_regional.csv
 Data_paired_*.csv
 PA_assignment_*.csv
 Unpaired_protected_sites_*.csv
