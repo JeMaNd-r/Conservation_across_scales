@@ -1,0 +1,35 @@
+﻿Column name,Description,Data type,Unit of measurement,Role in analysis,Notes
+SampleID,"Unique sample identifier as in BIOCOM and BIODESERT data (Maestre et al. 2015, 2022a, 2022b)",character,-,-,"Note that following 18 sites are missing from this SHARED dataset as their publication is under embargo: 1001-1015, 1052-1054. Six of the missing sites are located in Algeria, 3 sites in Canada, and 9 sites in Argentina."
+LC,"Land cover defined as one of Cropland, Grassland (pastures), Woodland (exotic and native forests), Urban areas* (Carvalho et al., 2025, Duarte et al., 2024)",character,-,Habitat type,-
+Latitude,Latitude,numeric,decimal degrees,Environmental similarity,-
+Longitude,Longitude,numeric,decimal degrees,Environmental similarity,-
+Elevation,"Data from WorldClim v 2.1 (Fick, Hijmans, 2017), extracted using terra::extract (Hijmans et al., 2022)",numeric,m,Environmental similarity,-
+AnnualPrec,"Annual precipitation from CHELSA v 2.1 (Karger et al., 2020), extracted using terra::extract (Hijmans et al., 2022)",numeric,mm,Environmental similarity,-
+AnnualTemp,"Annual mean temperature from CHELSA v 2.1 (Karger et al., 2020), extracted using terra::extract (Hijmans et al., 2022)",numeric,degree Celsius,Environmental similarity,-
+Soil_pH,"Soil pH of dried samples in water (Carvalho et al., 2025, Duarte et al., 2024)",numeric,-,Environmental similarity,-
+Soil_salinity,"Electrical conductivity measured in fresh soils (Carvalho et al., 2025, Duarte et al., 2024)",numeric,µS / cm,Environmental similarity,-
+Soil_texture,"Clay+silt content (Carvalho et al., 2025, Duarte et al., 2024)",percent,%,Environmental similarity,-
+Soil_carbon_service,"Soil organic matter content (Carvalho et al., 2025, Duarte et al., 2024)",numeric,percent,Soil function,-
+OM_decomposition_service,"Standardized soil microbial basal respiration (Carvalho et al., 2025, Duarte et al., 2024)",numeric,-,Soil function,-
+Soil_stability_service,"Standardized water-stable aggregates (Carvalho et al., 2025, Duarte et al., 2024)",numeric,-,Soil function,-
+Nutrient_service,"Average of standardized content of phosphorus, potassium, calcium and magnesium in soil (Carvalho et al., 2025, Duarte et al., 2024)",numeric,-,Soil function,-
+Pathogen_control,Inverse proportion of soil-borne potential fungal plant pathogens,numeric,-,Soil function,-
+Bac_richness,Number of bacterial zOTUs,numeric,Number of zOTUs,Soil biodiversity attribute,-
+Fungi_richness,Number of fungal zOTUs,numeric,Number of zOTUs,Soil biodiversity attribute,-
+Invertebrate_richness,Number of invertebrate zOTUs,numeric,Number of zOTUs,Soil biodiversity attribute,-
+Protist_richness,Number of protist zOTUs,numeric,Number of zOTUs,Soil biodiversity attribute,-
+Nematode_richness,Number of nematode zOTUs,numeric,Number of zOTUs,Soil biodiversity attribute,-
+Bac_shannonDiv,Shannon index ,numeric,-,Soil biodiversity attribute,-
+Fungi_shannonDiv,Shannon index ,numeric,-,Soil biodiversity attribute,-
+Invertebrate_shannonDiv,Shannon index ,numeric,-,Soil biodiversity attribute,-
+Protist_shannonDiv,Shannon index ,numeric,-,Soil biodiversity attribute,-
+Ectomycorrhizal_richness,Number of ectomycorrhizal fungi zOTUs,numeric,Number of zOTUs,Soil biodiversity attribute,-
+Arbuscularmycorrhizal_richness,Number of arbuscular mycorrhizal fungi zOTUs,numeric,Number of zOTUs,Soil biodiversity attribute,-
+Decomposer_richness,Number of decomposer zOTUs,numeric,Number of zOTUs,Soil biodiversity attribute,-
+Bac_JaccDist_av,Jaccard distance based on presence-absence matrix,numeric,-,Soil biodiversity attribute,-
+Fungi_JaccDist_av,Jaccard distance based on presence-absence matrix,numeric,-,Soil biodiversity attribute,-
+Protist_JaccDist_av,Jaccard distance based on presence-absence matrix,numeric,-,Soil biodiversity attribute,-
+Invertebrate_JaccDist_av,Jaccard distance based on presence-absence matrix,numeric,-,Soil biodiversity attribute,-
+PA,Protection status: protected (1) or unprotected (0) based on IUCN protected area management categories,binary,-,Protection status,-
+PA_type,"IUCN protected area management category according to (UNEP–WCMC, IUCN, 2021)",character,-,Protection type,-
+PA_rank,Protection level ranging from 1 (strictly) to 10 (less strictly) and NA (unprotected) as defined by authors increasing with increasing IUCN category,numeric,-,Protection type gradient,-

@@ -50,7 +50,6 @@ rsconnect/
 *.png
 *.db
 
-/data_raw
 /intermediates
 *.html
 /docs/Appendix_files
@@ -68,6 +67,7 @@ renv/staging/
 Data_clean_global.csv
 Data_clean_continental.csv
 Data_clean_regional.csv
+Diversity_*.csv
 Data_paired_*.csv
 PA_assignment_*.csv
 Unpaired_protected_sites_*.csv
@@ -75,3 +75,17 @@ Locations_*.csv
 *.zip
 *.docx
 docs/Notes.txt
+
+# raw data with embargo
+data_raw/Global_Atlas_drylands_V2.xlsx
+data_raw/GlobalAtlasv2_conservation_heterogeneity_papers_v2.xlsx
+data_raw/LUCAS_2018_iDiv_20221018.csv
+data_raw/LUCAS_2018_iDiv_metadata.txt
+data_raw/SoilReCon_MetaData_211123.csv
+data_raw/SoilReCon_Data_211123.csv
+
+# data downloaded from public repositories
+data_raw/Data_Maestre_14_10_2015.xlsx
+data_raw/Main_Data_code
+data_raw/Global_Biodesert_15122021_coordinates.xlsx
+
