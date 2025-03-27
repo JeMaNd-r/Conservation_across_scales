@@ -30,9 +30,11 @@ The structure of the README file is based on [this one](https://github.com/JWicq
 On the project main page on GitHub, click on the green button `Code` and then click on `Download ZIP`.
 Alternatively, you can `clone` the repository.
 
-All datasets except *LABELS_functions.csv* and *Elevation_Worldclim_Global_METADATA.txt* require downloading or requesting. 
+All raw datasets except *LABELS_functions.csv* and *Elevation_Worldclim_Global_METADATA.txt* require downloading or requesting (but see [1.2 Starting with shared clean data](#12-starting-with-shared-clean-data)). 
 Climate rasters (*CHELSA_bio1_1981-2010_V.2.1.tif*, *CHELSA_bio12_1981-2010_V.2.1.tif*) were obtained from CHELSA on 2022-04-10, and *Elevation_Worldclim_Global.tif* from WorldClim on 2022-12-21. 
 Sequencing datasets (*Diversity_[temp_scale].csv*, *Diversity_global_atlas.csv*) correspond to pre-processed soil biodiversity and functioning data from providers of corresponding global, continental, and regional datasets. 
+
+### 1.1 Requesting raw data
 
 Global dataset: 
 The *Global_Atlas_drylands_V2.xlsx* and *GlobalAtlasv2_conservation_heterogeneity_papers_v2.xlsx* datasets contain dryland and alternative global data, respectively. It can be requested from Fernando T. Maestre Gil or through corresponding author [Romy Zeiss](#5-contributing).
@@ -42,6 +44,16 @@ The *LUCAS_2018_iDiv_20221018.csv* dataset covers continental Europe. It can be 
 
 Regional dataset:
 The *SoilReCon_Data_211123.csv* dataset represents regional data from Portugal. It can be requested from Concha Cano-Diaz or through corresponding author [Romy Zeiss](#5-contributing).
+
+### 1.2 Starting with shared clean data
+
+To start directly with the shared clean but incomplete data, following steps need to be considered:
+
+1. Coordinates are missing. They can be requested as described above or otherwise need to be removed from the analysis. Latter is possible by removing both Latitude and Longitude in the `mahal_vars` object definition in `00_Parameters.R`. The scripts would than pair protected and unprotected sites without considering spatial location. Not that Latitude and Longitude are also required in other steps of the analysis, e.g. to pair sites with distance lower than the distance threshold for continental scale (`radius_thres`); thus, be aware of error messages.
+
+2. Data provided are incomplete; thus, number of sites paired and results may change or pairing may not be possible due to missing sites.
+
+3. Change the file name to `Data_clean_[temp_scale].csv` and move the file to the `intermediates` folder. This will guarantee scripts to access the file and no further changes in file calls will be required.
 
 
 ## 2. Description of the project
