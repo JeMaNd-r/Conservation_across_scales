@@ -1,8 +1,8 @@
 ﻿Column name,Description,Data type,Unit of measurement,Role in analysis,Notes
-SampleID,"Unique sample identifier as in BIOCOM and BIODESERT data (Maestre et al. 2015, 2022a, 2022b)",character,-,-,"Note that following 18 sites are missing from this SHARED dataset as their publication is under embargo: 1001-1015, 1052-1054. Six of the missing sites are located in Algeria, 3 sites in Canada, and 9 sites in Argentina."
+SampleID,"Unique sample identifier as in BIOCOM and BIODESERT data (Maestre et al. 2015, 2022a, 2022b)",character,-,-,-
 LC,"Land cover defined as one of Cropland, Grassland (pastures), Woodland (exotic and native forests), Urban areas* (Carvalho et al., 2025, Duarte et al., 2024)",character,-,Habitat type,-
-Latitude,Latitude,numeric,decimal degrees,Environmental similarity,-
-Longitude,Longitude,numeric,decimal degrees,Environmental similarity,-
+Latitude,The y-coordinate (latitude) of the sample site. Coordinate system WGS 1984 (EPSG: 4326).,numeric,decimal degrees,Environmental similarity,-
+Longitude,The x-coordinate (longitude) of the sample site. Coordinate system WGS 1984 (EPSG: 4326).,numeric,decimal degrees,Environmental similarity,-
 Elevation,"Data from WorldClim v 2.1 (Fick, Hijmans, 2017), extracted using terra::extract (Hijmans et al., 2022)",numeric,m,Environmental similarity,-
 AnnualPrec,"Annual precipitation from CHELSA v 2.1 (Karger et al., 2020), extracted using terra::extract (Hijmans et al., 2022)",numeric,mm,Environmental similarity,-
 AnnualTemp,"Annual mean temperature from CHELSA v 2.1 (Karger et al., 2020), extracted using terra::extract (Hijmans et al., 2022)",numeric,degree Celsius,Environmental similarity,-

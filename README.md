@@ -49,7 +49,7 @@ The *SoilReCon_Data_211123.csv* dataset represents regional data from Portugal. 
 
 To start directly with the shared clean but incomplete data, following steps need to be considered:
 
-1. Coordinates are missing. They can be requested as described above or otherwise need to be removed from the analysis. Latter is possible by removing both Latitude and Longitude in the `mahal_vars` object definition in `00_Parameters.R`. The scripts would than pair protected and unprotected sites without considering spatial location. Not that Latitude and Longitude are also required in other steps of the analysis, e.g. to pair sites with distance lower than the distance threshold for continental scale (`radius_thres`); thus, be aware of error messages.
+1. Coordinates are missing in continental and regional data. They can be requested as described above or otherwise need to be removed from the analysis. Latter is possible by removing both Latitude and Longitude in the `mahal_vars` object definition in `00_Parameters.R`. The scripts would than pair protected and unprotected sites without considering spatial location. Not that Latitude and Longitude are also required in other steps of the analysis, e.g. to pair sites with distance lower than the distance threshold for continental scale (`radius_thres`); thus, be aware of error messages.
 
 2. Data provided are incomplete; thus, number of sites paired and results may change or pairing may not be possible due to missing sites.
 
@@ -68,7 +68,7 @@ Habitat types are Dryland at global scale, and Cropland, Grassland, and Woodland
 
 This project is divided in 6 folders:
 
-* :open_file_folder:	`data_raw` contains input 11 datasets, 3 metadata files and one reference table (see part [2.2 Datasets description](#22-datasets-description)).
+* :open_file_folder:	`data_raw` contains input 11 datasets, 3 metadata files and one reference table, as well as the 3 shared clean datasets and their metadata (see part [2.2 Datasets description](#22-datasets-description)).
 * :open_file_folder:	`intermediates` is required as temporary storage place for intermediate results (see part [2.2 Datasets description](#22-datasets-description)).
 * :open_file_folder:	`results` contains output files (csv, RData, txt). It also contains all files of the sensitivity analyses, namely intermediate results, figures and final results (see part [2.2 Datasets description](#22-datasets-description)).
 * :open_file_folder:	`src` contains R scripts for all analyses (see part [2.3 Code description](#23-code-description)).
@@ -82,6 +82,8 @@ This project is divided in 6 folders:
 
 The spatial rasters **CHELSA_bio1_1981-2010_V.2.1.tif** and **CHELSA_bio12_1981-2010_V.2.1.tif** were downloaded from [CHELSA](https://chelsa-climate.org/downloads/) on 2022-04-10. 
 Reference: Karger, D.N., Conrad, O., Boehner, J., Kawohl, T., Kreft, H., Soria-Auza, R.W., Zimmermann, N.E., Linder, P., Kessler, M. (2017): Climatologies at high resolution for the Earth land surface areas. *Scientific Data*. 4 170122. https://doi.org/10.1038/sdata.2017.122
+
+The datasets **Data_clean_[temp_scale]_SHARED.csv** with `temp_scale` being one of three (global, continental, regional) correspond to the shared clean data prepared based on the raw data and contain all data that are available without request. For the global dataset, 18 sampling sites are missing as data associated with these sites is still under embargo. Similarly, sampling locations (latitude and longitude) in the continental and regional dataset are removed because of embargo. Missing data can be requested as described in [1.1 Requesting raw data](#1-1-requesting-raw-data). Column descriptions for all three datasets can be found in **Data_clean_[temp_scale]_METADATA.csv**.
 
 The datasets **Diversity_[temp_scale].csv** with `temp_scale` being one of three (global, continental, regional) correspond to the pre-processed sequencing data from the three original datasets described in the associated publication. The dataset **Diversity_global_atlas.csv** corresponds to the alternative global dataset that was analysed in a previous version of the study. This dataset covered distinct habitats worldwide that are not necessarily comparable within habiat type, which is why we decided to focus on the results from the dryland dataset only.   
 
