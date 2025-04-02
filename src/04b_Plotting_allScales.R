@@ -296,64 +296,130 @@ write_csv(d_plot_all %>%
             filter(!is.na(Group)),
           paste0(here::here(), "/figures/Results_d-value_meanCI_allScales_fns.csv"))
 
-# plot - FIGURE 2
-ggplot(data = d_plot_all %>%
-         filter(lc != "Shrubland"),
-       aes(x = lc, y = scale))+
-  
-  geom_point(aes(size = effect_mean_f,
-                 color = effect_direction_c, 
-                 fill= effect_significance,
-                 shape = effect_na))+
-  facet_wrap(vars(Label), ncol=6, drop=FALSE)+
-  scale_fill_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb", "not significant" = "white"),
-                    name = "Direction of effect",
-                    na.value = "black", drop = FALSE)+
-  scale_color_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb"),
-                    name = "Direction of effect",
-                    na.value = "black")+
-  scale_size_manual(values = c("marginal" = 2, "not significant" = 2, "small" = 5, "medium" = 10, "large" = 15),
-                     name = "Effect size",
-                    na.value =1)+
-  scale_shape_manual(values = c("not available" = 4),
-                     name = "Missing data",
-                     na.value = 21)+
-  scale_x_discrete(labels = c(
-    "Dryland" = "<img src='figures/icon_land.png' width='30'>",
-    "Cropland" = "<img src='figures/icon_harvest.png' width='20'>",
-    "Grassland" = "<img src='figures/icon_grass.png' width='17'>",
-    #"Shrubland" = "<img src='figures/icon_shrub-crop.png' width='35'>",
-    "Woodland" = "<img src='figures/icon_forest.png' width='30'>"
-  ))+
-  
-  scale_y_discrete(labels = c(
-    "global" = "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>",
-    "continental" = "<img src='figures/icon_location-black.png' width='30'>",
-    "regional" = "<img src='figures/icon_flag-Portugal.png' width='30'>"
-  ))+
-  xlab("")+ylab("")+
+# # plot - FIGURE 2
+# ggplot(data = d_plot_all %>%
+#          filter(lc != "Shrubland"),
+#        aes(x = lc, y = scale))+
+#   
+#   geom_point(aes(size = effect_mean_f,
+#                  color = effect_direction_c, 
+#                  fill= effect_significance,
+#                  shape = effect_na))+
+#   facet_wrap(vars(Label), ncol=6, drop=FALSE)+
+#   scale_fill_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb", "not significant" = "white"),
+#                     name = "Direction of effect",
+#                     na.value = "black", drop = FALSE)+
+#   scale_color_manual(values = c("negative" = "#fc8d59", "positive" = "#91bfdb"),
+#                     name = "Direction of effect",
+#                     na.value = "black")+
+#   scale_size_manual(values = c("marginal" = 2, "not significant" = 2, "small" = 5, "medium" = 10, "large" = 15),
+#                      name = "Effect size",
+#                     na.value =1)+
+#   scale_shape_manual(values = c("not available" = 4),
+#                      name = "Missing data",
+#                      na.value = 21)+
+#   scale_x_discrete(labels = c(
+#     "Dryland" = "<img src='figures/icon_land.png' width='30'>",
+#     "Cropland" = "<img src='figures/icon_harvest.png' width='20'>",
+#     "Grassland" = "<img src='figures/icon_grass.png' width='17'>",
+#     #"Shrubland" = "<img src='figures/icon_shrub-crop.png' width='35'>",
+#     "Woodland" = "<img src='figures/icon_forest.png' width='30'>"
+#   ))+
+#   
+#   scale_y_discrete(labels = c(
+#     "global" = "<img src='figures/icon_earth-globe-with-continents-maps.png' width='30'>",
+#     "continental" = "<img src='figures/icon_location-black.png' width='30'>",
+#     "regional" = "<img src='figures/icon_flag-Portugal.png' width='30'>"
+#   ))+
+#   xlab("")+ylab("")+
+#   theme_bw() + # use a white background
+#   
+#   guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black", "black"),
+#                                                  shape = 21, size = 5)), #tell legend to use different point shape
+#     color = "none", #don't show legend
+#     shape = guide_legend(override.aes = list(size = 5)))+
+#   theme(legend.position = "bottom", #c(0.96, -0.05),
+#         legend.justification = c(1, 0),
+#         legend.box = "horizontal",
+#         legend.direction = "vertical",
+#         legend.title = element_text(size = 15),
+#         legend.text = element_text(size = 15),
+#         axis.text.y = ggtext::element_markdown(hjust = 0),
+#         axis.ticks = element_blank(),
+#         axis.text.x = ggtext::element_markdown(vjust = 0),
+#         panel.grid = element_blank(),
+#         panel.border = element_blank(),
+#         strip.background = element_rect(fill="white", color = "white"), #chocolate4
+#         strip.text = element_text(color="black", size = 15, hjust = 0)) #white
+# ggsave(filename=paste0(here::here(), "/figures/Results_d-value_meanCI_allScales_fns.png"),
+#        plot = last_plot(), 
+#        width = 4400, height = 3800, units = "px")
+
+## Pointrange
+ggplot(data = d_plot_all %>% 
+         filter(lc != "Shrubland" & lc != "Dryland" & scale != "global") %>%
+         filter(!is.na(effect_significance)) %>%
+         mutate(Label = factor(Label, levels = rev(fns_labels$Label))) %>%
+         mutate(Label = ifelse(Group_function == "Function", as.character(Label), 
+                               ifelse(Label_short == "AM fungi R", "Fungi (AM)",
+                                      ifelse(Label_short == "EM fungi R", "Fungi (EM)",
+                                             Organism)))) %>%
+         mutate(lc_icon = ifelse(lc == "Cropland", "<img src='figures/icon_harvest.png' width='40'>",
+                                    ifelse(lc == "Grassland", "<img src='figures/icon_grass.png' width='34'>",
+                                           ifelse(lc == "Woodland", "<img src='figures/icon_forest.png' width='60'>", NA)))) %>%
+         mutate(Label = factor(Label, rev(sort(unique(Label)))),
+           Group_function = factor(Group_function, levels = rev(c("Dissimilarity", "Shannon", "Richness", "Function"))),
+           lc_icon = factor(lc_icon, levels = c("<img src='figures/icon_harvest.png' width='40'>",
+                                                           "<img src='figures/icon_grass.png' width='34'>",
+                                                           "<img src='figures/icon_forest.png' width='60'>" ))),
+       aes(y = effect_mean, x = Label))+
+
+  geom_hline(aes(yintercept=0), linetype = "dashed")+  
+  geom_pointinterval(aes(ymin = effect_ci_17, ymax = effect_ci_83),
+                     linewidth = 12) +
+  geom_pointinterval(aes(ymin = effect_ci_2.5, ymax = effect_ci_97.5,
+                         fill = effect_significance), 
+                     shape = 21, size = 10,
+                     linewidth = 6) + 
+  coord_flip()+
+  ylab("Effect size")+
+  facet_grid(Group_function ~ scale + lc_icon,
+             scales = "free",
+             axis.labels = "all_x",
+             space = "free_y")+
+  # facet_wrap2(vars(scale, lc_icon), nrow = 1, 
+  #             #strip = ggh4x::strip_nested(clip = "off"),
+  #             strip.position = "top")+
+  scale_color_manual(values=c("Cropland" = "#4A2040",
+                             "Grassland" = "#E69F00",
+                             "Shrubland" = "#0072B2", 
+                             "Woodland" = "#009E73", 
+                             "Other" = "#000000",
+                             "Dryland" = "#000000"))+
+  scale_fill_manual(values = c("positive" = "#91bfdb", "negative" = "#fc8d59",
+                               "not significant" = "white"),
+                    name = "Effect direction")+
   theme_bw() + # use a white background
-  
-  guides(fill = guide_legend(override.aes = list(color = c("#fc8d59", "#91bfdb", "black", "black"),
-                                                 shape = 21, size = 5)), #tell legend to use different point shape
-    color = "none", #don't show legend
-    shape = guide_legend(override.aes = list(size = 5)))+
-  theme(legend.position = "bottom", #c(0.96, -0.05),
-        legend.justification = c(1, 0),
-        legend.box = "horizontal",
-        legend.direction = "vertical",
-        legend.title = element_text(size = 15),
-        legend.text = element_text(size = 15),
-        axis.text.y = ggtext::element_markdown(hjust = 0),
+  theme(legend.position = "right", axis.title.y =element_blank(),
+        legend.title = element_text(size=18, color = "black"),
+        legend.text = element_text(size=18, color = "black"),
+        axis.text.y = element_text(size=18, color = "black"),  
+        axis.text.x = element_text(size=10, color = "gray80"),
         axis.ticks = element_blank(),
-        axis.text.x = ggtext::element_markdown(vjust = 0),
-        panel.grid = element_blank(),
-        panel.border = element_blank(),
-        strip.background = element_rect(fill="white", color = "white"), #chocolate4
-        strip.text = element_text(color="black", size = 15, hjust = 0)) #white
+        axis.title.x = element_text(size=18, color = "black"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(color = "gray80"),
+        rect = element_blank(),  
+        strip.background.x = element_rect(fill="white", color = NA), #chocolate4
+        strip.background.y = element_rect(fill="white", color = NA),
+        strip.placement = "outside",
+        strip.text.y = element_text(size=18, color = "black", hjust = 0),
+        strip.text.x = ggtext::element_markdown(vjust = 0)) #white
 ggsave(filename=paste0(here::here(), "/figures/Results_d-value_meanCI_allScales_fns.png"),
-       plot = last_plot(), 
-       width = 4400, height = 3800, units = "px")
+       plot = last_plot(),
+       dpi = 300,
+       width=16, height=10)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #### Summarizing stats ####
