@@ -45,6 +45,8 @@ clean_cont <- read_csv(here::here("intermediates", "Data_clean_continental.csv")
 clean_regi <- read_csv(here::here("intermediates", "Data_clean_regional.csv"))
 ```
 
+Note: The effect of protection status and types on soil biodiversity and functioning was also tested at global scale but datasets available were not suitable for full comparison. Dataset used for global comparison is described in [Appendix 4](#appendix-4-effect-of-protection-at-global-scale). Results at global scale are shown in supplementary figures and tables but should be taken with caution. 
+
 ## Appendix 1: Sampling protocols
 
 ```{r table_protocols, echo=FALSE, warning=FALSE, message=FALSE}
@@ -421,7 +423,27 @@ knitr::include_graphics(here::here("figures", "Results_slope_parsBayesian_region
 
 ```
 
-## Appendix 4: Sensitivity analysis for global bacterial data
+## Appendix 4: Effect of protection at global scale
+
+To analyze the effect of protection status and types on soil biodiversity and functioning, data were retrieved from an updated version of the dataset presented in [@maestre2015; @maestre2022a; @maestre2022b]. The dataset includes 551 locations collected in drylands across six continents, which are defined as “areas with an aridity index (precipitation divided by potential evapotranspiration) <0.65” [@maestre2022a; @maestre2022b]. In the updated version of the dataset, 18 sites were added to the already published sampling sites from the BIOCOM [@maestre2015] and BIODESERT project [@maestre2022a; @maestre2022b]. Sampling collection and analysis follow protocols previously described [@maestre2015; @maestre2022a; @maestre2022b]. To our knowledge, this is the best available dataset at time that covers one type of ecosystem very well to compare soil biodiversity globally. The limitation to one biome type, namely drylands, allows for meaningful comparisons of similar ecosystems. The dataset contained 248 sites with complete biodiversity data of all taxonomic groups investigated, but 330 sites with complete bacterial diversity data. We therefore decided to run two analyses for bacteria: one with all 330 sites and one with only 248 sites. Results for the complete bacterial diversity data can be found in [Appendix 4.2](#appendix-4-2-sensitivity-analysis-for-global-bacterial-data).
+
+Bioinformatics and data analysis follow methodology described in the main text. Number of sites to be paired was set to the minimum number of protected sites across habitat types per dataset, namely 39 protected sites for global drylands. Spatial distance between two samples was not limited. Habitat type was not considered in random-slope and random-intercept models. Final sampling sites considered in the effect size analysis were 131 at global scale (Dryland protected=39 | unprotected=92).
+
+### Appendix 4.1: Results of global-scale analysis
+
+Results of the analysis of protection status at global scale were presented in the figures and tables above. Here, a visualization of the effect size estimates is added.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#| label: Figure 4.1
+#| fig-cap: "Appendix Figure 4.1: Effect size estimates for soil biodiversity and functioning attributes averaged across 1000 randomized pairings in global drylands. Effect size magnitudes were calculated as Cohen’s D. Statistically non-significant effect sizes are defined as 95% confidence intervals (CI) crossing 0. Number of samples was 39 for global scale for each habitat type and attribute."
+
+knitr::include_graphics(here::here("figures", "Results_d-value_medianCI_global.png"))
+
+```
+
+
+
+### Appendix 4.2: Sensitivity analysis for global bacterial data
 
 ```{r load_bact, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -435,14 +457,14 @@ clean_d_glob <- read_csv(paste0(here::here(), "/results/Locations_global.csv"))
 At global scale, the dataset from [@maestre2015; @maestre2022a; @maestre2022b] contained `r nrow(clean_bact)` sites with complete bacteria diversity data (hereafter bacteria-complete) but only `r nrow(clean_glob)` sites with complete biodiversity data of all taxonomic groups investigated (hereafter all-complete). We therefore decided to run two analyses for bacteria: one with all `r nrow(clean_bact)` sites and one with only `r nrow(clean_glob)` sites. We did not keep the sites with missing data in the complete dataset (`r nrow(clean_glob)` sites), as we wanted to simplify the coding steps by first sub-setting the data (i.e. complete rows only) and then building the pairs for further analysis. This way, we were also comparing the same sites for different biodiversity and functioning attributes measures instead of having results from different pairs for each measure.
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-#| label: Figure 4.1
-#| fig-cap: "Appendix Figure 4.1: Locations of sampling sites investigated in the effect size estimation (top), and random intercept and random slope model (bottom) compared between the all-complete (left) and bacteria-complete dataset (right). Numbers in the boxes represent the number of sites per spatial scale and protection status respectively. Icons: “Globe” created by Freepik - Flaticon."
+#| label: Figure 4.2
+#| fig-cap: "Appendix Figure 4.2: Locations of sampling sites investigated in the effect size estimation (top), and random intercept and random slope model (bottom) compared between the all-complete (left) and bacteria-complete dataset (right). Numbers in the boxes represent the number of sites per spatial scale and protection status respectively. Icons: “Globe” created by Freepik - Flaticon."
 
 knitr::include_graphics(here::here("docs", "Appendix_maps_globalBacteria.png"))
 
 ```
 
-Similarly to the main analysis, we excluded sites with pairing possibilities below 10 at global scale. We limited the number of sites that should be paired to the minimum number of protected sites from the all-complete dataset for better comparability, that is 39 at global scale. Final sampling sites considered in the effect size analysis were `r nrow(clean_d_bact)` for the bacteria-complete dataset (protected=`r table(clean_d_bact$PA)[2]` \| unprotected=`r table(clean_d_bact$PA)[1]`) and `r nrow(clean_d_glob)` for the all-complete dataset (`r table(clean_d_glob$PA)[2]` \| `r table(clean_d_glob$PA)[1]`). In the random-intercept and random-slope model, final sampling sites considered were `r nrow(clean_bact)` for the bacteria-complete dataset (protected=`r table(clean_bact$PA)[2]` \| unprotected=`r table(clean_bact$PA)[1]`) and `r nrow(clean_glob)` for the all-complete dataset (`r table(clean_glob$PA)[2]` \| `r table(clean_glob$PA)[1]`). Remarkable changes in the geographical distribution of sampling sites used in the effect size analysis are added sites that are missing in the all-complete dataset around the Mediterranean Sea, in Australia, and in North and South America (Appendix Figure 4.1). Note that sites are different in the effect size estimation map because of the different possible set of pairs. Regarding protected area categories, the bacteria-complete dataset contained 2 sites in category Ib and VI each as well as 1 site in category Ia, among others; category Ib and VI were not present in the all-complete dataset. Results of the random-slope model have therefore to be compared with caution, as trends may result from the addition of levels in the independent variable.
+Similarly to the main analysis, we excluded sites with pairing possibilities below 10 at global scale. We limited the number of sites that should be paired to the minimum number of protected sites from the all-complete dataset for better comparability, that is 39 at global scale. Final sampling sites considered in the effect size analysis were `r nrow(clean_d_bact)` for the bacteria-complete dataset (protected=`r table(clean_d_bact$PA)[2]` \| unprotected=`r table(clean_d_bact$PA)[1]`) and `r nrow(clean_d_glob)` for the all-complete dataset (`r table(clean_d_glob$PA)[2]` \| `r table(clean_d_glob$PA)[1]`). In the random-intercept and random-slope model, final sampling sites considered were `r nrow(clean_bact)` for the bacteria-complete dataset (protected=`r table(clean_bact$PA)[2]` \| unprotected=`r table(clean_bact$PA)[1]`) and `r nrow(clean_glob)` for the all-complete dataset (`r table(clean_glob$PA)[2]` \| `r table(clean_glob$PA)[1]`). Remarkable changes in the geographical distribution of sampling sites used in the effect size analysis are added sites that are missing in the all-complete dataset around the Mediterranean Sea, in Australia, and in North and South America (Appendix Figure 4.2). Note that sites are different in the effect size estimation map because of the different possible set of pairs. Regarding protected area categories, the bacteria-complete dataset contained 2 sites in category Ib and VI each as well as 1 site in category Ia, among others; category Ib and VI were not present in the all-complete dataset. Results of the random-slope model have therefore to be compared with caution, as trends may result from the addition of levels in the independent variable.
 
 When comparing the raw values of soil biodiversity and functioning attributes of the all-complete with the bacteria-complete dataset, the bacteria-complete dataset showed overall similar distribution but some more outliers (Appendix Figure 4.3).
 
@@ -508,7 +530,7 @@ ggplot() +
         legend.position = "none", legend.text = element_text(size=15), axis.text.y = element_text(size=15))
 ```
 
-### Effect sizes
+#### Effect sizes
 
 During randomized pairing, protected sites were more repeatedly used in the all-complete rather than in the bacteria-complete dataset, which can partly be explained by the lower number of total sites investigated of the all-complete dataset. On average, each protected and unprotected site of the bacteria-complete dataset was used in 812 (SD=12, min=782, max=837) and 429 (SD=299, min=1, max=821) of the 1000 randomized pairings, respectively. In comparison, for the all-complete dataset, all 39 protected sites were used in all of the 1000 randomized pairings, and unprotected sites were used 424 times on average in the 1000 randomized pairings (SD=366, min=1, max=979). Note that the sample size and therefore number of protected areas per pairing was set to the minimum number of protected areas across habitat types, that is 39 in the case of the global dataset.
 
@@ -540,7 +562,7 @@ knitr::kable(d_value_bactGlob,
 
 ```{r plot_bact_d_pointrange, echo=FALSE, warning=FALSE, message=FALSE}
 #| fig-cap:
-#|   - "Appendix Figure 4.2: Effect size estimates averaged over 1,000 randomizations for all-complete (red) and bacteria-complete (blue) global dataset. Thick and thin bars indicate 66 % and 95 % confidence intervals. Points represent median effect sizes. Absolute effect sizes are regarded as small (>0.2), medium (>0.5) and large (>0.8) indicated by vertical lines."
+#|   - "Appendix Figure 4.4: Effect size estimates averaged over 1,000 randomizations for all-complete (red) and bacteria-complete (blue) global dataset. Thick and thin bars indicate 66 % and 95 % confidence intervals. Points represent median effect sizes. Absolute effect sizes are regarded as small (>0.2), medium (>0.5) and large (>0.8) indicated by vertical lines."
  
 ggplot(data = d_value_bactGlob %>% 
          mutate(Label=factor(Label, levels = rev(fns_labels$Label))), 
@@ -579,11 +601,11 @@ ggplot(data = d_value_bactGlob %>%
 
 ```
 
-In contrast to the patterns from the all-complete dataset, we found a positive effect of protection on bacterial richness and Shannon index in the bacteria-complete dataset, while effect size for dissimilarity was not significantly different from 0 (Appendix Table 4.1, Appendix Figure 4.2); the all-complete dataset showed the exact opposite pattern with less diverse and similar bacteria communities in protected areas. Higher richness and Shannon index in protected areas in the bacteria-complete dataset are also exactly opposite to the pattern we found at regional scale, indicating again that effects are not consistent across scales. However, we still found the mixed pattern of the effect of protection status on soil biodiversity, here specifically for bacteria, with no consistent direction but being positive and negative for different diversity aspects (i.e. richness, Shannon index, dissimilarity).
+In contrast to the patterns from the all-complete dataset, we found a positive effect of protection on bacterial richness and Shannon index in the bacteria-complete dataset, while effect size for dissimilarity was not significantly different from 0 (Appendix Table 4.1, Appendix Figure 4.4); the all-complete dataset showed the exact opposite pattern with less diverse and similar bacteria communities in protected areas. Higher richness and Shannon index in protected areas in the bacteria-complete dataset are also exactly opposite to the pattern we found at regional scale, indicating again that effects are not consistent across scales. However, we still found the mixed pattern of the effect of protection status on soil biodiversity, here specifically for bacteria, with no consistent direction but being positive and negative for different diversity aspects (i.e. richness, Shannon index, dissimilarity).
 
-### Random-intercept model
+#### Random-intercept model
 
-Random-intercept models did not differ for the bacteria-complete and all-complete dataset regarding those protected area categories that are present in both (Appendix Table 4.2; Appendix Figure 4.4). For the categories being only present in the bacteria-complete dataset, we found similarly low bacterial richness and Shannon index as well as similarly high dissimilarity for protected sites of category Ib and VI; both align most with richness trends for protected sites of category V and otherwise did not differ from attribute values in other IUCN categories.
+Random-intercept models did not differ for the bacteria-complete and all-complete dataset regarding those protected area categories that are present in both (Appendix Table 4.2; Appendix Figure 4.5). For the categories being only present in the bacteria-complete dataset, we found similarly low bacterial richness and Shannon index as well as similarly high dissimilarity for protected sites of category Ib and VI; both align most with richness trends for protected sites of category V and otherwise did not differ from attribute values in other IUCN categories.
 
 ```{r table_intercepts_bact, echo=FALSE, warning=FALSE, message=FALSE}
 intercepts_bacteria <- read_csv(here::here("results", "sensitivity_globalBacteria", "PAtypes_Bayesian_global_emmeans.csv"))
@@ -614,13 +636,13 @@ knitr::kable(intercepts_bacteria,
 
 ```
 
-### Random-slope model
+#### Random-slope model
 
-Using the bacteria-complete dataset resulted in similar patterns for all slope estimates of bacterial diversity (Appendix Figure 4.4; Appendix Table 4.3). We found no significant slope estimates for bacterial richness, Shannon index, and dissimilarity, similar to the all-complete dataset.
+Using the bacteria-complete dataset resulted in similar patterns for all slope estimates of bacterial diversity (Appendix Figure 4.5; Appendix Table 4.3). We found no significant slope estimates for bacterial richness, Shannon index, and dissimilarity, similar to the all-complete dataset.
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-#| label: Figure 4.4
-#| fig-cap: "Appendix Figure 4.2: Global comparison of soil biodiversity and functioning attributes in differently protected (Ia-VI) and unprotected drylands. Results for the all-complete (left) and bacteria-complete dataset (right) from the random-intercept (left panels, pointrange plot) and random-slope model (right panels, line plot). Pointrange plots: Results from the random-intercept model. Bars represent 66% and 95% quantile (percentage) intervals, vertical bars indicate medians of the estimated group means. Dark gray rectangles in plot background represent unprotected sites, light gray areas represent sites that are protected but cannot be grouped into one of the 7 IUCN protection categories (Ia, Ib, II, III, IV, V, VI). Line plots: Results from the random-slope model. Gray shades represent highest posterior density intervals (HPDI) with probability being 50%, 80% and 95%, respectively. Colored lines indicate medians of the estimated group means for each habitat type. Protection level 1 to 10 represent IUCN categories \"Not Applicable\",  \"Not Assigned\", \"Not Reported\", VI, V, IV, III, II, Ib and Ia. Soil biodiversity and functioning attributes (y-axis) were not scaled."
+#| label: Figure 4.5
+#| fig-cap: "Appendix Figure 4.5: Global comparison of soil biodiversity and functioning attributes in differently protected (Ia-VI) and unprotected drylands. Results for the all-complete (left) and bacteria-complete dataset (right) from the random-intercept (left panels, pointrange plot) and random-slope model (right panels, line plot). Pointrange plots: Results from the random-intercept model. Bars represent 66% and 95% quantile (percentage) intervals, vertical bars indicate medians of the estimated group means. Dark gray rectangles in plot background represent unprotected sites, light gray areas represent sites that are protected but cannot be grouped into one of the 7 IUCN protection categories (Ia, Ib, II, III, IV, V, VI). Line plots: Results from the random-slope model. Gray shades represent highest posterior density intervals (HPDI) with probability being 50%, 80% and 95%, respectively. Colored lines indicate medians of the estimated group means for each habitat type. Protection level 1 to 10 represent IUCN categories \"Not Applicable\",  \"Not Assigned\", \"Not Reported\", VI, V, IV, III, II, Ib and Ia. Soil biodiversity and functioning attributes (y-axis) were not scaled."
 
 knitr::include_graphics(here::here("docs", "Appendix_bayesian_globalBacteria.png"))
 
