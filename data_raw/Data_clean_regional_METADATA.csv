@@ -6,13 +6,13 @@ Longitude,The x-coordinate (longitude) of the sample site. Coordinate system WGS
 Elevation,"Data from WorldClim v 2.1 (Fick, Hijmans, 2017), extracted using terra::extract (Hijmans et al., 2022)",numeric,m,Environmental similarity,-
 AnnualPrec,"Annual precipitation from CHELSA v 2.1 (Karger et al., 2020), extracted using terra::extract (Hijmans et al., 2022)",numeric,mm,Environmental similarity,-
 AnnualTemp,"Annual mean temperature from CHELSA v 2.1 (Karger et al., 2020), extracted using terra::extract (Hijmans et al., 2022)",numeric,degree Celsius,Environmental similarity,-
-Soil_pH,"Soil pH of dried samples in water (Carvalho et al., 2025, Duarte et al., 2024)",numeric,-,Environmental similarity,-
-Soil_salinity,"Electrical conductivity measured in fresh soils (Carvalho et al., 2025, Duarte et al., 2024)",numeric,µS / cm,Environmental similarity,-
-Soil_texture,"Clay+silt content (Carvalho et al., 2025, Duarte et al., 2024)",percent,%,Environmental similarity,-
-Soil_carbon_service,"Soil organic matter content (Carvalho et al., 2025, Duarte et al., 2024)",numeric,percent,Soil function,-
-OM_decomposition_service,"Standardized soil microbial basal respiration (Carvalho et al., 2025, Duarte et al., 2024)",numeric,-,Soil function,-
-Soil_stability_service,"Standardized water-stable aggregates (Carvalho et al., 2025, Duarte et al., 2024)",numeric,-,Soil function,-
-Nutrient_service,"Average of standardized content of phosphorus, potassium, calcium and magnesium in soil (Carvalho et al., 2025, Duarte et al., 2024)",numeric,-,Soil function,-
+Soil_pH,"Soil pH of dried samples in water estimated potentiometrically in a soil-to-water suspension, maintaining a ratio of 1 part soil to 2.5 parts water (by mass/volume)(Carvalho et al., 2025, Duarte et al., 2024)",numeric,-,Environmental similarity,-
+Soil_salinity,Electrical conductivity measured in fresh soils (Guerra et al. 2022),numeric,µS / cm,Environmental similarity,-
+Soil_texture,"Clay+silt content determined based on particle-size distribution, silt (0.02 > Ø > 0.002 mm) and clay (Ø < 0.002 mm), as recommended by the International Union of Soil Science (Atterberg Scale) (Carvalho et al., 2025, Duarte et al., 2024)",percent,%,Environmental similarity,-
+Soil_carbon_service,"Soil organic matter content determined by digestion with sodium dichromate and ultraviolet/visible molecular absorption spectrophotometry (Nelson and Sommers 1996; FAO 2020) (Carvalho et al., 2025, Duarte et al., 2024)",numeric,percent,Soil function,-
+OM_decomposition_service,Standardized soil microbial basal respiration (Guerra et al. 2022),numeric,-,Soil function,-
+Soil_stability_service,Standardized water-stable aggregates (Guerra et al. 2022),numeric,-,Soil function,-
+Nutrient_service,"Average of standardized content of phosphorus, potassium, calcium and magnesium in soil (Carvalho et al., 2025, Duarte et al., 2024). Extractable phosphorus and potassium were determined by the modified Egner-Riehm method (Egner et al., 1960), extracted from a solution of ammonium lactate and acetic acid measured using colorimetry and flame photometry, respectively. Extractable calcium and magnesium were quantified by atomic absorption spectrophotometry in ammonium acetate (Póvoas and Barral 1992).",numeric,-,Soil function,-
 Pathogen_control,Inverse proportion of soil-borne potential fungal plant pathogens,numeric,-,Soil function,-
 Bac_richness,Number of bacterial zOTUs,numeric,Number of zOTUs,Soil biodiversity attribute,-
 Fungi_richness,Number of fungal zOTUs,numeric,Number of zOTUs,Soil biodiversity attribute,-

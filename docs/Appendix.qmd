@@ -1,7 +1,7 @@
 ---
 title: "Cons across scales - Appendix"
 format: 
-  html:
+  docx:
     toc: true
 editor: visual
 engine: knitr
@@ -45,7 +45,7 @@ clean_cont <- read_csv(here::here("intermediates", "Data_clean_continental.csv")
 clean_regi <- read_csv(here::here("intermediates", "Data_clean_regional.csv"))
 ```
 
-Note: The effect of protection status and types on soil biodiversity and functioning was also tested at global scale but datasets available were not suitable for full comparison. Dataset used for global comparison is described in [Appendix 4](#appendix-4-effect-of-protection-at-global-scale). Results at global scale are shown in supplementary figures and tables but should be taken with caution. 
+Note: The effect of protection status and types on soil biodiversity and functioning was also tested at global scale but datasets available were not suitable for full comparison. Dataset used for global comparison is described in [Appendix 4](#appendix-4-effect-of-protection-at-global-scale). Results at global scale are shown in supplementary figures and tables but should be taken with caution.
 
 ## Appendix 1: Sampling protocols
 
@@ -423,11 +423,11 @@ knitr::include_graphics(here::here("figures", "Results_slope_parsBayesian_region
 
 ```
 
-## Appendix 4: Effect of protection at global scale
+## Appendix 4: Effect of protection at global scale {#appendix-4-effect-of-protection-at-global-scale}
 
-To analyze the effect of protection status and types on soil biodiversity and functioning, data were retrieved from an updated version of the dataset presented in [@maestre2015; @maestre2022a; @maestre2022b]. The dataset includes 551 locations collected in drylands across six continents, which are defined as “areas with an aridity index (precipitation divided by potential evapotranspiration) <0.65” [@maestre2022a; @maestre2022b]. In the updated version of the dataset, 18 sites were added to the already published sampling sites from the BIOCOM [@maestre2015] and BIODESERT project [@maestre2022a; @maestre2022b]. Sampling collection and analysis follow protocols previously described [@maestre2015; @maestre2022a; @maestre2022b]. To our knowledge, this is the best available dataset at time that covers one type of ecosystem very well to compare soil biodiversity globally. The limitation to one biome type, namely drylands, allows for meaningful comparisons of similar ecosystems. The dataset contained 248 sites with complete biodiversity data of all taxonomic groups investigated, but 330 sites with complete bacterial diversity data. We therefore decided to run two analyses for bacteria: one with all 330 sites and one with only 248 sites. Results for the complete bacterial diversity data can be found in [Appendix 4.2](#appendix-4-2-sensitivity-analysis-for-global-bacterial-data).
+To analyze the effect of protection status and types on soil biodiversity and functioning, data were retrieved from an updated version of the dataset presented in [@maestre2015; @maestre2022a; @maestre2022b]. The dataset includes 551 locations collected in drylands across six continents, which are defined as “areas with an aridity index (precipitation divided by potential evapotranspiration) \<0.65” [@maestre2022a; @maestre2022b]. In the updated version of the dataset, 18 sites were added to the already published sampling sites from the BIOCOM [@maestre2015] and BIODESERT project [@maestre2022a; @maestre2022b]. Sampling collection and analysis follow protocols previously described [@maestre2015; @maestre2022a; @maestre2022b]. To our knowledge, this is the best available dataset at time that covers one type of ecosystem very well to compare soil biodiversity globally. The limitation to one biome type, namely drylands, allows for meaningful comparisons of similar ecosystems. The dataset contained 248 sites with complete biodiversity data of all taxonomic groups investigated, but 330 sites with complete bacterial diversity data. We therefore decided to run two analyses for bacteria: one with all 330 sites and one with only 248 sites. Results for the complete bacterial diversity data can be found in [Appendix 4.2](#appendix-4-2-sensitivity-analysis-for-global-bacterial-data).
 
-Bioinformatics and data analysis follow methodology described in the main text. Number of sites to be paired was set to the minimum number of protected sites across habitat types per dataset, namely 39 protected sites for global drylands. Spatial distance between two samples was not limited. Habitat type was not considered in random-slope and random-intercept models. Final sampling sites considered in the effect size analysis were 131 at global scale (Dryland protected=39 | unprotected=92).
+Bioinformatics and data analysis follow methodology described in the main text. Number of sites to be paired was set to the minimum number of protected sites across habitat types per dataset, namely 39 protected sites for global drylands. Spatial distance between two samples was not limited. Habitat type was not considered in random-slope and random-intercept models. Final sampling sites considered in the effect size analysis were 131 at global scale (Dryland protected=39 \| unprotected=92).
 
 ### Appendix 4.1: Results of global-scale analysis
 
@@ -440,8 +440,6 @@ Results of the analysis of protection status at global scale were presented in t
 knitr::include_graphics(here::here("figures", "Results_d-value_medianCI_global.png"))
 
 ```
-
-
 
 ### Appendix 4.2: Sensitivity analysis for global bacterial data
 
