@@ -373,7 +373,7 @@ ggplot(data = d_plot_all %>%
                                                            "<img src='figures/icon_grass.png' width='34'>",
                                                            "<img src='figures/icon_forest.png' width='60'>" ))),
        aes(y = effect_mean, x = Label))+
-
+  
   geom_hline(aes(yintercept=0), linetype = "dashed")+  
   geom_pointinterval(aes(ymin = effect_ci_17, ymax = effect_ci_83),
                      linewidth = 12) +

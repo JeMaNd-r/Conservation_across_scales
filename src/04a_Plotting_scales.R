@@ -21,8 +21,8 @@ library(maps) #for mapping data locations
 library(mapproj) # for mapping data locations
 
 #temp_scale <- "global"
-temp_scale <- "continental"
-#temp_scale <- "regional"
+#temp_scale <- "continental"
+temp_scale <- "regional"
 
 # load background map
 world.inp <- map_data("world")
@@ -106,6 +106,12 @@ write_csv(data_locations, file = paste0(here::here(), "/results/Locations_", tem
 nrow(data_locations %>% filter(PA==1)) #G: 28 PAs, G-together: 39; C: 48, R: 34
 nrow(data_locations %>% filter(PA==0)) #G: 93 PAs, G-together: 92; C: 269, R: 123
 
+# extract list of sampling locations from Bayesian analysis
+data_loc_bayes <- data_clean %>%
+  filter(LC %in% lc_names)
+data_loc_bayes #G: nrow=248; C: 745, R: 270
+write_csv(data_loc_bayes, file = paste0(here::here(), "/results/Locations_PAranks_", temp_scale, ".csv"))
+
 # set limits for point maps
 if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
 if(temp_scale == "continental") temp_limits <- c(-10, 35, 35, 70)
@@ -125,6 +131,14 @@ ggplot()+
                                       fill = as.character(PA), 
                                       size = as.character(PA)),
              stroke = 2)+
+  geom_point(data=data_loc_bayes %>%
+               filter(!(SampleID %in% unique(data_locations$SampleID))), 
+             aes(x=Longitude, y=Latitude,
+                 shape = as.character(PA), 
+                 color = LC,
+                 fill = as.character(PA), 
+                 size = as.character(PA)),
+             stroke = 2,  alpha = 0.15)+
   #stroke = 1.4, color = "#000000")+ #increase circle line width; G: 2 (1.4), C+R:3
   scale_shape_manual(values = c("0" = 21, "1" = 1))+ #label = c("Protected", "Unprotected")
   scale_size_manual(values = c("0" = 2, "1" = 6))+ #G: 1.4,4.5/0.3, 1, C+R:3,8/ 0.6,2
@@ -153,13 +167,9 @@ ggsave(filename=paste0(here::here(), "/figures/Data_locations_", temp_scale,".pn
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### APPENDIX FIGURE 3.1 - Maps for random-slope model ####
-# extract list of sampling locations actually used in comparison
-data_locations <- data_clean %>%
-  filter(LC %in% lc_names)
-data_locations #G: nrow=248; C: 745, R: 270
-write_csv(data_locations, file = paste0(here::here(), "/results/Locations_PAranks_", temp_scale, ".csv"))
-nrow(data_locations %>% filter(PA==1)) #G: 42 PAs, C: 61, R: 40
-nrow(data_locations %>% filter(PA==0)) #G: 206 PAs, C: 684, R: 230
+data_loc_bayes <- read_csv(file = paste0(here::here(), "/results/Locations_PAranks_", temp_scale, ".csv"))
+nrow(data_loc_bayes %>% filter(PA==1)) #G: 42 PAs, C: 61, R: 40
+nrow(data_loc_bayes %>% filter(PA==0)) #G: 206 PAs, C: 684, R: 230
 
 # set limits for point maps
 if(temp_scale == "global") temp_limits <- c(-180, 180, -180, 180)
@@ -174,7 +184,7 @@ ggplot()+
   xlim(temp_limits[1], temp_limits[2])+
   ylim(temp_limits[3], temp_limits[4])+
   
-  geom_point(data=data_locations, aes(x=Longitude, y=Latitude, 
+  geom_point(data=data_loc_bayes, aes(x=Longitude, y=Latitude, 
                                       shape = as.character(PA), color=LC, 
                                       size = as.character(PA)),
              stroke = 2)+ #increase circle line width; G+C: 2; R:3
