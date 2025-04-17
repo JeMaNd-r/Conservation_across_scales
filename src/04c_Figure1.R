@@ -1,3 +1,4 @@
+library(tidyverse)
 library(patchwork)
 library(ggtext)
 
@@ -276,30 +277,84 @@ data_locations_all <- data_locations_all %>%
   mutate(scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_location-black.png' width='30'>",
                                                     "<img src='figures/icon_flag-Portugal.png' width='30'>" )))
 
+data_loc_bayes_all <- data_loc_bayes_regi %>%
+  dplyr::select(SampleID, LC, Latitude, Longitude, PA) %>%
+  mutate(scale = "regional") %>%
+  rbind(data_loc_bayes_cont %>%
+          dplyr::select(SampleID, LC, Latitude, Longitude, PA) %>%
+          mutate(scale = "continental"))
+
+data_loc_bayes_all <- data_loc_bayes_all %>%
+  mutate(LC_f = as.factor(LC)) %>%
+  mutate(LC_f = factor(LC_f, levels = c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland"))) %>%
+  mutate(scale = factor(scale, levels = c("continental", "regional"))) %>%
+  mutate(scale_icon = ifelse(scale == "regional", "<img src='figures/icon_flag-Portugal.png' width='30'>",
+                             ifelse(scale == "continental", "<img src='figures/icon_location-black.png' width='30'>", NA))) %>%
+  mutate(scale_icon = factor(scale_icon, levels = c("<img src='figures/icon_location-black.png' width='30'>",
+                                                    "<img src='figures/icon_flag-Portugal.png' width='30'>" )))
+
 # plot
 p_bar <- ggplot()+
   xlab("")+
   ylab("Number of sampling sites")+
+  # geom_bar(data = data_loc_bayes_all, 
+  #          aes(x = LC_f, color = LC_f), fill = "white", #fill = LC_f, 
+  #          position = "dodge",
+  #          alpha = 0.2,
+  #          linewidth = 0.6,
+  #          just = 0,
+  #          linetype = "longdash",
+  #          width = 0.5,
+  #          na.rm=TRUE)+
+  # geom_bar(data = data_loc_bayes_all %>%
+  #            filter(PA == 0) %>%
+  #            mutate(scale = factor(scale, levels = c("regional", "continental"))), 
+  #          aes(x = LC_f, fill = LC_f, color = LC_f), #fill = "white", 
+  #          position = "dodge",
+  #          linewidth = 0.6,
+  #          linetype = "longdash",
+  #          just = 0,
+  #          alpha = 0.2,
+  #          width = 0.4,
+  #          na.rm=TRUE)+
   geom_bar(data = data_locations_all, 
-           aes(x = LC_f, fill = LC_f, alpha = "Unprotected"),
+         aes(x = LC_f, color = LC_f),fill = "white", 
+         position = "dodge",
+         linewidth = 1,
+         width = 0.8,
+         na.rm=TRUE)+
+  geom_bar(data = data_locations_all, 
+           aes(x = LC_f, fill = LC_f, color = LC_f,
+               alpha = "Protected"), #fill = "white", 
            position = "dodge",
+           linewidth = 1,
+           width = 0.8,
            na.rm=TRUE)+
+  geom_bar(data = data_locations_all %>%
+             filter(PA == 0) %>%
+             mutate(scale = factor(scale, levels = c("regional", "continental"))), 
+           aes(x = LC_f, color = LC_f, fill = LC_f,
+               alpha = "Unprotected"), #fill = "white", 
+           position = "dodge",
+           linewidth = 1,
+           width = 0.8,
+           na.rm=TRUE)+
+  
   scale_fill_manual(values = c("Cropland" = "#4A2040",
                                "Grassland" = "#E69F00",
                                "Shrubland" = "#0072B2", 
                                "Woodland" = "#009E73", 
                                "Other" = "#000000",
-                               "Dryland" = "#000000"))+ 
-  
-  geom_bar(data = data_locations_all %>%
-             filter(PA == 1) %>%
-             mutate(scale = factor(scale, levels = c("regional", "continental"))), 
-           aes(x = LC_f, alpha = "Protected"), fill = "white", 
-           position = "dodge",
-           na.rm=TRUE)+
+                               "Dryland" = "#000000"))+
+  scale_color_manual(values = c("Cropland" = "#4A2040",
+                               "Grassland" = "#E69F00",
+                               "Shrubland" = "#0072B2", 
+                               "Woodland" = "#009E73", 
+                               "Other" = "#000000",
+                               "Dryland" = "#000000"))+
   
   geom_text(data = subset(data_locations_all, scale_icon == "<img src='figures/icon_location-black.png' width='30'>"),
-           x = 1, y = 55,
+           x = 1, y = 40,
            hjust = 0.5,
            label = c("Cropland"),
            angle = 90,
@@ -307,7 +362,7 @@ p_bar <- ggplot()+
            size = 6,
            inherit.aes = FALSE)+
   geom_text(data = subset(data_locations_all, scale_icon == "<img src='figures/icon_location-black.png' width='30'>"),
-            x = 2, y = 55,
+            x = 2, y = 40,
             hjust = 0.5,
             label = c("Grassland"),
             angle = 90,
@@ -315,7 +370,7 @@ p_bar <- ggplot()+
             size = 6,
             inherit.aes = FALSE)+
   geom_text(data = subset(data_locations_all, scale_icon == "<img src='figures/icon_location-black.png' width='30'>"),
-            x = 3, y = 55,
+            x = 3, y = 40,
             hjust = 0.5,
             label = c("Woodland"),
             angle = 90,
@@ -323,8 +378,23 @@ p_bar <- ggplot()+
             size = 6,
             inherit.aes = FALSE)+
   
+  geom_point(data = subset(data_locations_all, scale_icon == "<img src='figures/icon_location-black.png' width='30'>"),
+             x = 3.35, y = 96.5,
+             shape = 21,
+             stroke = 2,
+             color = "black",
+             fill = "white",
+             size = 3,
+             inherit.aes = FALSE)+
+  geom_point(data = subset(data_locations_all, scale_icon == "<img src='figures/icon_location-black.png' width='30'>"),
+             x = 3.35, y = 114.5,
+             shape = 1,
+             stroke = 2,
+             color = "black",
+             size = 6,
+             inherit.aes = FALSE)+
   geom_point(data = subset(data_locations_all, scale_icon == "<img src='figures/icon_flag-Portugal.png' width='30'>"),
-             x = 3.4, y = 38,
+             x = 3.35, y = 49,
              shape = 21,
              stroke = 2,
              color = "black",
@@ -332,14 +402,14 @@ p_bar <- ggplot()+
              size = 3,
              inherit.aes = FALSE)+
   geom_point(data = subset(data_locations_all, scale_icon == "<img src='figures/icon_flag-Portugal.png' width='30'>"),
-             x = 3.4, y = 6.5,
+             x = 3.35, y = 61.5,
              shape = 1,
              stroke = 2,
              color = "black",
              size = 6,
              inherit.aes = FALSE)+
   
-  scale_alpha_manual(values = c("Protected" = 0.5, "Unprotected" = 1))+
+  scale_alpha_manual(values = c("Protected" = 0.1, "Unprotected" = 1))+
   guides(alpha = guide_legend(override.aes = list(fill = "black",
                                                   alpha = c(0.1, 1))))+
   scale_x_discrete(expand = c(0,0.7),
@@ -351,8 +421,10 @@ p_bar <- ggplot()+
                          #"Shrubland" = "<img src='figures/icon_shrub-crop.png' width='35'>",
                          "Woodland" = "<img src='figures/icon_forest.png' width='30'>"
                        ))+
-  scale_y_continuous(expand = c(0,0), limits = c(0, 120))+
-  facet_grid(cols = vars(scale_icon), drop = TRUE, scales = "free_x", space = "free_x")+
+  #scale_y_continuous(expand = c(0,0), limits = c(0, 333))+
+  facet_grid(cols = vars(scale_icon), drop = TRUE, 
+             scales = "free_y", 
+             space = "free_y")+
   theme_bw()+
   theme(panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_line(color = "grey80"),
@@ -365,7 +437,6 @@ p_bar <- ggplot()+
         panel.spacing = unit(1, "cm"),
         axis.text.y = element_text(size = 15, vjust = 0.5),
         axis.title.y = element_text(size = 15),
-        #axis.text.x = element_blank(),
         axis.text.x = ggtext::element_markdown(vjust = 0))
 p_bar
 
