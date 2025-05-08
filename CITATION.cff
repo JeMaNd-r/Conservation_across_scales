@@ -1,0 +1,54 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: Zeiss 
+  given-names: Romy
+  orcid: https://orcid.org/0000-0001-8862-9185
+- family-names: Delgado-Baquerizo 
+  given-names: Manuel
+  orcid: https://orcid.org/
+- family-names: Singavarapu 
+  given-names: Bala
+  orcid: https://orcid.org/
+- family-names: Eisenhauer 
+  given-names: Nico
+  orcid: https://orcid.org/
+- family-names: Cano-Díaz 
+  given-names: Concha
+  orcid: https://orcid.org/
+- family-names: Calderón-Sanou 
+  given-names: Irene
+  orcid: https://orcid.org/
+- family-names: Carvalho 
+  given-names: Rui P. 
+  orcid: https://orcid.org/
+- family-names: Costa 
+  given-names: Sofia R.
+  orcid: https://orcid.org/
+- family-names: Duarte 
+  given-names: A. Carolina
+  orcid: https://orcid.org/
+- family-names: Fernandes 
+  given-names: Paulo
+  orcid: https://orcid.org/
+- family-names: Jones 
+  given-names: Arwyn
+  orcid: https://orcid.org/
+- family-names: Küsel 
+  given-names: Kirsten
+  orcid: https://orcid.org/
+- family-names: Mendes 
+  given-names: Susana
+  orcid: https://orcid.org/
+- family-names: Orgiazzi 
+  given-names: Alberto
+  orcid: https://orcid.org/
+- family-names: Singh 
+  given-names: Brajesh K.
+  orcid: https://orcid.org/
+- family-names: Guerra 
+  given-names: Carlos A.
+  orcid: https://orcid.org/ 
+title:JeMaNd-r/Conservation_across_scales: Publication
+version: v1.0
+date-released: 2025-05-08
