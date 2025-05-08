@@ -1,6 +1,6 @@
 ﻿Column name,Description,Data type,Unit of measurement,Role in analysis,Notes
 SampleID,"Unique sample identifier as in BIOCOM and BIODESERT data (Maestre et al. 2015, 2022a, 2022b)",character,-,-,-
-LC,"Land cover defined as one of Cropland, Grassland, Shrubland*, Woodland, Others*; classification described in Zeiss et al. (2022a, 2022b) and others (Orgiazzi et al. 2018, 2022; Fernandez-Ugalde et al. 2022)",character,-,Habitat type,-
+LC,"Land cover defined as one of Cropland, Grassland, Shrubland*, Woodland, Others*; classification described in Zeiss et al. (2022) and others (Orgiazzi et al. 2018, 2022; Fernandez-Ugalde et al. 2022)",character,-,Habitat type,-
 Latitude,The y-coordinate (latitude) of the sample site. Coordinate system WGS 1984 (EPSG: 4326).,numeric,decimal degrees,Environmental similarity,-
 Longitude,The x-coordinate (longitude) of the sample site. Coordinate system WGS 1984 (EPSG: 4326).,numeric,decimal degrees,Environmental similarity,-
 Elevation,"Data from WorldClim v 2.1 (Fick, Hijmans, 2017), extracted using terra::extract (Hijmans et al., 2022)",numeric,m,Environmental similarity,-
@@ -10,9 +10,9 @@ Soil_pH,Soil pH was measured in a 1:5 (V/V) suspension of dry soil in water acco
 Soil_salinity,"Electrical conductivity of dried samples was measured according to ISO 11265:1994 (metal electrodes in aqueous extract of soil) (Hiederer, 2018).",numeric,µS / cm,Environmental similarity,-
 Soil_texture,"Clay+silt content was measured according to ISO 11277:1998 and ISO 13320:2009 (laser diffraction) (Hiederer, 2018).",percent,%,Environmental similarity,-
 Soil_carbon_service,"Soil organic carbon content (Orgiazzi et al. 2018, 2022; Fernandez-Ugalde et al. 2022)",numeric,percent,Soil function,-
-OM_decomposition_service,"Average of standardized activity of N-Acetylglucosaminidase and soil microbial basal respiration (Guerra et al., 2021; Zeiss et al. 2022b; Fernandez-Ugalde et al. 2022)",numeric,-,Soil function,-
+OM_decomposition_service,"Average of standardized activity of N-Acetylglucosaminidase and soil microbial basal respiration (Guerra et al., 2021; Zeiss et al. 2022; Fernandez-Ugalde et al. 2022)",numeric,-,Soil function,-
 Water_regulation_service,"Standardized water-stable aggregates (Carvalho et al., 2025, Duarte et al., 2024)",numeric,-,Soil function,-
-Soil_stability_service,Average of standardized mean weight diameter and water-stable aggregates (Zeiss et al. 2022b),numeric,-,Soil function,-
+Soil_stability_service,Average of standardized mean weight diameter and water-stable aggregates (Zeiss et al. 2022),numeric,-,Soil function,-
 Nutrient_service,"Average of standardized content of nitrogen, phosphorus and potassium in soil. Phosphorus was estimated according to ISO 11263:1994 (spectrometric determination of P soluble in sodium hydrogen CaCO3 solution). Total nitrogen  was estimated according to ISO 11261:1995 (modified Kjeldahl method). Extractable potassium  was estimated according to USDA−NRCS (2004) by atomic absorption spectrometry after extraction with NH4 OAc (Hiederer, 2018).",,,,-
 Pathogen_control,Inverse proportion of soil-borne potential fungal plant pathogens,numeric,-,Soil function,-
 Bac_richness,Number of bacterial zOTUs,numeric,Number of zOTUs,Soil biodiversity attribute,-
