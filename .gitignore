@@ -89,3 +89,9 @@ data_raw/Data_Maestre_14_10_2015.xlsx
 data_raw/Main_Data_code
 data_raw/Global_Biodesert_15122021_coordinates.xlsx
 
+# add data (because they are stored in Data repository)
+results/
+figures/
+data_raw/Data_clean_*
+
+
