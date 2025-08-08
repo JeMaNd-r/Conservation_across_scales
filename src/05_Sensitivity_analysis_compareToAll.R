@@ -17,6 +17,7 @@ library(here)
 library(tidyverse)
 library(terra)
 library(psych)
+library(ggdist) #to plot distributions
 
 #### Function to check for pairing ####
 # same as function in 00_Functions.R, except for 2 changes:
@@ -586,7 +587,7 @@ for(temp_scale in c("continental", "regional", "global")){
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Pairing without any Mahalanobis selection #### 
-# Note that with Mahalnobis threshold == Inf, only few unprotected sites are "used" for pairing
+# Note that with Mahalnobis threshold == Inf as above, only few unprotected sites are "used" for pairing
 
 #temp_scale <- "continental"
 for(temp_scale in c("continental", "regional", "global")){  
@@ -624,8 +625,168 @@ for(temp_scale in c("continental", "regional", "global")){
   }
   
   #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  ## Loop over radius thresholds ####
+  ### Loop over radius thresholds ####
+  #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  ### Calculate d values & count number of significances ####
+
+  for(radius_thres in radius_thres_vect){
+      
+      # load data as above
+      data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+      data_clean
+      
+      data_clean <- data_clean %>% filter(LC %in% lc_names)
+      
+      data_clean <- f_scale_vars(data = data_clean, vars = mahal_vars)
+    
+      pa_pairs <- data.frame()
+      
+      if(temp_scale == "continental"){
+        # calculate geographical distance
+        nonpa <- data_clean[data_clean$PA==0,c("SampleID", "LC", "PA", mahal_vars)]
+        pa <- data_clean[data_clean$PA==1,c("SampleID", "LC", "PA", mahal_vars)]
+        
+        temp_dist <- terra::distance(terra::vect(pa %>% dplyr::select(Longitude, Latitude), 
+                                                 geom=c("Longitude", "Latitude"), 
+                                                 crs = "+proj=longlat +datum=WGS84"),
+                                     terra::vect(nonpa %>% dplyr::select(Longitude, Latitude), 
+                                                 geom=c("Longitude", "Latitude"), 
+                                                 crs = "+proj=longlat +datum=WGS84"),
+                                     unit = "m") %>%
+          as_tibble()
+        colnames(temp_dist) <- nonpa$SampleID
+        temp_dist <- temp_dist %>% mutate(ID = pa$SampleID) %>% dplyr::select(ID, everything())
+        temp_dist
+        
+        # extract nonPA with distance <= radius_thres
+        list_dist <- lapply(1:nrow(temp_dist), function(i){
+          colnames(temp_dist[,-1])[temp_dist[i, -1] <= radius_thres]
+        })
+        names(list_dist) <- temp_dist$ID
+        
+        # save for later
+        save(list_dist, file = paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale, "/Geographically_close_sites_r", radius_thres, "-m", mahal_thres, ".RData"))
+        
+        load(paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale, "/Geographically_close_sites_r", radius_thres, "-m", mahal_thres, ".RData")) #list_dist
+        
+        # check number of sites remaining (e.g. min_size)
+        do.call(rbind, lapply(list_dist, length)) %>% sort() #2 lower than min_size=10 (840 and 368), may be more when considering LC types
+      }
+      
+      times = 0
+      times.with.error = 0
+      set.seed(1)
+      
+      repeat {
+        times <- times+1; if(times > number_times) {break} #stop loop if reached 1000 trails
+        times.with.error <- times.with.error + 1
+        
+        stop_loop <- FALSE #to stop loop if needed (see further below)        
+        
+        print(times)
+        
+        for(lc in lc_names){
+          temp_pairs <- data_clean %>%
+            filter(PA == 1) %>%
+            dplyr::select(SampleID, LC) %>%
+            filter(LC == lc) %>%
+            rename("ID" = SampleID) %>%
+            mutate(nonPA = NA)
+          
+          temp_PA <- data_clean %>% filter(PA == 1) %>% 
+            filter(LC == lc) %>%
+            pull(SampleID)
+          
+          for(k in temp_PA){
+            
+            # if continental data, remove nonPA with geographical distance >radius_thres
+            temp_nonPA <- data_clean %>% filter(PA == 0) %>% 
+              filter(LC == lc) %>%
+              pull(SampleID)
+            
+            # remove sites that are already used
+            temp_nonPA <- temp_nonPA[!(temp_nonPA %in% temp_pairs$nonPA)]
+          
+            if(temp_scale == "continental"){
+              temp_nonPA <- temp_nonPA[temp_nonPA %in% as.numeric(list_dist[[as.character(k)]])]
+            }
+            
+            try(temp_pairs[temp_pairs$ID==k,]$nonPA <- temp_nonPA %>% f_resample(1))
+          } 
+          
+          # do run again if there is an error (i.e. if no nonPA site with distance lower than threshold)
+          if(sum(!is.na(temp_pairs$nonPA)) < length(temp_pairs$ID)) {
+            times <- times-1
+            print("Not enough PA sites paired.")
+            
+            if(times < -1){ # if running into negative numbers with times
+              print("No pairing possible. Try decreasing min_size, radius_thresh or col_lc (data grouping).")
+              if(exists("pairing_possible")){ # relevant for sensitivity analysis of distance threshold
+                # add information to output list
+                pairing_possible <- c(pairing_possible, list(cbind("radius_thres" = radius_thres, 
+                                                                   "min_size" = min_size,
+                                                                   "sites_lower_min_nonPA" = sum(is.na(temp_pairs$nonPA)),
+                                                                   "pairing_possible" = 0)))
+              }
+              stop_loop <- TRUE
+              break() #stop looping into negative numbers
+            }
+            
+          } else {
+            
+            temp_pairs <- temp_pairs %>% 
+              mutate(mahal.min = 1,
+                     times.with.error = 0,
+                     times = times,
+                     n = 0) %>%
+              dplyr::select(ID, nonPA, mahal.min, LC, everything())
+            pa_pairs <- rbind(pa_pairs, temp_pairs)
+          }
+        }
+      }
+        if(stop_loop) break()
+      }
+      
+      # load PA-nonPA pairs
+      write_csv(pa_pairs, file=here::here("results", "sensitivity_compareToAll", temp_scale, paste0("Pairs_paNonpa_1000trails_r", radius_thres, "-m", mahal_thres,  ".csv")))
+      head(pa_pairs)
+      
+      # subset sites that were actually paired
+      data_locations <- data_clean %>% 
+        filter(SampleID %in% unique(pa_pairs$ID) | 
+                 SampleID %in% unique(pa_pairs$nonPA)) %>%
+        dplyr::select(Longitude,Latitude,SampleID, PA, LC)
+      data_locations 
+      
+      write_csv(data_locations, file = paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale ,"/Locations_r", radius_thres, "-m", mahal_thres,  ".csv"))
+}
+}
+
+for(temp_scale in c("continental", "regional", "global")){  
   
+  source(paste0(here::here(), "/src/00_Parameters.R"))
+  source(paste0(here::here(), "/src/00_Functions.R"))
+  rm(mahal_thres, radius_thres)
+  mahal_thres <- "NA"
+  
+  # define combinations to be tested
+  radius_thres_vect <- c(500000, Inf)
+  
+  if(temp_scale == "global"){
+    lc_names <- "Dryland" #lc_names[lc_names != "Other" & lc_names != "Cropland"]
+    #min_size <- 39 # number of samples/ sites that should be paired per LC type = min. number of PA per LC
+  } 
+  if(temp_scale == "continental"){
+    lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
+    #min_size <- 14 # number of samples/ sites that should be paired per LC type
+    fns <- fns[fns != "Water_regulation_service"]
+  }
+  if(temp_scale == "regional"){
+    lc_names <- lc_names[lc_names != "Other" & lc_names != "Shrubland" & lc_names != "Dryland"]
+    #min_size <- 7 # number of samples/ sites that should be paired per LC type
+    fns <- fns[fns != "Water_regulation_service"]
+  }
+    
   pairing_possible <- list()
   
   for(radius_thres in radius_thres_vect){
@@ -641,12 +802,9 @@ for(temp_scale in c("continental", "regional", "global")){
     arrange(radius_thres, mahal_thres)
   
   #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  ## Numbers ####
+  ### Numbers ####
   
   pairing_possible
-  
-  #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  ## Calculate d values & count number of significances ####
   
   pairing_possible$n_pa <- NA
   pairing_possible$n_nonpa <- NA
@@ -656,118 +814,79 @@ for(temp_scale in c("continental", "regional", "global")){
   pairing_possible$n_d_sign_neg <- NA
   
   for(radius_thres in radius_thres_vect){
-
-      # load data as above
-      data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
-      data_clean
-      
-      data_clean <- data_clean %>% filter(LC %in% lc_names)
-      
-      data_clean <- f_scale_vars(data = data_clean, vars = mahal_vars)
+    # load data as above
+    data_clean <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+    data_clean
     
-      pa_pairs <- data.frame()
-      temp_pairs$nonPA <- NA
-      
-      for(times in 1:number_times){
-        print(times)
-        for(lc in lc_names){
-          temp_pairs <- data_clean %>%
-            filter(PA == 1) %>%
-            dplyr::select(SampleID, LC) %>%
-            filter(LC == lc) %>%
-            rename("ID" = SampleID)
+    data_clean <- data_clean %>% filter(LC %in% lc_names)
+    
+    data_clean <- f_scale_vars(data = data_clean, vars = mahal_vars)
+    
+    # location (i.e. sites actually used in pairing)
+    data_locations <- read_csv(file = paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale ,"/Locations_r", radius_thres, "-m", mahal_thres,  ".csv"))
   
-          # if continental data, remove nonPA with geographical distance >radius_thres
-          temp_nonPA <- data_clean %>% filter(PA == 0) %>% 
-            filter(LC == lc) %>%
-            pull(SampleID)
-          
-          if(temp_scale == "continental"){
-            temp_nonPA <- temp_nonPA[!(temp_nonPA %in% unlist(list_dist[temp_PA$SampleID]))]
-          }
-          
-          temp_pairs$nonPA <- temp_nonPA %>% f_resample(nrow(temp_pairs), replace = FALSE)
-          
-          temp_pairs <- temp_pairs %>% 
-            mutate(mahal.min = 1,
-                   times.with.error = 0,
-                   times = times,
-                   n = 0) %>%
-            dplyr::select(ID, nonPA, mahal.min, LC, everything())
-          pa_pairs <- rbind(pa_pairs, temp_pairs)
-        }
-      }
+    # save number of sites
+    pairing_possible[pairing_possible$radius_thres==radius_thres & pairing_possible$mahal_thres==mahal_thres,]$n_pa <- nrow(data_locations %>% filter(PA==1)) #G: 28 PAs, G-together: 39; C: 48, R: 36
+    pairing_possible[pairing_possible$radius_thres==radius_thres & pairing_possible$mahal_thres==mahal_thres,]$n_nonpa <- nrow(data_locations %>% filter(PA==0)) #G: 93 PAs, G-together: 92; C: 269, R: 125
+    
+    # load pairs
+    pa_pairs <- read_csv(file=here::here("results", "sensitivity_compareToAll", temp_scale, paste0("Pairs_paNonpa_1000trails_r", radius_thres, "-m", mahal_thres,  ".csv")))
+    
+    # using Cohen's D
+    try({
+      d_list <- f_compare_pa_nonpa(data = data_clean,
+                                   data_pairs = pa_pairs,
+                                   col_id = "SampleID",
+                                   col_fns = fns)
+      head(d_list)
       
-      # load PA-nonPA pairs
-      write_csv(pa_pairs, file=here::here("results", "sensitivity_compareToAll", temp_scale, paste0("Pairs_paNonpa_1000trails_r", radius_thres, "-m", mahal_thres,  ".csv")))
-      head(pa_pairs)
+      # save total df with effect sizes 
+      save(d_list,  file=paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale, "/d_1000_trails_r", radius_thres, "-m", mahal_thres,  ".RData"))
       
-      # subset sites that were actually paired
-      data_locations <- data_clean %>% 
-        filter(SampleID %in% unique(pa_pairs$ID) | 
-                 SampleID %in% unique(pa_pairs$nonPA)) %>%
-        dplyr::select(Longitude,Latitude,SampleID, PA, LC)
-      data_locations 
+      # summarize
+      d_df <- do.call(rbind, d_list)
+      str(d_df)
       
-      write_csv(data_locations, file = paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale ,"/Locations_r", radius_thres, "-m", mahal_thres,  ".csv"))
-      pairing_possible[pairing_possible$radius_thres==radius_thres & pairing_possible$mahal_thres==mahal_thres,]$n_pa <- nrow(data_locations %>% filter(PA==1)) #G: 28 PAs, G-together: 39; C: 48, R: 36
-      pairing_possible[pairing_possible$radius_thres==radius_thres & pairing_possible$mahal_thres==mahal_thres,]$n_nonpa <- nrow(data_locations %>% filter(PA==0)) #G: 93 PAs, G-together: 92; C: 269, R: 125
+      d_df <- d_df %>% full_join(fns_labels, by=c("fns"="Function")) %>%
+        mutate("Label" = factor(Label, levels = rev(fns_labels$Label)),
+               "Organism" = factor(Organism, levels = unique(fns_labels$Organism)))
       
-      # using Cohen's D
-      try({
-        d_list <- f_compare_pa_nonpa(data = data_clean,
-                                     data_pairs = pa_pairs,
-                                     col_id = "SampleID",
-                                     col_fns = fns)
-        head(d_list)
-        
-        # save total df with effect sizes 
-        save(d_list,  file=paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale, "/d_1000_trails_r", radius_thres, "-m", mahal_thres,  ".RData"))
-        
-        # summarize
-        d_df <- do.call(rbind, d_list)
-        str(d_df)
-        
-        d_df <- d_df %>% full_join(fns_labels, by=c("fns"="Function")) %>%
-          mutate("Label" = factor(Label, levels = rev(fns_labels$Label)),
-                 "Organism" = factor(Organism, levels = unique(fns_labels$Organism)))
-        
-        # save data for plot
-        write.csv(d_df, file=paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale, "/Data_d-value_r", radius_thres, "-m", mahal_thres,  ".csv"), row.names = FALSE)
-        
-        d_df <- read_csv(file=paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale, "/Data_d-value_r", radius_thres, "-m", mahal_thres,  ".csv"))
-        
-        d_summary <- d_df %>% 
-          dplyr::select(-run) %>%
-          #pivot_longer(cols = c(p_value, ci_lower, ci_upper, t_stats),
-          #             names_to = "metric") %>%
-          group_by(lc, fns, Label, Group_function, Organism) %>%
-          summarize(across(effect, .fns = list("mean"=mean, "SD"=sd, "median"=median,
-                                               "ci_2.5" = function(x) quantile(x, 0.05, na.rm=TRUE), 
-                                               "ci_17" = function(x) quantile(x, 0.17, na.rm=TRUE), 
-                                               "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
-                                               "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE))))
-        d_summary
-        write.csv(d_summary, file=paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale, "/Results_d-value_summary_r", radius_thres, "-m", mahal_thres,  ".csv"), row.names = FALSE)
-        
-        # significance
-        d_summary <- d_summary %>%
-          mutate(effect_direction = as.factor(sign(effect_mean)))%>%
-          mutate(effect_direction_c = ifelse(effect_direction=="-1", "negative",
-                                             ifelse(effect_direction=="1", "positive", "0"))) %>%
-          mutate(effect_significance = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "not significant", effect_direction_c),
-                 effect_na = ifelse(is.na(effect_mean), "not available", NA)) %>%
-          mutate(effect_significance = factor(effect_significance, levels = c("negative", "positive", "not significant")))
-        
-        # add to summary table
-        pairing_possible[pairing_possible$radius_thres==radius_thres & pairing_possible$mahal_thres==mahal_thres,]$n_d_sign <- d_summary %>% 
-          filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% nrow()
-        pairing_possible[pairing_possible$radius_thres==radius_thres & pairing_possible$mahal_thres==mahal_thres,]$n_d_sign_pos <- d_summary %>% 
-          filter(effect_significance=="positive" & !is.na(effect_significance)) %>% nrow()
-        pairing_possible[pairing_possible$radius_thres==radius_thres & pairing_possible$mahal_thres==mahal_thres,]$n_d_sign_neg <- d_summary %>% 
-          filter(effect_significance=="negative" & !is.na(effect_significance)) %>% nrow()
-      })
-    }
+      # save data for plot
+      write.csv(d_df, file=paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale, "/Data_d-value_r", radius_thres, "-m", mahal_thres,  ".csv"), row.names = FALSE)
+      
+      d_df <- read_csv(file=paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale, "/Data_d-value_r", radius_thres, "-m", mahal_thres,  ".csv"))
+      
+      d_summary <- d_df %>% 
+        dplyr::select(-run) %>%
+        #pivot_longer(cols = c(p_value, ci_lower, ci_upper, t_stats),
+        #             names_to = "metric") %>%
+        group_by(lc, fns, Label, Group_function, Organism) %>%
+        summarize(across(effect, .fns = list("mean"=mean, "SD"=sd, "median"=median,
+                                             "ci_2.5" = function(x) quantile(x, 0.05, na.rm=TRUE), 
+                                             "ci_17" = function(x) quantile(x, 0.17, na.rm=TRUE), 
+                                             "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
+                                             "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE))))
+      d_summary
+      write.csv(d_summary, file=paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale, "/Results_d-value_summary_r", radius_thres, "-m", mahal_thres,  ".csv"), row.names = FALSE)
+      
+      # significance
+      d_summary <- d_summary %>%
+        mutate(effect_direction = as.factor(sign(effect_mean)))%>%
+        mutate(effect_direction_c = ifelse(effect_direction=="-1", "negative",
+                                           ifelse(effect_direction=="1", "positive", "0"))) %>%
+        mutate(effect_significance = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "not significant", effect_direction_c),
+               effect_na = ifelse(is.na(effect_mean), "not available", NA)) %>%
+        mutate(effect_significance = factor(effect_significance, levels = c("negative", "positive", "not significant")))
+      
+      # add to summary table
+      pairing_possible[pairing_possible$radius_thres==radius_thres & pairing_possible$mahal_thres==mahal_thres,]$n_d_sign <- d_summary %>% 
+        filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% nrow()
+      pairing_possible[pairing_possible$radius_thres==radius_thres & pairing_possible$mahal_thres==mahal_thres,]$n_d_sign_pos <- d_summary %>% 
+        filter(effect_significance=="positive" & !is.na(effect_significance)) %>% nrow()
+      pairing_possible[pairing_possible$radius_thres==radius_thres & pairing_possible$mahal_thres==mahal_thres,]$n_d_sign_neg <- d_summary %>% 
+        filter(effect_significance=="negative" & !is.na(effect_significance)) %>% nrow()
+    })
+  }
   
   pairing_possible
   
@@ -775,7 +894,7 @@ for(temp_scale in c("continental", "regional", "global")){
   
   
   #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  ## mean distance of pairs & all samples #### 
+  ### mean distance of pairs & all samples #### 
   
   # nonpa <- data_clean[data_clean$PA==0,c("SampleID", "LC", "PA", mahal_vars)]
   # pa <- data_clean[data_clean$PA==1,c("SampleID", "LC", "PA", mahal_vars)]
@@ -791,7 +910,7 @@ for(temp_scale in c("continental", "regional", "global")){
   
   
   #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  ## check differences in significances #### 
+  ### check differences in significances #### 
   
   d_all <- list()
   
@@ -871,3 +990,194 @@ write_csv(d_all %>%
                    "Number of significant negative effect sizes"=n_d_sign_neg,
             ),
           paste0(here::here(), "/results/sensitivity_compareToAll/Summary_allRadius_all.csv"))
+
+# number of sites per LC
+data_locations_all <- data.frame()
+
+for(temp_scale in c("global", "continental", "regional")){
+  source(paste0(here::here(), "/src/00_Parameters.R"))
+  source(paste0(here::here(), "/src/00_Functions.R"))
+  rm(mahal_thres, radius_thres)
+  
+  mahal_thres_vect <- c(qchisq(.975, df=length(mahal_vars)), qchisq(1, df=length(mahal_vars))) #17.53455, Inf
+  radius_thres_vect <- c(500000, Inf)
+  
+  for(radius_thres in radius_thres_vect){
+    for(mahal_thres in mahal_thres_vect){ try({
+      print(mahal_thres)
+      temp_data <- read_csv(paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale, "/Data_paired_r", radius_thres, "-m", mahal_thres, ".csv"))
+      pa_pairs <- read_csv(paste0(here::here(), "/results/sensitivity_compareToAll/", temp_scale, "/Pairs_paNonpa_1000trails_r", radius_thres, "-m", mahal_thres, ".csv"))
+      
+      temp_data <- temp_data %>% 
+        dplyr::filter(SampleID %in% unique(pa_pairs$ID) | 
+                        SampleID %in% unique(pa_pairs$nonPA)) %>%
+        dplyr::select(Longitude, Latitude, SampleID, PA, PA_type, LC)
+      
+      temp_data$scale <- temp_scale
+      temp_data$mahal_thres <- mahal_thres
+      temp_data$radius_thres <- radius_thres
+      
+      data_locations_all <- rbind(data_locations_all, temp_data)
+    })}}
+}
+
+data_locations_all <- data_locations_all %>% 
+  group_by(scale, mahal_thres, radius_thres, LC, PA) %>% 
+  count()
+data_locations_all
+
+write_csv(data_locations_all, 
+          paste0(here::here(), "/results/sensitivity_compareToAll/Data_habitats_allScales.csv"))
+
+
+### FIGURE 2 & APPENDIX TABLE 2.2 - Heatmap of effect sizes ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# mean per lc type and all 3 scales
+d_sum_glob <- read.csv(file=paste0(here::here(), "/results/sensitivity_compareToAll/global/Results_d-value_summary_rInf-mInf.csv"))
+d_sum_cont <- read.csv(file=paste0(here::here(), "/results/sensitivity_compareToAll/continental/Results_d-value_summary_rInf-mInf.csv"))
+d_sum_regi <- read.csv(file=paste0(here::here(), "/results/sensitivity_compareToAll/regional/Results_d-value_summary_rInf-mInf.csv"))
+
+# define each land cover type
+lc_names_all <- c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland", "Other")
+
+# define order of functions
+labels_order <- c(
+  "Decomposition (OM)", "Nutrient cycling", "Pathogen control", "Soil carbon", "Soil stability", "Water regulation",
+  "Bacterial Richness", "Fungal Richness", "Invertebrate Richness", "Protist Richness",
+  "AM fungi Richness", "EM fungi Richness",
+  "Bacterial Shannon", "Fungal Shannon", "Invertebrate Shannon", "Protist Shannon",
+  "Nematode Richness", "Decomposer Richness",
+  "Bacterial Dissimilarity", "Fungal Dissimilarity", "Invertebrate Dissimilarity", "Protist Dissimilarity"
+)
+
+
+d_sum_all <- rbind(d_sum_glob %>% mutate("scale" = "global"), 
+                   d_sum_cont %>% mutate("scale" = "continental")) %>%
+  rbind(d_sum_regi %>% mutate("scale" = "regional"))  %>%
+  as_tibble()
+rm(d_sum_glob, d_sum_cont, d_sum_regi)
+
+d_sum_all %>% ungroup() %>% group_by(lc) %>% 
+  summarize(across(c(effect_median, effect_ci_2.5:effect_ci_97.5), 
+                   function(x) mean(x)))
+d_sum_all %>% ungroup() %>% group_by(lc) %>% 
+  summarize(across(c(effect_median), 
+                   list(mean=function(x) mean(abs(x)),
+                        sd=function(x) sd(abs(x)))))
+
+# mean per Group_function
+d_sum_all %>% ungroup() %>% 
+  mutate("Supergroup_function" = ifelse(Group_function == "Function", "Functioning", "Diversity")) %>%
+  group_by(Supergroup_function) %>%
+  summarize(across(c(effect_median), 
+                   list(mean=function(x) mean(abs(x), na.rm=TRUE),
+                        sd=function(x) sd(abs(x), na.rm=TRUE))))
+
+## switch lc and scales
+d_plot_all <- d_sum_all %>%
+  filter(lc %in% lc_names_all) %>%
+  dplyr::select(-Label) %>%
+  right_join(fns_labels %>% dplyr::select(Label, Label_short, Function), 
+             by = c("fns" = "Function")) %>%
+  mutate(effect_mean_f = cut(abs(effect_mean),
+                             breaks=c(0, 0.2, 0.5, 0.8, Inf),
+                             labels=c("marginal", "small", "medium", "large"))) %>%
+  filter(!is.na(effect_mean)) %>% #!is.na(effect_ci_min66) & 
+  full_join(expand.grid(scale = c("global", "continental", "regional"), 
+                        lc = lc_names_all, 
+                        Label = fns_labels$Label)) %>%
+  mutate(scale = factor(scale, levels = rev(c("global", "continental", "regional"))),
+         Label = factor(Label, levels = rev(fns_labels %>% arrange(Group_function, Label) %>% pull(Label))),
+         lc = factor(lc, levels = c("Dryland", "Cropland", "Grassland", "Shrubland", "Woodland"))) %>%
+  filter(lc != "Other" & !is.na(Label)) %>% 
+  mutate(effect_direction = as.factor(sign(effect_mean)))%>%
+  mutate(effect_direction_c = ifelse(effect_direction=="-1", "negative",
+                                     ifelse(effect_direction=="1", "positive", "0"))) %>%
+  mutate(Label = factor(Label, levels = labels_order)) %>%
+  mutate(effect_significance = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "not significant", effect_direction_c),
+         effect_na = ifelse(is.na(effect_mean), "not available", NA)) %>%
+  mutate(effect_significance = factor(effect_significance, levels = c("negative", "positive", "not significant")))
+
+# save table - APPENDIX TABLE 2.2
+write_csv(d_plot_all %>% 
+            dplyr::select(Group_function, Label, scale, lc, effect_mean:effect_ci_97.5, effect_significance) %>%
+            arrange(Group_function, Label, scale, lc) %>%
+            mutate(effect_significance = ifelse(effect_significance=="not significant", "", "*")) %>%
+            mutate("Habitat" = lc,
+                   "Group" = Group_function,
+                   "Slope [HPD]" = paste0(round(effect_mean, 3), 
+                                          " [", round(effect_ci_2.5, 3), "; ", round(effect_ci_97.5, 3), "] ", effect_significance),
+                   "Variable" = Label,
+                   "Scale_long" = factor(scale, levels = c("global", "continental", "regional")))  %>%
+            mutate("Scale" = factor(substr(scale, 1, 4), levels = c("glob", "cont", "regi"))) %>%
+            dplyr::select(Group, Variable, Scale, Habitat, "Slope [HPD]") %>%
+            pivot_wider(names_from = "Habitat", values_from = "Slope [HPD]") %>%
+            arrange(Group, Variable, Scale) %>%
+            filter(!is.na(Group)),
+          paste0(here::here(), "/results/sensitivity_compareToAll/Results_d-value_meanCI_allScales_fns.csv"))
+
+## Pointrange
+ggplot(data = d_plot_all %>% 
+         filter(lc != "Shrubland" & lc != "Dryland" & scale != "global") %>%
+         filter(!is.na(effect_significance)) %>%
+         mutate(Label = factor(Label, levels = rev(fns_labels$Label))) %>%
+         mutate(Label = ifelse(Group_function == "Function", as.character(Label), 
+                               ifelse(Label_short == "AM fungi R", "Fungi (AM)",
+                                      ifelse(Label_short == "EM fungi R", "Fungi (EM)",
+                                             Organism)))) %>%
+         mutate(lc_icon = ifelse(lc == "Cropland", "<img src='figures/icon_harvest.png' width='40'>",
+                                 ifelse(lc == "Grassland", "<img src='figures/icon_grass.png' width='34'>",
+                                        ifelse(lc == "Woodland", "<img src='figures/icon_forest.png' width='60'>", NA)))) %>%
+         mutate(Label = factor(Label, rev(sort(unique(Label)))),
+                Group_function = factor(Group_function, levels = rev(c("Dissimilarity", "Shannon", "Richness", "Function"))),
+                lc_icon = factor(lc_icon, levels = c("<img src='figures/icon_harvest.png' width='40'>",
+                                                     "<img src='figures/icon_grass.png' width='34'>",
+                                                     "<img src='figures/icon_forest.png' width='60'>" ))),
+       aes(y = effect_mean, x = Label))+
+  
+  geom_hline(aes(yintercept=0), linetype = "dashed")+  
+  geom_pointinterval(aes(ymin = effect_ci_17, ymax = effect_ci_83),
+                     linewidth = 12) +
+  geom_pointinterval(aes(ymin = effect_ci_2.5, ymax = effect_ci_97.5,
+                         fill = effect_significance), 
+                     shape = 21, size = 10,
+                     linewidth = 6) + 
+  coord_flip()+
+  ylab("Effect size")+
+  facet_grid(Group_function ~ scale + lc_icon,
+             scales = "free",
+             axis.labels = "all_x",
+             space = "free_y")+
+  # facet_wrap2(vars(scale, lc_icon), nrow = 1, 
+  #             #strip = ggh4x::strip_nested(clip = "off"),
+  #             strip.position = "top")+
+  scale_color_manual(values=c("Cropland" = "#4A2040",
+                              "Grassland" = "#E69F00",
+                              "Shrubland" = "#0072B2", 
+                              "Woodland" = "#009E73", 
+                              "Other" = "#000000",
+                              "Dryland" = "#000000"))+
+  scale_fill_manual(values = c("positive" = "#91bfdb", "negative" = "#fc8d59",
+                               "not significant" = "white"),
+                    name = "Effect direction")+
+  theme_bw() + # use a white background
+  theme(legend.position = "right", axis.title.y =element_blank(),
+        legend.title = element_text(size=18, color = "black"),
+        legend.text = element_text(size=18, color = "black"),
+        axis.text.y = element_text(size=18, color = "black"),  
+        axis.text.x = element_text(size=10, color = "gray80"),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size=18, color = "black"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(color = "gray80"),
+        rect = element_blank(),  
+        strip.background.x = element_rect(fill="white", color = NA), #chocolate4
+        strip.background.y = element_rect(fill="white", color = NA),
+        strip.placement = "outside",
+        strip.text.y = element_text(size=18, color = "black", hjust = 0),
+        strip.text.x = ggtext::element_markdown(vjust = 0)) #white
+ggsave(filename=paste0(here::here(), "/results/sensitivity_compareToAll/Results_d-value_meanCI_allScales_fns.png"),
+       plot = last_plot(),
+       dpi = 300,
+       width=16, height=10)
