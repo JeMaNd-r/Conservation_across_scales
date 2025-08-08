@@ -7,6 +7,8 @@
 #                                           #
 #- - - - - - - - - - - - - - - - - - - - - -#
 
+options(scipen = 999) # to keep numbers as they are
+
 library(here)
 library(tidyverse)
 library(terra)

@@ -27,7 +27,7 @@ mahal_vars <- c("Latitude", "Longitude", "Elevation", "AnnualPrec", "AnnualTemp"
                 #"MonthlyPrecipSum","MonthlyMeanTemp", 
                 "Soil_pH", "Soil_salinity", "Soil_texture")
 
-mahal_thres <- qchisq(.975, df=length(mahal_vars)) #21.92005
+mahal_thres <- qchisq(.975, df=length(mahal_vars)) #17.53455
 
 mahal_vars_z <- paste0(mahal_vars, ".z")
 

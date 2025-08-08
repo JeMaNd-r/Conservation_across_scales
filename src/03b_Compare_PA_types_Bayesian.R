@@ -19,7 +19,7 @@ library(loo) #for model comparison
 library(modelr)
 library(tidybayes)
 
-for(temp_scale in c("continental", "regional")){ #"global", 
+for(temp_scale in c("global")){ # ,"continental", "regional"
   source(paste0(here::here(), "/src/00_Parameters.R"))
   source(paste0(here::here(), "/src/00_Functions.R"))
   
