@@ -295,17 +295,17 @@ for(temp_scale in c("global", "continental", "regional")){
   # mean per lc type
   d_summary <- read.csv(file=paste0(here::here(), "/figures/Results_d-value_summary_", temp_scale, ".csv"))
   
-  d_summary %>% ungroup() %>% group_by(lc) %>% 
-    summarize(across(c(effect_median, effect_ci_2.5:effect_ci_97.5), 
+  d_summary %>% ungroup() %>% group_by(lc) %>%
+    summarize(across(c(effect_median, effect_ci_2.5:effect_ci_97.5),
                      function(x) mean(x)))
-  d_summary %>% ungroup() %>% group_by(lc) %>% 
-    summarize(across(c(effect_median), 
+  d_summary %>% ungroup() %>% group_by(lc) %>%
+    summarize(across(c(effect_median),
                      list(mean=function(x) mean(abs(x)),
                           sd=function(x) sd(abs(x)))))
-  
+
   # mean per Group_function
-  d_summary %>% ungroup() %>% group_by(Group_function) %>% 
-    summarize(across(c(effect_median), 
+  d_summary %>% ungroup() %>% group_by(Group_function) %>%
+    summarize(across(c(effect_median),
                      list(mean=function(x) mean(abs(x), na.rm=TRUE),
                           sd=function(x) sd(abs(x), na.rm=TRUE))))
   
@@ -339,6 +339,7 @@ d_sum_all <- rbind(d_sum_glob %>% mutate("scale" = "global"),
   as_tibble()
 rm(d_sum_glob, d_sum_cont, d_sum_regi)
 
+# post-hoc averaging... be carefull with interpretation
 d_sum_all %>% ungroup() %>% group_by(lc) %>% 
   summarize(across(c(effect_median, effect_ci_2.5:effect_ci_97.5), 
                    function(x) mean(x)))
@@ -478,10 +479,11 @@ ggplot(data = d_plot_all %>%
        aes(y = effect_mean, x = Label))+
   
   geom_hline(aes(yintercept=0), linetype = "dashed")+  
-  geom_pointinterval(aes(ymin = effect_ci_17, ymax = effect_ci_83),
+  geom_pointinterval(aes(ymin = effect_ci_17, ymax = effect_ci_83, 
+                         color = effect_significance),
                      linewidth = 12) +
   geom_pointinterval(aes(ymin = effect_ci_2.5, ymax = effect_ci_97.5,
-                         fill = effect_significance), 
+                         fill = effect_significance, color = effect_significance), 
                      shape = 21, size = 10,
                      linewidth = 6) + 
   coord_flip()+
@@ -498,11 +500,15 @@ ggplot(data = d_plot_all %>%
                              "Shrubland" = "#0072B2", 
                              "Woodland" = "#009E73", 
                              "Other" = "#000000",
-                             "Dryland" = "#000000"))+
+                             "Dryland" = "#000000",
+                             "not significant" = "grey50",
+                             "positive" = "black",
+                             "negative" = "black"))+
   scale_fill_manual(values = c("positive" = "#91bfdb", "negative" = "#fc8d59",
                                "not significant" = "white"),
                     name = "Effect direction")+
   theme_bw() + # use a white background
+  guides(fill = guide_legend(override.aes = list(color = c("black", "black","grey50"))))+
   theme(legend.position = "right", axis.title.y =element_blank(),
         legend.title = element_text(size=18, color = "black"),
         legend.text = element_text(size=18, color = "black"),
@@ -536,6 +542,94 @@ table(d_plot_all %>% filter(effect_significance!="not significant" & !is.na(effe
 table(d_plot_all %>% filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% dplyr::select(effect_direction_c))
 table(d_plot_all %>% filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% dplyr::select(effect_direction_c, Group_function))
 table(d_plot_all %>% filter(!is.na(effect_significance)) %>% dplyr::select(scale, lc))
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#### individual distributions ####
+
+d_cont <- get(load(paste0(here::here(), "/results/d_1000_trails_continental.RData"))) #d_list
+d_regi <- get(load(paste0(here::here(), "/results/d_1000_trails_regional.RData")))
+
+d_cont <- do.call(rbind, d_cont)
+d_cont$scale <- "continental"
+d_regi <- do.call(rbind, d_regi)
+d_regi$scale <- "regional"
+
+d_all <- rbind(d_cont, d_regi)
+str(d_all)
+
+d_all <- d_all %>%
+  right_join(fns_labels %>% dplyr::select(Label, Label_short, Function, Group_function, Organism), 
+             by = c("fns" = "Function"))
+
+ggplot(d_all[order(d_all$lower),] %>% filter(fns == "Soil_carbon_service") , aes(x = effect, y = run)) +
+  geom_point(alpha = 1) +
+  geom_errorbarh(aes(xmin = lower, xmax = upper), height = 0.2, alpha = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  theme_minimal() +
+  facet_grid(vars(lc, scale))+
+  coord_flip()+
+  labs(x = "Effect size", y = "Trail")
+
+p_dist <- 
+  ggplot(d_all %>%
+         mutate(Label = factor(Label, levels = rev(fns_labels$Label))) %>%
+         mutate(Label = ifelse(Group_function == "Function", as.character(Label), 
+                               ifelse(Label_short == "AM fungi R", "Fungi (AM)",
+                                      ifelse(Label_short == "EM fungi R", "Fungi (EM)",
+                                             Organism)))) %>%
+          mutate(lc_icon = ifelse(lc == "Cropland", "<img src='figures/icon_harvest.png' width='40'>",
+                               ifelse(lc == "Grassland", "<img src='figures/icon_grass.png' width='34'>",
+                                      ifelse(lc == "Woodland", "<img src='figures/icon_forest.png' width='60'>", NA)))) %>%
+         mutate(Label = factor(Label, rev(sort(unique(Label)))),
+                Group_function = factor(Group_function, levels = rev(c("Dissimilarity", "Shannon", "Richness", "Function"))),
+                lc_icon = factor(lc_icon, levels = c("<img src='figures/icon_harvest.png' width='40'>",
+                                                     "<img src='figures/icon_grass.png' width='34'>",
+                                                     "<img src='figures/icon_forest.png' width='60'>" ))) %>%
+         filter(!is.na(lc_icon)), 
+       aes(x = effect, y = Label)) +
+  geom_point(alpha = 0.02, size = 4, shape = 15) +
+  geom_linerange(aes(xmin = lower, xmax = upper), linewidth = 2, alpha = 0.01) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "black") +
+  theme_bw() +
+  #coord_flip()+
+  facet_grid(Group_function ~ scale + lc_icon,
+             scales = "free",
+             axis.labels = "all_x",
+             space = "free_y")+
+  theme(legend.position = "right", axis.title.y =element_blank(),
+        legend.title = element_text(size=18, color = "black"),
+        legend.text = element_text(size=18, color = "black"),
+        axis.text.y = element_text(size=18, color = "black"),  
+        axis.text.x = element_text(size=10, color = "gray80"),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(color = "gray80"),
+        rect = element_blank(),  
+        strip.background.x = element_rect(fill="white", color = NA), #chocolate4
+        strip.background.y = element_rect(fill="white", color = NA),
+        strip.placement = "outside",
+        strip.text.y = element_text(size=18, color = "black", hjust = 0),
+        strip.text.x = ggtext::element_markdown(vjust = 0)) #white
+ggsave(filename=paste0(here::here(), "/figures/Results_d-value_dist_allScales_fns.png"),
+       plot = p_dist,
+       dpi = 300,
+       width=16, height=10)
+
+#### individual distributions - stats ####
+
+d_all %>% filter(sign(upper)==sign(lower)) %>%
+  filter(Organism == "Bacteria") %>% count(lc, scale, Label)
+
+d_all %>% filter(sign(upper)==sign(lower)) %>%
+  filter(Organism == "Invertebrates") %>% count(lc, scale, Label)
+
+d_all %>% filter(sign(upper)==sign(lower)) %>%
+  filter(Organism == "Fungi") %>% count(lc, scale, Label)
+
+d_all %>% filter(sign(upper)==sign(lower)) %>%
+  filter(Organism == "Function") %>% count(lc, scale, Label)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### SUPPLEMENTARY FIGURE 3 - Heatmap correlation Mahalanobis & difference ####
@@ -968,6 +1062,9 @@ d_power_all %>% arrange(desc(power))
 pwr::pwr.t.test(n = 14,
            power = 0.8, # typically desired power
            sig.level = 0.05, type = "two.sample", alternative = "two.sided")
+pwr::pwr.t.test(n = 7,
+                power = 0.8, # typically desired power
+                sig.level = 0.05, type = "two.sample", alternative = "two.sided")
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1338,8 +1435,63 @@ ggsave(filename=paste0(here::here(), "/figures/Results_slope_BayesianTrends_allS
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Priors of Bayesian models ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# function to extract priors and merge in df
+f_prior_merge <- function(list_priors, scale){
+  list_priors <- lapply(list_priors, function(x){
+    y <- x$intercept[, c("prior", "class", "coef", "group")]
+    y$model <- "intercept"
+    
+    z <- x$slope[, c("prior", "class", "coef", "group")]
+    z$model <- "slope"
+    
+    return(rbind(y, z))
+  })
+  list_priors <- lapply(names(list_priors), function(x){
+    list_priors[[x]]$fns <- x
+    list_priors[[x]]$scale <- scale
+    list_priors[[x]] <- list_priors[[x]] %>%
+      dplyr::select(model, scale, fns, class, prior)
+    return(list_priors[[x]])
+  })
+  
+  list_priors <- do.call(rbind, list_priors)
+  
+  return(list_priors)
+}
 
-load(file=paste0(here::here(), "/intermediates/PAranks_Priors_", temp_scale, ".RData")) #prior_list
-load(file=paste0(here::here(), "/intermediates/PAranks_PriorsWithRandomFactor_", temp_scale, ".RData")) #prior_list
+# loop through spatial scales
+df_prior <- data.frame()
+for(temp_scale in c("continental", "regional", "global")){
+  print(temp_scale)
+  
+  prior_list_noRF <- get(load(file=paste0(here::here(), "/intermediates/PAranks_Priors_", temp_scale, ".RData"))) #prior_list
+  prior_list_noRF <- f_prior_merge(list_priors = prior_list_noRF, scale = temp_scale)
+  prior_list_noRF$random_factors <- FALSE
+  # remove flat priors
+  prior_list_noRF <- prior_list_noRF %>% filter(class %in% c("Intercept", "sd", "sigma") & prior != "")
+  
+  if(temp_scale != "global"){
+    prior_list_withRF <- get(load(file=paste0(here::here(), "/intermediates/PAranks_PriorsWithRandomFactor_", temp_scale, ".RData"))) #prior_list
+    prior_list_withRF <- f_prior_merge(list_priors = prior_list_withRF, scale = temp_scale)
+    prior_list_withRF$random_factors <- TRUE
+    prior_list_withRF <- prior_list_withRF %>% filter(class %in% c("Intercept", "sd", "sigma") & prior != "")
+  }
+  
+  df_prior <- rbind(df_prior, prior_list_noRF)
+  df_prior <- rbind(df_prior, prior_list_withRF)
+}
+df_prior
 
+df_prior %>% count(scale)
 
+df_prior <- df_prior %>%
+  group_by(scale, fns, prior, class) %>%
+  mutate(
+    rf = ifelse(random_factors, "withRF", "noRF"),
+    group = paste0(model, " -", rf)) %>%
+  summarise(model = paste(unique(group), collapse = ", ")) %>%
+  arrange(scale, fns, class)
+
+# check if sd = sigma everywhere (summary without model), if so, report together with note that sd only in withRF models
+
+write_csv(prior_df, paste0(here::here(), "/results/PA_Bayesian_priors_all.csv"))
