@@ -275,68 +275,12 @@ ggsave(filename=paste0(here::here(), "/figures/Locations_connection_", temp_scal
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### APPENDIX TABLE 2.1 - Effect size per LC type ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-d_df <- do.call(rbind, d_list)
-str(d_df)
-
-d_df <- d_df %>% full_join(fns_labels, by=c("fns"="Function")) %>%
-  mutate("Label" = factor(Label, levels = rev(fns_labels$Label)),
-         "Organism" = factor(Organism, levels = unique(fns_labels$Organism)))
-
-# save data for plot
-write.csv(d_df, file=paste0(here::here(), "/figures/Data_d-value_", temp_scale, ".csv"), row.names = FALSE)
-
-d_df <- read_csv(file=paste0(here::here(), "/figures/Data_d-value_", temp_scale, ".csv"))
-
-d_summary <- d_df %>% 
-  dplyr::select(-run) %>%
-  #pivot_longer(cols = c(p_value, ci_lower, ci_upper, t_stats),
-  #             names_to = "metric") %>%
-  group_by(lc, fns, Label, Group_function, Organism) %>%
-  summarize(across(effect, .fns = list("mean"=mean, "SD"=sd, "median"=median,
-                                       "ci_2.5" = function(x) quantile(x, 0.05, na.rm=TRUE), 
-                                       "ci_17" = function(x) quantile(x, 0.17, na.rm=TRUE), 
-                                       "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
-                                       "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE))))
-d_summary
-write.csv(d_summary, file=paste0(here::here(), "/figures/Results_d-value_summary_", temp_scale, ".csv"))
-
-# mean per lc type
-d_summary <- read.csv(file=paste0(here::here(), "/figures/Results_d-value_summary_", temp_scale, ".csv"))
-
-d_summary %>% ungroup() %>% group_by(lc) %>% 
-  summarize(across(c(effect_median, effect_ci_2.5:effect_ci_97.5), 
-                   function(x) mean(x)))
-d_summary %>% ungroup() %>% group_by(lc) %>% 
-  summarize(across(c(effect_median), 
-                   list(mean=function(x) mean(abs(x)),
-                        sd=function(x) sd(abs(x)))))
-
-# mean per Group_function
-d_summary %>% ungroup() %>% group_by(Group_function) %>% 
-  summarize(across(c(effect_median), 
-                   list(mean=function(x) mean(abs(x), na.rm=TRUE),
-                        sd=function(x) sd(abs(x), na.rm=TRUE))))
-
-# check for significant mean p-values
-#d_summary %>% arrange(p_value_mean)
-
-sink(file=paste0(here::here(), "/results/D-values_", temp_scale, ".txt"))
-cat("#################################################", sep="\n")
-cat("##  Significant d-values from global analysis  ##", sep="\n")
-cat(paste0("##  Sys.Date() ", Sys.Date(), "  ##"), sep="\n")
-cat("#################################################", sep="\n")
-print(d_summary %>% ungroup() %>%
-  filter(abs(effect_mean) >= 0.2) %>%
-  dplyr::select(lc, fns, starts_with("effect")) %>%
-    arrange(desc(abs(effect_median))),
-)
-sink()
-
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Effect sizes (Cohen's D) ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Pointrange effect size per LC type ####
+d_df <- read_csv(file=paste0(here::here(), "/figures/Data_d-value_", temp_scale, ".csv"))
 
 # with confidence intervals 
 ggplot(data = d_df %>% 

@@ -18,6 +18,7 @@ library(corrplot)
 library(magick) # to create plot from multiple pngs
 library(geosphere) # calculate spatial distance
 library(ggpubr) #plot correlation in ggplot
+library(pwr) #power tests
 
 source(paste0(here::here(), "/src/00_Parameters.R"))
 source(paste0(here::here(), "/src/00_Functions.R"))
@@ -43,19 +44,31 @@ labels_order <- c(
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Locations per habitat type ####
 data_locations_all <- data.frame()
+data_locations_Bayes <- data.frame()
 
 for(temp_scale in c("global", "continental", "regional")){
   # load locations
-  temp_data <- read_csv(file = paste0(here::here(), "/results/Locations_", temp_scale, ".csv"))
-
+  temp_data <- read_csv(paste0(here::here(), "/intermediates/Data_clean_", temp_scale, ".csv"))
+  pa_pairs <- read_csv(file=sort(list.files(here::here("intermediates", temp_scale), pattern = "Pairs_paNonpa_1000trails_", full.names = TRUE), decreasing = TRUE)[1])
+  
+  temp_subset <- temp_data %>% 
+    dplyr::filter(SampleID %in% unique(pa_pairs$ID) | 
+             SampleID %in% unique(pa_pairs$nonPA)) %>%
+    dplyr::select(Longitude,Latitude,SampleID, PA, PA_type, LC)
+  temp_data <- temp_data %>%
+    dplyr::select(Longitude,Latitude,SampleID, PA, PA_type, LC)
+  
   # add scale
-  temp_data$scale <- temp_scale 
+  temp_data$scale <- temp_scale
+  temp_subset$scale <- temp_scale 
   
   # add to full dataframe
-  data_locations_all <- rbind(data_locations_all, temp_data)  
+  data_locations_all <- rbind(data_locations_all, temp_subset)  
+  data_locations_Bayes <- rbind(data_locations_Bayes, temp_data)  
 }
 
 data_locations_all
+data_locations_Bayes
 
 data_locations_all <- data_locations_all %>%
   mutate(LC_f = as.factor(LC)) %>%
@@ -107,6 +120,31 @@ ggplot()+
 ggsave(paste0(here::here(), "/figures/Data_habitats_allScales.png"),
        width = 10, height = 5,
        plot = last_plot())
+
+# table with number of sites per PA type
+write_csv(data_locations_all %>% 
+    group_by(scale, LC, PA_type, PA) %>%
+    count() %>%
+    mutate(PA_type = factor(PA_type, levels = c("Ia", "Ib", "II", "III", "IV", "V", "VI", "Not Applicable", "Not Assigned", "Not Reported", NA))) %>%
+    pivot_wider(names_from = scale, values_from = n) %>%
+    ungroup() %>%
+    dplyr::select(LC, PA_type, regional, continental, global) %>%
+    arrange(LC, PA_type) %>%
+    rename("Habitat type" = LC, "Protection type" = PA_type),
+  paste0(here::here(), "/figures/Data_habitats_allScales.csv")
+)
+
+write_csv(data_locations_Bayes %>% 
+            group_by(scale, LC, PA_type, PA) %>%
+            count() %>%
+            mutate(PA_type = factor(PA_type, levels = c("Ia", "Ib", "II", "III", "IV", "V", "VI", "Not Applicable", "Not Assigned", "Not Reported", NA))) %>%
+            pivot_wider(names_from = scale, values_from = n) %>%
+            ungroup() %>%
+            dplyr::select(LC, PA_type, regional, continental, global) %>%
+            arrange(LC, PA_type) %>%
+            rename("Habitat type" = LC, "Protection type" = PA_type),
+          paste0(here::here(), "/figures/Data_habitats_allScales_Bayesian.csv")
+)
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -226,6 +264,68 @@ rm(pairs_glob, pairs_cont, pairs_regi, all_glob, all_cont, all_regi)
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ## Effect sizes ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+for(temp_scale in c("global", "continental", "regional")){
+  load(file=paste0(here::here(), "/results/d_1000_trails_", temp_scale, ".RData")) #d_list
+
+  d_df <- do.call(rbind, d_list)
+  str(d_df)
+  
+  d_df <- d_df %>% full_join(fns_labels, by=c("fns"="Function")) %>%
+    mutate("Label" = factor(Label, levels = rev(fns_labels$Label)),
+           "Organism" = factor(Organism, levels = unique(fns_labels$Organism)))
+  
+  # save data for plot
+  write.csv(d_df, file=paste0(here::here(), "/figures/Data_d-value_", temp_scale, ".csv"), row.names = FALSE)
+  
+  d_df <- read_csv(file=paste0(here::here(), "/figures/Data_d-value_", temp_scale, ".csv"))
+  
+  d_summary <- d_df %>% 
+    dplyr::select(-run) %>%
+    #pivot_longer(cols = c(p_value, ci_lower, ci_upper, t_stats),
+    #             names_to = "metric") %>%
+    group_by(lc, fns, Label, Group_function, Organism) %>%
+    summarize(across(effect, .fns = list("mean"=mean, "SD"=sd, "median"=median,
+                                         "ci_2.5" = function(x) quantile(x, 0.05, na.rm=TRUE), 
+                                         "ci_17" = function(x) quantile(x, 0.17, na.rm=TRUE), 
+                                         "ci_83" = function(x) quantile(x, 0.83, na.rm=TRUE), 
+                                         "ci_97.5" = function(x) quantile(x, 0.975, na.rm=TRUE))))
+  d_summary
+  write.csv(d_summary, file=paste0(here::here(), "/figures/Results_d-value_summary_", temp_scale, ".csv"))
+  
+  # mean per lc type
+  d_summary <- read.csv(file=paste0(here::here(), "/figures/Results_d-value_summary_", temp_scale, ".csv"))
+  
+  d_summary %>% ungroup() %>% group_by(lc) %>% 
+    summarize(across(c(effect_median, effect_ci_2.5:effect_ci_97.5), 
+                     function(x) mean(x)))
+  d_summary %>% ungroup() %>% group_by(lc) %>% 
+    summarize(across(c(effect_median), 
+                     list(mean=function(x) mean(abs(x)),
+                          sd=function(x) sd(abs(x)))))
+  
+  # mean per Group_function
+  d_summary %>% ungroup() %>% group_by(Group_function) %>% 
+    summarize(across(c(effect_median), 
+                     list(mean=function(x) mean(abs(x), na.rm=TRUE),
+                          sd=function(x) sd(abs(x), na.rm=TRUE))))
+  
+  # check for significant mean p-values
+  #d_summary %>% arrange(p_value_mean)
+  
+  sink(file=paste0(here::here(), "/results/D-values_", temp_scale, ".txt"))
+  cat("#################################################", sep="\n")
+  cat("##  Significant d-values from global analysis  ##", sep="\n")
+  cat(paste0("##  Sys.Date() ", Sys.Date(), "  ##"), sep="\n")
+  cat("#################################################", sep="\n")
+  print(d_summary %>% ungroup() %>%
+          filter(abs(effect_mean) >= 0.2) %>%
+          dplyr::select(lc, fns, starts_with("effect")) %>%
+          arrange(desc(abs(effect_median))),
+  )
+  sink()
+}
+
+
 ### FIGURE 2 & APPENDIX TABLE 2.2 - Heatmap of effect sizes ####
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # mean per lc type and all 3 scales
@@ -799,6 +899,76 @@ ggsave(filename=paste0(here::here(), "/figures/Results_d-value_medianCI_allScale
        width = 2700, height = 2200,
        units = "px")
 
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Power analysis for effect sizes ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Cohen's D is difference between 2 means -> t.test function for power test
+
+# sample size = number of protected areas
+sample_size <- read_csv(paste0(here::here(), "/figures/Data_habitats_allScales.csv"))
+sample_size <- sample_size %>%
+  mutate(PA = ifelse(is.na(`Protection type`), 0, 1)) %>%
+  group_by(`Habitat type`, PA) %>%
+  summarize(across(c(regional:global),  \(x) sum(x, na.rm = TRUE)))
+
+for(temp_scale in c("global", "continental", "regional")){
+  print("################################################")
+  print(temp_scale)
+  d_sum <- read_csv(file=paste0(here::here(), "/figures/Results_d-value_summary_", temp_scale, ".csv"))
+ 
+  d_sum <- d_sum %>%
+    full_join(sample_size %>% filter(PA == 1) %>%
+                pivot_longer(regional:global, names_to = "scale", values_to = "sample_size") %>%
+                filter(scale == temp_scale) %>%
+                dplyr::select(-PA, -scale),
+              by = c("lc" = "Habitat type"))
+  d_sum$power <- NA
+  
+  # power given sample size n and effect size d
+  d_sum$power <- pwr::pwr.t.test(d = d_sum$effect_median, n = d_sum$sample_size, sig.level = 0.05, type = "two.sample", alternative = "two.sided")$power
+  
+  # number of effect sizes that meet power threshold of >=0.8
+  print(sum(d_sum$power >= 0.8, na.rm=TRUE))
+  print(sum(d_sum$power >= 0.6, na.rm=TRUE))
+  
+  write_csv(d_sum, file=paste0(here::here(), "/figures/Results_d-value_summary+power_", temp_scale, ".csv"))
+}
+
+
+d_power_glob <- read_csv(paste0(here::here(), "/figures/Results_d-value_summary+power_", "global", ".csv"))
+d_power_cont <- read_csv(paste0(here::here(), "/figures/Results_d-value_summary+power_", "continental", ".csv"))
+d_power_regi <- read_csv(paste0(here::here(), "/figures/Results_d-value_summary+power_", "regional", ".csv"))
+
+d_power_all <- rbind(d_power_glob %>% mutate("scale" = "global"), 
+                     d_power_cont %>% mutate("scale" = "continental")) %>%
+  rbind(d_power_regi %>% mutate("scale" = "regional"))  %>%
+  as_tibble()
+rm(d_power_glob, d_power_cont, d_power_regi)
+d_power_all
+
+#### Summary stats power analysis ####
+# number significant effects
+d_power_all %>% filter(sign(effect_ci_2.5)== sign(effect_ci_97.5)) %>% nrow() #31
+# number ns
+d_power_all %>% filter(sign(effect_ci_2.5)!= sign(effect_ci_97.5)) %>% nrow() #116
+
+d_power_all <- d_power_all %>%
+  mutate(effect_direction = sign(effect_median))
+
+# number significant per lc
+table(d_power_all %>% filter(sign(effect_ci_2.5)== sign(effect_ci_97.5)) %>% dplyr::select(scale, lc))
+table(d_power_all %>% filter(sign(effect_ci_2.5)== sign(effect_ci_97.5) & power>=0.8) %>% dplyr::select(scale, lc))
+table(d_power_all %>% filter(sign(effect_ci_2.5)== sign(effect_ci_97.5)) %>% dplyr::select(effect_direction))
+table(d_power_all %>% filter(sign(effect_ci_2.5)== sign(effect_ci_97.5)) %>% dplyr::select(effect_direction , Group_function))
+table(d_power_all %>% dplyr::select(scale, lc))
+
+d_power_all %>% arrange(desc(power))
+
+# # minimum detectable effect size
+pwr::pwr.t.test(n = 14,
+           power = 0.8, # typically desired power
+           sig.level = 0.05, type = "two.sample", alternative = "two.sided")
+
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ## Model comparison: random-slope & -intercept models ####
@@ -1164,4 +1334,12 @@ ggplot(data = pars_all %>%
 ggsave(filename=paste0(here::here(), "/figures/Results_slope_BayesianTrends_allScales_fns.png"),
        plot = last_plot(), 
        width = 4400, height = 3800, units = "px")
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Priors of Bayesian models ####
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+load(file=paste0(here::here(), "/intermediates/PAranks_Priors_", temp_scale, ".RData")) #prior_list
+load(file=paste0(here::here(), "/intermediates/PAranks_PriorsWithRandomFactor_", temp_scale, ".RData")) #prior_list
+
 
