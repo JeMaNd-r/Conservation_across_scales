@@ -571,7 +571,19 @@ ggplot(d_all[order(d_all$lower),] %>% filter(fns == "Soil_carbon_service") , aes
   labs(x = "Effect size", y = "Trail")
 
 p_dist <- 
-  ggplot(d_all %>%
+  ggplot(d_all  %>%
+           full_join(d_all %>%
+                       mutate(significance = ifelse(sign(lower)==sign(upper), 1, 0)) %>%
+                       dplyr::select(significance, fns, lc, scale, effect) %>%
+                       group_by(fns, lc, scale) %>%
+                       count(significance) %>% 
+                       filter(significance == 1) %>%
+                       rename(n_ci_significant = n) %>%
+                       dplyr::select(-significance),
+                     by = c("fns", "lc", "scale")) %>%
+           full_join(d_sum_all %>%
+                       dplyr::select(fns, lc, scale, effect_mean),
+                     by = c("fns", "lc", "scale")) %>%
          mutate(Label = factor(Label, levels = rev(fns_labels$Label))) %>%
          mutate(Label = ifelse(Group_function == "Function", as.character(Label), 
                                ifelse(Label_short == "AM fungi R", "Fungi (AM)",
@@ -585,11 +597,12 @@ p_dist <-
                 lc_icon = factor(lc_icon, levels = c("<img src='figures/icon_harvest.png' width='40'>",
                                                      "<img src='figures/icon_grass.png' width='34'>",
                                                      "<img src='figures/icon_forest.png' width='60'>" ))) %>%
-         filter(!is.na(lc_icon)), 
+         filter(!is.na(lc_icon)),
        aes(x = effect, y = Label)) +
   geom_point(alpha = 0.02, size = 4, shape = 15) +
   geom_linerange(aes(xmin = lower, xmax = upper), linewidth = 2, alpha = 0.01) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "black") +
+  geom_text(aes(x = effect_mean, label = n_ci_significant), hjust = 1, color = "white", size = 3)+
   theme_bw() +
   #coord_flip()+
   facet_grid(Group_function ~ scale + lc_icon,
@@ -610,7 +623,7 @@ p_dist <-
         strip.background.x = element_rect(fill="white", color = NA), #chocolate4
         strip.background.y = element_rect(fill="white", color = NA),
         strip.placement = "outside",
-        strip.text.y = element_text(size=18, color = "black", hjust = 0),
+        strip.text.y = element_text(size=18, color = "black"),
         strip.text.x = ggtext::element_markdown(vjust = 0)) #white
 ggsave(filename=paste0(here::here(), "/figures/Results_d-value_dist_allScales_fns.png"),
        plot = p_dist,
@@ -1058,11 +1071,19 @@ table(d_power_all %>% dplyr::select(scale, lc))
 
 d_power_all %>% arrange(desc(power))
 
-# # minimum detectable effect size
+# minimum detectable effect size
 pwr::pwr.t.test(n = 14,
            power = 0.8, # typically desired power
            sig.level = 0.05, type = "two.sample", alternative = "two.sided")
 pwr::pwr.t.test(n = 7,
+                power = 0.8, # typically desired power
+                sig.level = 0.05, type = "two.sample", alternative = "two.sided")
+
+# same based on comparison to all sites
+pwr::pwr.t.test(n = 16,
+                power = 0.8, # typically desired power
+                sig.level = 0.05, type = "two.sample", alternative = "two.sided")
+pwr::pwr.t.test(n = 10,
                 power = 0.8, # typically desired power
                 sig.level = 0.05, type = "two.sample", alternative = "two.sided")
 
@@ -1490,8 +1511,11 @@ df_prior <- df_prior %>%
     rf = ifelse(random_factors, "withRF", "noRF"),
     group = paste0(model, " -", rf)) %>%
   summarise(model = paste(unique(group), collapse = ", ")) %>%
-  arrange(scale, fns, class)
+  ungroup() %>%
+  group_by(fns, prior, class, model) %>%
+  summarise("scale" = paste(unique(`scale`), collapse = ", ")) %>%
+  rename(parameter = class) %>%
+  arrange(fns, parameter, scale)
+df_prior
 
-# check if sd = sigma everywhere (summary without model), if so, report together with note that sd only in withRF models
-
-write_csv(prior_df, paste0(here::here(), "/results/PA_Bayesian_priors_all.csv"))
+write_csv(df_prior, paste0(here::here(), "/results/PA_Bayesian_priors_all.csv"))
