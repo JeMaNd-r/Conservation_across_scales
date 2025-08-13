@@ -198,7 +198,7 @@ knitr::include_graphics(here::here("figures", "Results_d-value_medianCI_global.p
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 #| label: Figure S11a
-#| fig-cap: "Figure S8a: Global comparison of soil biodiversity and functioning attributes in differently protected (Ia-V) and unprotected drylands. Results from the random-intercept model. Density plot shows distribution of the extracted 10,000 posterior samples of intercept estimates for each IUCN protection categories (Ia, Ib, II, III, IV, V, VI) and unprotected sites."
+#| fig-cap: "Figure S11a: Global comparison of soil biodiversity and functioning attributes in differently protected (Ia-V) and unprotected drylands. Results from the random-intercept model. Density plot shows distribution of the extracted 10,000 posterior samples of intercept estimates for each IUCN protection categories (Ia, Ib, II, III, IV, V, VI) and unprotected sites."
 
 knitr::include_graphics(here::here("figures", "Results_intercept_parsBayesian_global.png"))
 
@@ -254,7 +254,7 @@ clean_values_glob <- clean_glob %>%
 #| label: Figure S13 
 #| layout-ncol: 2 
 #| fig-cap: 
-#| - "Figure S15: Attribute values of (a) all-complete dataset and" 
+#| - "Figure S13: Attribute values of (a) all-complete dataset and" 
 #| - "(b) bacteria-complete dataset."  
 
 ggplot() +   
