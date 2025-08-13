@@ -244,6 +244,8 @@ Three sensitivity analysis were conducted.
 - `05_Sensitivity_analysis_alternativeGlobal.R` uses an alternative global dataset that covers multiple habitat types instead of just drylands. Output generated with this script is stored in `results/sensitivity_globalAlternativeDataset`.
 - `05_Sensitivity_analysis_bacteriaAll.R` uses all sites with complete data for soil bacterial biodiversity measures that is bacterial richness, Shannon index and dissimilarity. In this analysis, all available sites are used to compare just the 3 bacterial diversity attributes. Output generated with this script is stored in `results/sensitivity_globalBacteria`.
 - `05_Sensitivity_analysis_distanceThreshold.R` considers different distance thresholds to build pairs of protected and environmentally similar unprotected sites and compare their soil biodiversity and functioning attributes. Output generated with this script is stored in `results/sensitivity_distanceThreshold`.
+- `05_Sensitivity_analysis_compareToAll.R` compares all protected with any unprotected sites, ignoring Mahalanobis and spatial distance thresholds. Output generated with this script is stored in `results/sensitivity_compareToAll`.
+- `05_Sensitivity_analysis_similarAttributes.R` uses more similar soil biodiversity and functioning attributes by removing variables that are absent in one of the datasets (continental or regional). Output generated with this script is stored in `results/sensitivity_similarAttributes`.
 
 Files in the sensitivity output folders follow naming conventions described above.
 
