@@ -620,9 +620,38 @@ write_csv(d_significant, paste0(here::here(), "/results/sensitivity_similarAttri
 d_significant <- read_csv(paste0(here::here(), "/results/sensitivity_similarAttributes/Results_d-value_summary_allScales.csv"))
 d_significant
 
+
 # compare to main analysis
+d_main <- list()
+for(temp_scale in c("continental", "regional")){
+  d_summary <- read_csv(paste0(here::here(), "/figures/Results_d-value_summary_", temp_scale, ".csv"))
+  
+  # significance
+  d_summary <- d_summary %>%
+    mutate(effect_direction = as.factor(sign(effect_mean)))%>%
+    mutate(effect_direction_c = ifelse(effect_direction=="-1", "negative",
+                                       ifelse(effect_direction=="1", "positive", "0"))) %>%
+    mutate(effect_significance = ifelse(sign(effect_ci_2.5)!= sign(effect_ci_97.5), "not significant", effect_direction_c),
+           effect_na = ifelse(is.na(effect_mean), "not available", NA)) %>%
+    mutate(effect_significance = factor(effect_significance, levels = c("negative", "positive", "not significant")))
+  
+  # add radius_thres
+  d_summary$scale <- paste0(temp_scale, "_main")
+  
+  # add to overall table
+  d_main <- c(d_main, list(d_summary))
+}  
 
+d_main <- do.call(rbind, d_main)
 
+d_main <- d_main %>% 
+  unique() %>%
+  filter(effect_significance!="not significant" & !is.na(effect_significance)) %>% 
+  count(scale, fns, effect_significance, lc) %>%
+  pivot_wider(names_from = scale, values_from = n) 
+d_main
 
-
-
+d_significant <- d_significant %>%
+  full_join(d_main) %>%
+  arrange(continental, regional)
+d_significant
