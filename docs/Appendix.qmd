@@ -66,7 +66,7 @@ Data S1 to S5 are provided as separate CSV files.
 #### Sensitivity analysis of matching scenarios
 
 Changing the spatial distance threshold from 500 km to 200, 300, 400, 600, 700 and 1,000 km did affect the number and type of significant effect sizes found at continental scale, but trends did not contradict main results (table S1-S2). Matching scenarios with and without spatial and Mahalanobis distance thresholds resulted in changed sampling sizes, namely additional protected sites up to 1 in cropland, 4 in grassland, and 8 in woodland sites at continental scale, and 3 additional sites in each regional grasslands and woodlands without thresholds, as well as changes in the number of unprotected sites used in pairing at both scales (table S4). Compared to the minimal detectable effect sizes from the main analysis (power=0.8, significance level=0.05), minimum detectable effect size was lower by 0.3 (d=0.8 (n=27) and 1.3 (d=10) for continental and regional scale). 
-Some effects found in the main analysis were robust against matching scenarios, while others disappeared and even more were additionally detected. At continental scale, only the positive effect on decomposer richness in croplands was robust against all 4 scenarios (w/o Mahalanobis distance threshold, w/o spatial distance threshold), but the positive effect on AM fungal richness in grasslands was also robust to the removal of the environmental threshold. Interestingly, we found effects across all 3 scenarios but not the main scenario, namely a positive effect on AM fungi richness in croplands, decomposer richness in grasslands, and decomposition in grasslands. Without the spatial distance threshold but independent of the environmental threshold, we found 13 additional effects, mainly on bacteria (higher diversity and lower dissimilarity under protection), invertebrates and protists (lower diversity and higher dissimilarity), and on pathogen control (positive effect in both cropland and grassland). Unique effects detected in the matching scenario without thresholds were those on fungal diversity in grasslands (negative), fungal dissimilarity in croplands (positive), invertebrate diversity (richness positive in woodlands, but Shannon diversity negative in grasslands), nematode and protist richness in grasslands (negative) and soil stability in croplands (positive). At regional scale, all effects found in the main matching scenario were robust against the environmental threshold, except for the positive effect on invertebrate dissimilarity in croplands. In addition, we detected 8 positive and 4 negative effects on fungal, protist and invertebrate diversity, as well as on nematode and decomposer richness, and soil carbon (negative in woodlands, positive in grasslands). Taken together, we would say that we observed an effect of protection on soil biodiversity and functioning if(!) we would just test for the difference between protected and unprotected sites not controlling for environmental covariates; however, previous matching studies showed that not controlling for covariates overestimates the effect of protected areas (Andam et al., 2008; Eastwood et al., 2016; L. Joppa & Pfaff, 2010).
+Some effects found in the main analysis were robust against matching scenarios, while others disappeared and even more were additionally detected. At continental scale, only the positive effect on decomposer richness in croplands was robust against all 4 scenarios (w/o Mahalanobis distance threshold, w/o spatial distance threshold), but the positive effect on AM fungal richness in grasslands was also robust to the removal of the environmental threshold. Interestingly, we found effects across all 3 scenarios but not the main scenario, namely a positive effect on AM fungi richness in croplands, decomposer richness in grasslands, and decomposition in grasslands. Without the spatial distance threshold but independent of the environmental threshold, we found 13 additional effects, mainly on bacteria (higher diversity and lower dissimilarity under protection), invertebrates and protists (lower diversity and higher dissimilarity), and on pathogen control (positive effect in both cropland and grassland). Unique effects detected in the matching scenario without thresholds were those on fungal diversity in grasslands (negative), fungal dissimilarity in croplands (positive), invertebrate diversity (richness positive in woodlands, but Shannon diversity negative in grasslands), nematode and protist richness in grasslands (negative) and soil stability in croplands (positive). At regional scale, all effects found in the main matching scenario were robust against the environmental threshold, except for the positive effect on invertebrate dissimilarity in croplands. In addition, we detected 8 positive and 4 negative effects on fungal, protist and invertebrate diversity, as well as on nematode and decomposer richness, and soil carbon (negative in woodlands, positive in grasslands). Taken together, we would say that we observed an effect of protection on soil biodiversity and functioning if(!) we would just test for the difference between protected and unprotected sites not controlling for environmental covariates; however, previous matching studies showed that not controlling for covariates overestimates the effect of protected areas (Andam et al., 2008; Eastwood et al., 2016; Joppa & Pfaff, 2010).
 
 #### Results of the random-intercept and random-slope model
 
@@ -102,7 +102,7 @@ Using the bacteria-complete dataset resulted in similar patterns for all slope e
 
 ## Supplementary Figures
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, out.width='90%'}
 #| label: Figure S1
 #| fig-cap: "Figure S1: Workflow to assess the effect of conservation measures on soil biodiversity and functioning across three spatial scales. Analysis steps of estimation of effect size (1) and random-slope models (2). Results for the random-intercept and random-slope models are given in Supplementary Text. Icons: soil: Author01 (CC-BY 4.0), all others: PowerPoint."
 
@@ -110,7 +110,7 @@ knitr::include_graphics(here::here("docs", "Fig_1_Workflow_only.png"))
 ```
 
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, out.width='90%'}
 #| label: Figure S2
 #| fig-cap: "Figure S2: Mahalanobis distance between protected and unprotected sites is smaller in pairs than across all investigates sites. Distance is shown on y-axis at different scales without (bottom) and with proper pairing (top) of environmentally similar sites (i.e. pairing based on Mahalanobis threshold). This shows that paired sites are indeed more environmentally similar than compared with pairing of all sites without Mahalanobis threshold."
 
@@ -125,30 +125,30 @@ knitr::include_graphics(here::here("figures", "Correlation_diff_mahal_allScales.
 ```
 
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, out.width='90%'}
 #| label: Figure S4
-#| fig-cap: "Figure S4: Confidence intervals of Cohens D effect size estimates for soil biodiversity and functionality attributes (y-axis) of 1,000 randomized pairings across three land-use types and spatial scales (x-axis). Thinner lines represent 95 percent confidence intervals (CIs), thicker lines show (overlapping) Cohens D estimates. Statistically not significant effect sizes are defined as 95 percent CIs crossing 0. White numbers represent number of CIs not crossing 0 (total n=1,000). Number of samples was 7 at regional and 14 at continental scale for each habitat type and attribute. Icons: “Grass“ created by Freepik, “Forest“ by Vitaly Gorbachev, and “Agriculture“ by Vectors Tank - Flaticon."
+#| fig-cap: "Figure S4: Confidence intervals of Cohens D effect size estimates for soil biodiversity and functionality attributes (y-axis) of 1,000 randomized pairings across three land-use types and  two spatial scales (x-axis, left: continental, right: regional). Thinner lines represent 95 percent confidence intervals (CIs), thicker lines show (overlapping) Cohens D estimates. Statistically not significant effect sizes are defined as 95 percent CIs crossing 0. White numbers represent number of CIs not crossing 0 (total n=1,000). Number of samples was 7 at regional and 14 at continental scale for each habitat type and attribute. Icons: “Grass“ created by Freepik, “Forest“ by Vitaly Gorbachev, and “Agriculture“ by Vectors Tank - Flaticon."
 
 knitr::include_graphics(here::here("figures", "Results_d-value_dist_allScales_fns.png"))
 ```
 
 
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, out.width='90%'}
 #| label: Figure S5
 #| fig-cap: "Figure S5: Locations of sampling sites investigates in the effect size estimation (top), and random intercept and random slope model (bottom). Numbers in the boxes represent the number of sites per spatial scale and protection status respectively. Icons: “Grass”, “Globe” and “Flag” created by Freepik, “Europe” modified after icon by amoghdesign, “Forest” by Vitaly Gorbachev, “Land” by HEA POH LIN, and “Agriculture” by Vectors Tank - Flaticon."
 
 knitr::include_graphics(here::here("docs", "Appendix_maps.png"))
 ```
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, out.width='90%'}
 #| label: Figure S6
 #| fig-cap: "Figure S6: Grouped effect sizes for soil biodiversity and functionality attributes of 1000 randomized pairings across three land-use types (x-axis) and spatial scales (y-axis). Colors represent habitat types. Points represent median effect size, bars represent 66% (thick) and 95% confidence intervals (thin). Effect size magnitudes are regarded as marginal (≤0.2), small (>0.2), medium (>0.5) and large (>0.8) indicated by horizontal gray lines. Statistically not significant effect sizes are defined as 95% confidence intervals (CI) crossing 0. Number of samples was 7, 14, and 39 for regional, continental, and global scale for each habitat type and attribute. Icons: “Globe” and  “Flag” created by Freepik, “Europe” modified after icon by amoghdesign."
 
 knitr::include_graphics(here::here("figures", "Results_d-value_medianCI_allScales_grouped.png"))
 ```
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, out.width='90%'}
 #| label: Figure S7
 #| fig-cap: "Figure S7: Slope estimates from effect of protection level on soil biodiversity and functioning attributes across four habitat types (x-axis) and spatial scales (y-axis). The four habitat types on the x-axis are cropland, grassland, woodland,and dryland. Spatial scales on the y-axis are regional, continental, and global. Colors represent direction of estimated median marginal trends, circle size represents values of estimated median marginal trends. Black crosses indicate missing data. Statistically not significant effect sizes (ns, unfilled circles) are defined as high posterior density interval crossing 0. Icons: “Grass”, “Globe” and “Flag” created by Freepik, “Europe” modified after icon by amoghdesign, “Forest” by Vitaly Gorbachev, “Land” by HEA POH LIN, and “Agriculture” by Vectors Tank - Flaticon. "
 
@@ -156,7 +156,7 @@ knitr::include_graphics(here::here("docs", "Appendix_bayesian_trends.png"))
 
 ```
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, out.width='90%'}
 #| label: Figure S8a
 #| fig-cap: "Figure S8a: Continental comparison of soil biodiversity and functioning attributes in differently protected (Ia-V) and unprotected cropland, grasslands, shrublands and woodlands. Results from the random intercept model. Density plot shows distribution of the extracted 10,000 posterior samples of intercept estimates for each IUCN protection categories (Ia, Ib, II, III, IV, V, VI) and unprotected sites."
 
@@ -164,7 +164,7 @@ knitr::include_graphics(here::here("figures", "Results_intercept_parsBayesian_co
 
 ```
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, out.width='90%'}
 #| label: Figure S8b
 #| fig-cap: "Figure S8b: Continental comparison of soil biodiversity and functioning attributes across the protection level gradient. Results from the random slope model. Gray shades represent highest posterior density intervals (HPDI) with probability being 50%, 80% and 95%, respectively, based on 10,000 posterior samples of the slope estimates. Colored lines indicate medians of the estimated group means for each habitat type. Protection level 1 to 11 represent \"Unprotected\" sites (1) and IUCN categories \"Not Assigned\" (3), \"Not Reported\" (4), VI (5), V (6), VI (7), and II (9). Soil biodiversity and functioning attributes (y-axis) were not scaled."
 
@@ -172,7 +172,7 @@ knitr::include_graphics(here::here("figures", "Results_slope_parsBayesian_contin
 
 ```
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, out.width='90%'}
 #| label: Figure S9a
 #| fig-cap: "Figure S9a: Regional comparison of soil biodiversity and functioning attributes in differently protected (Ia-V) and unprotected cropland, grasslands and woodlands. Results from the  random-intercept model. Density plot shows distribution of the extracted 10,000 posterior samples of intercept estimates for each IUCN protection categories (Ia, Ib, II, III, IV, V, VI) and unprotected sites."
 
@@ -180,7 +180,7 @@ knitr::include_graphics(here::here("figures", "Results_intercept_parsBayesian_re
 
 ```
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, out.width='90%'}
 #| label: Figure S9b
 #| fig-cap: "Figure S9b: Regional comparison of soil biodiversity and functioning attributes across the protection level gradient. Results from the random-slope model. Gray shades represent highest posterior density intervals (HPDI) with probability being 50%, 80% and 95%, respectively, based on 10,000 posterior samples of the slope estimates. Colored lines indicate medians of the estimated group means for each habitat type. Protection level 1 to 11 represent \"Unprotected\" sites (1) and IUCN categories \"Not Reported\" (4), V (6), VI (7), and II (9). Soil biodiversity and functioning attributes (y-axis) were not scaled."
 
@@ -250,7 +250,7 @@ clean_values_glob <- clean_glob %>%
   filter(!is.na(LC)) 
 ```
 
-```{r S13_boxplot_raw_bact_complete, echo=FALSE, warning=FALSE, message=FALSE, fig.show='hold', out.width='40%'}
+```{r S13_boxplot_raw_bact_complete, echo=FALSE, warning=FALSE, message=FALSE, fig.show='hold', out.width='35%'}
 #| label: Figure S13 
 #| layout-ncol: 2 
 #| fig-cap: 
@@ -437,11 +437,22 @@ Slope estimates from effect of protection level on soil biodiversity and functio
 Random-intercept model estimates for bacterial diversity and functioning attributes of 1000 randomized pairings summarized across the three habitat types and variables.
 
 
-## References
+# References
 
-...
+-   Andam, K. S., Ferraro, P. J., Pfaff, A., Sanchez-Azofeifa, G. A., & Robalino, J. A. (2008). Measuring the effectiveness of protected area networks in reducing deforestation. Proceedings of the National Academy of Sciences, 105(42), 16089–16094. https://doi.org/10.1073/pnas.0800437105
 
-#### References: Data S1
+-   Eastwood, A., Brooker, R., Irvine, R. J., Artz, R. R. E., Norton, L. R., Bullock, J. M., Ross, L., Fielding, D., Ramsay, S., Roberts, J., Anderson, W., Dugan, D., Cooksley, S., & Pakeman, R. J. (2016). Does nature conservation enhance ecosystem services delivery? Ecosystem Services, 17, 152–162. https://doi.org/10.1016/j.ecoser.2015.12.001
+
+-   Fernandez-Ugalde, O., Scarpa, S., Orgiazzi, A., Panagos, P., Van Liedekerke, M., Marechal, A., Jones, A. (2022) LUCAS 2018 soil module. Presentation of dataset and results, EUR 31144 EN, Publications office of the European Union. JRC129926.
+
+-   Joppa, L. N., & Pfaff, A. (2010b). Reassessing the forest impacts of protection. Annals of the New York Academy of Sciences, 1185(1), 135–149. https://doi.org/10.1111/j.1749-6632.2009.05162.x
+
+-   USDA (2004) Soil Survey Laboratory Manual. Soil Survey Investigation Report No. 42, Version 4. USDA. NRCS, USDA.
+
+-   Zeiss, R., Eisenhauer, N., Orgiazzi, A., Rillig, M., Buscot, F., Jones, A., et al. (2022b) Soil function data measured in LUCAS 2018 sites across the EU. European Soil Data Centre (ESDAC). https://esdac.jrc.ec.europa.eu/content/soil-function-data-measured-lucas-2018-sites-across-eu
+
+
+### References: Data S1
 
 -   Carvalho RP, Guerra C, Cano-Díaz C, Mendes S, Costa SR (2025) Distribution of plant-parasitic nematode communities across land-use types in the North of Portugal. Applied Soil Ecology. 1;206:105852.
 
