@@ -1,6 +1,11 @@
-cff-version: 1.1.0
+cff-version: 1.2.0
+title: "Soil protection across scales"
+version: 2.0
+license: "CC-BY"
+type: software
+abstract: "This repository contains the scripts, input and output for the comparison of soil diversity and functioning estimates in protected and unprotected sampling sites across three spatial scales (global, continental: Europe, regional: North-Portugal)."
 message: "If you use this software, please cite it as below."
-authors:
+date-released: 2025-08-13
 - family-names: Zeiss 
   given-names: Romy
   orcid: https://orcid.org/0000-0001-8862-9185
@@ -48,6 +53,8 @@ authors:
 - family-names: Guerra 
   given-names: Carlos A.
   orcid: https://orcid.org/0000-0003-4917-2105
-title:JeMaNd-r/Conservation_across_scales: Publication
-version: v1.0
-date-released: 2025-05-08
+keywords:
+  - soil biodiversity
+  - soil functions
+  - protected areas
+  - conservation
