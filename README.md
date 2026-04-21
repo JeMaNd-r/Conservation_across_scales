@@ -6,7 +6,7 @@ The structure of the README file is based on [this one](https://github.com/JWicq
 
 **The respective study is presented in the following article**:
 
-[Zeiss et al. (in Review) ... .](DOI)
+Zeiss, R., Delgado-Baquerizo, M., Singavarapu, B., Eisenhauer, N., Cano-Díaz, C., Calderón-Sanou, I., ... & Guerra, C. A. (2026). Uncertain role of conservation areas to protect soil biodiversity and functioning. Global Ecology and Conservation, e04052. [https://doi.org/10.1016/j.gecco.2026.e04052](https://doi.org/10.1016/j.gecco.2026.e04052)
 
 
 ## Table of Contents
